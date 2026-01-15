@@ -23,6 +23,6 @@ describe('App', () => {
   it('should have title', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
-    expect(app['title']).toBe('Rates E-Trading Desktop');
+    expect(app.title).toBe('Rates E-Trading Desktop');
   });
 });

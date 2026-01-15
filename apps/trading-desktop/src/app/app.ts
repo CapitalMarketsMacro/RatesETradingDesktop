@@ -9,7 +9,7 @@ import { RatesData } from '@rates-trading/data-access';
 })
 export class App {
   private ratesData = inject(RatesData);
-  protected title = 'Rates E-Trading Desktop';
+  title = 'Rates E-Trading Desktop';
   protected rates: { symbol: string; rate: number; change: number }[] = [];
 
   constructor() {
