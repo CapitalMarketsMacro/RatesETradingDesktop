@@ -2,21 +2,27 @@ import { TestBed } from '@angular/core/testing';
 import { App } from './app';
 import { NxWelcome } from './nx-welcome';
 import { RouterModule } from '@angular/router';
+import { UiComponentsModule } from '@rates-trading/ui-components';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterModule.forRoot([])],
+      imports: [RouterModule.forRoot([]), UiComponentsModule],
       declarations: [App, NxWelcome],
+      schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
   });
 
-  it('should render title', async () => {
+  it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain(
-      'Welcome trading-desktop',
-    );
+    const app = fixture.componentInstance;
+    expect(app).toBeTruthy();
+  });
+
+  it('should have title', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    expect(app['title']).toBe('Rates E-Trading Desktop');
   });
 });

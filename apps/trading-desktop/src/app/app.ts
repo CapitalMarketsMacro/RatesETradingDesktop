@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { RatesData } from '@rates-trading/data-access';
 
 @Component({
   selector: 'app-root',
@@ -7,5 +8,11 @@ import { Component } from '@angular/core';
   styleUrl: './app.scss',
 })
 export class App {
-  protected title = 'trading-desktop';
+  private ratesData = inject(RatesData);
+  protected title = 'Rates E-Trading Desktop';
+  protected rates: { symbol: string; rate: number; change: number }[] = [];
+
+  constructor() {
+    this.rates = this.ratesData.getRates();
+  }
 }

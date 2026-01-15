@@ -1,0 +1,7 @@
+<div class="rate-card">
+  <h3>{{ symbol }}</h3>
+  <p class="rate">{{ rate }}%</p>
+  <p class="change" [class.positive]="change > 0" [class.negative]="change < 0">
+    {{ change > 0 ? '+' : '' }}{{ change }}%
+  </p>
+</div>

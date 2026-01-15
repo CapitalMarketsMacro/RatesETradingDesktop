@@ -1,2 +1,13 @@
-<app-nx-welcome></app-nx-welcome>
+<div class="app-container">
+  <h1>{{ title }}</h1>
+  <div class="rates-grid">
+    @for (rate of rates; track rate.symbol) {
+      <lib-rate-card
+        [symbol]="rate.symbol"
+        [rate]="rate.rate"
+        [change]="rate.change"
+      ></lib-rate-card>
+    }
+  </div>
+</div>
 <router-outlet></router-outlet>
