@@ -7,8 +7,8 @@ An Nx mono-repo workspace for the Rates E-Trading Desktop application built with
 This is an Nx mono-repo containing:
 
 ### Applications
-- **trading-desktop** - Main Angular application for rates e-trading
-- **trading-desktop-e2e** - End-to-end tests using Playwright
+- **rates-desktop** - Main Angular application for rates e-trading
+- **rates-desktop-e2e** - End-to-end tests using Playwright
 
 ### Libraries
 - **shared-utils** - Shared utility functions and helpers
@@ -32,7 +32,7 @@ Start the development server:
 ```bash
 npm start
 # or
-nx serve trading-desktop
+nx serve rates-desktop
 ```
 
 The application will be available at `http://localhost:4200/`
@@ -43,7 +43,7 @@ Build the main application:
 ```bash
 npm run build
 # or
-nx build trading-desktop
+nx build rates-desktop
 ```
 
 Build all projects:
@@ -57,7 +57,7 @@ Run tests for the main application:
 ```bash
 npm test
 # or
-nx test trading-desktop
+nx test rates-desktop
 ```
 
 Run all tests:
@@ -69,7 +69,7 @@ Run end-to-end tests:
 ```bash
 npm run e2e
 # or
-nx e2e trading-desktop-e2e
+nx e2e rates-desktop-e2e
 ```
 
 ### Linting
@@ -78,7 +78,7 @@ Lint the main application:
 ```bash
 npm run lint
 # or
-nx lint trading-desktop
+nx lint rates-desktop
 ```
 
 Lint all projects:
@@ -97,7 +97,7 @@ nx graph
 
 Show project details:
 ```bash
-nx show project trading-desktop
+nx show project rates-desktop
 ```
 
 Run affected commands (only test/build/lint changed projects):

@@ -1,9 +1,0 @@
-{
-  "name": "trading-desktop-e2e",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "projectType": "application",
-  "sourceRoot": "apps/trading-desktop-e2e/src",
-  "implicitDependencies": ["trading-desktop"],
-  "// targets": "to see all targets run: nx show project trading-desktop-e2e --web",
-  "targets": {}
-}

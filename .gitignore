@@ -36,3 +36,5 @@ yarn-error.log*
 __screenshots__/
 
 vitest.config.*.timestamp*
+
+/.idea

@@ -1,26 +1,26 @@
 {
-  "name": "trading-desktop",
+  "name": "rates-desktop",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "prefix": "app",
-  "sourceRoot": "apps/trading-desktop/src",
+  "sourceRoot": "apps/rates-desktop/src",
   "tags": [],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/apps/trading-desktop",
-        "browser": "apps/trading-desktop/src/main.ts",
-        "tsConfig": "apps/trading-desktop/tsconfig.app.json",
+        "outputPath": "dist/apps/rates-desktop",
+        "browser": "apps/rates-desktop/src/main.ts",
+        "tsConfig": "apps/rates-desktop/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
           {
             "glob": "**/*",
-            "input": "apps/trading-desktop/public"
+            "input": "apps/rates-desktop/public"
           }
         ],
-        "styles": ["apps/trading-desktop/src/styles.scss"]
+        "styles": ["apps/rates-desktop/src/styles.scss"]
       },
       "configurations": {
         "production": {
@@ -51,10 +51,10 @@
       "executor": "@angular/build:dev-server",
       "configurations": {
         "production": {
-          "buildTarget": "trading-desktop:build:production"
+          "buildTarget": "rates-desktop:build:production"
         },
         "development": {
-          "buildTarget": "trading-desktop:build:development"
+          "buildTarget": "rates-desktop:build:development"
         }
       },
       "defaultConfiguration": "development"
@@ -70,9 +70,9 @@
       "continuous": true,
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "trading-desktop:build",
+        "buildTarget": "rates-desktop:build",
         "port": 4200,
-        "staticFilePath": "dist/apps/trading-desktop/browser",
+        "staticFilePath": "dist/apps/rates-desktop/browser",
         "spa": true
       }
     }
