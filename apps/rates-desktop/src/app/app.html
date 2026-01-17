@@ -1,3 +1,16 @@
+<p-menubar [model]="menuItems" class="app-menubar">
+  <ng-template pTemplate="end">
+    <button
+      pButton
+      type="button"
+      [icon]="themeIcon"
+      [label]="themeLabel"
+      (click)="toggleTheme()"
+      class="p-button-text theme-toggle"
+    ></button>
+  </ng-template>
+</p-menubar>
+
 <div class="app-container">
   <h1>{{ title }}</h1>
   <div class="rates-grid">

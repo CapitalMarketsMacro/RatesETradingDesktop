@@ -13,14 +13,14 @@
         "outputPath": "dist/apps/rates-desktop",
         "browser": "apps/rates-desktop/src/main.ts",
         "tsConfig": "apps/rates-desktop/tsconfig.app.json",
-        "inlineStyleLanguage": "scss",
+        "inlineStyleLanguage": "css",
         "assets": [
           {
             "glob": "**/*",
             "input": "apps/rates-desktop/public"
           }
         ],
-        "styles": ["apps/rates-desktop/src/styles.scss"]
+        "styles": ["apps/rates-desktop/src/styles.css"]
       },
       "configurations": {
         "production": {
