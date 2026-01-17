@@ -70,6 +70,10 @@
     "@angular/platform-browser": "~21.0.0",
     "@angular/router": "~21.0.0",
     "@primeuix/themes": "^2.0.2",
+    "ag-charts-angular": "^13.0.0",
+    "ag-charts-community": "^13.0.0",
+    "ag-grid-angular": "^35.0.0",
+    "ag-grid-enterprise": "^35.0.0",
     "primeng": "^21.0.3",
     "rxjs": "~7.8.0"
   }

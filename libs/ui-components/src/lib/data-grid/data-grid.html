@@ -1,0 +1,17 @@
+<div class="data-grid-container" [style.height]="height">
+  <ag-grid-angular
+    #agGrid
+    [columnDefs]="getColumns()"
+    [rowData]="rowData"
+    [theme]="gridTheme"
+    [pagination]="mergedGridOptions.pagination"
+    [paginationPageSize]="mergedGridOptions.paginationPageSize"
+    [paginationPageSizeSelector]="mergedGridOptions.paginationPageSizeSelector"
+    [defaultColDef]="mergedGridOptions.defaultColDef"
+    [cellSelection]="mergedGridOptions.cellSelection"
+    [rowSelection]="mergedGridOptions.rowSelection"
+    [animateRows]="mergedGridOptions.animateRows"
+    [suppressPaginationPanel]="mergedGridOptions.suppressPaginationPanel"
+    (gridReady)="onGridReady($event)"
+  ></ag-grid-angular>
+</div>

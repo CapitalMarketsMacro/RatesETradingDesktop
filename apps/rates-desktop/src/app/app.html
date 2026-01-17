@@ -13,7 +13,27 @@
 
 <div class="app-container">
   <h1>{{ title }}</h1>
+  
+  <div class="market-data-section">
+    <h2>On-The-Run Treasuries</h2>
+    <lib-data-grid
+      [columns]="treasuryColumns"
+      [rowData]="treasuryData"
+      height="500px"
+      [gridOptions]="{
+        pagination: true,
+        paginationPageSize: 10,
+        suppressPaginationPanel: false,
+        rowSelection: {
+          mode: 'singleRow'
+        },
+        cellSelection: true
+      }">
+    </lib-data-grid>
+  </div>
+
   <div class="rates-grid">
+    <h2>Key Rates</h2>
     @for (rate of rates; track rate.symbol) {
       <lib-rate-card
         [symbol]="rate.symbol"

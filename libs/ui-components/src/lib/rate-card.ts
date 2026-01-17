@@ -1,8 +1,10 @@
 import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'lib-rate-card',
-  standalone: false,
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './rate-card.html',
   styleUrl: './rate-card.css',
 })

@@ -16,6 +16,29 @@ h1 {
   margin-bottom: 24px;
 }
 
+h2 {
+  color: #1e3a8a;
+  margin-bottom: 16px;
+  font-size: 1.5rem;
+}
+
+.market-data-section {
+  margin-bottom: 32px;
+}
+
+.market-data-section h2 {
+  margin-bottom: 16px;
+}
+
+.rates-grid {
+  margin-top: 32px;
+}
+
+.rates-grid h2 {
+  margin-bottom: 16px;
+  width: 100%;
+}
+
 .rates-grid {
   display: flex;
   gap: 16px;
