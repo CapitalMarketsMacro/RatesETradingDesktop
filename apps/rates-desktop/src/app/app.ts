@@ -6,6 +6,7 @@ import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
 import { RatesData } from '@rates-trading/data-access';
 import { RateCard, DataGrid, ColDef } from '@rates-trading/ui-components';
+import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
 import { ValueFormatterParams } from 'ag-grid-community';
 
 export interface TreasurySecurity {
@@ -39,7 +40,9 @@ export interface TreasurySecurity {
 })
 export class App implements OnInit {
   private ratesData = inject(RatesData);
+  private configService = inject(ConfigurationService);
   title = 'Rates E-Trading Desktop';
+  config?: RatesAppConfiguration;
   protected rates: { symbol: string; rate: number; change: number }[] = [];
   menuItems: MenuItem[] = [
     { label: 'Market Data', icon: 'pi pi-chart-line', routerLink: ['/market-data'] },
@@ -242,6 +245,13 @@ export class App implements OnInit {
   }
 
   ngOnInit() {
+    // Load configuration
+    this.configService.loadConfiguration().subscribe((config) => {
+      this.config = config;
+      // Set title from configuration
+      this.title = config.app.name;
+    });
+
     // Check for saved theme preference
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
