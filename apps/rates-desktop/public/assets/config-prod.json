@@ -1,0 +1,46 @@
+{
+  "app": {
+    "name": "Rates E-Trading Desktop",
+    "version": "1.0.0",
+    "environment": "prod"
+  },
+  "api": {
+    "baseUrl": "https://api.rates-trading.com/api",
+    "timeout": 30000,
+    "retryAttempts": 5
+  },
+  "transport": {
+    "type": "solace",
+    "solace": {
+      "url": "wss://solace.rates-trading.com:443",
+      "vpnName": "prod-vpn",
+      "userName": "prod-user",
+      "clientName": "rates-desktop-prod"
+    }
+  },
+  "marketData": {
+    "updateInterval": 250,
+    "maxHistorySize": 5000,
+    "symbols": ["2Y", "3Y", "5Y", "7Y", "10Y", "30Y"]
+  },
+  "trading": {
+    "enabled": true,
+    "maxOrderSize": 10000000,
+    "defaultCurrency": "USD"
+  },
+  "features": {
+    "advancedCharts": true,
+    "realTimeUpdates": true,
+    "orderManagement": true
+  },
+  "logging": {
+    "level": "warn",
+    "enableConsole": false,
+    "enableRemote": true
+  },
+  "ui": {
+    "theme": "auto",
+    "defaultPageSize": 100,
+    "refreshInterval": 2000
+  }
+}

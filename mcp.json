@@ -7,6 +7,10 @@
     "ag-mcp": {
       "command": "npx",
       "args": ["ag-mcp"]
+    },
+    "nx-mcp": {
+      "command": "npx",
+      "args": ["nx-mcp@latest"]
     }
   }
 }
