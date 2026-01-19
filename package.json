@@ -74,7 +74,9 @@
     "ag-charts-community": "^13.0.0",
     "ag-grid-angular": "^35.0.0",
     "ag-grid-enterprise": "^35.0.0",
+    "amps": "5.3.4-0.378635.60b2fcc",
     "primeng": "^21.0.3",
-    "rxjs": "~7.8.0"
+    "rxjs": "~7.8.0",
+    "solclientjs": "10.18.2"
   }
 }
