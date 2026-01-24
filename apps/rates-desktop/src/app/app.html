@@ -11,8 +11,6 @@
       <button
         pButton
         type="button"
-        [icon]="themeIcon"
-        [label]="themeLabel"
         (click)="toggleTheme()"
         class="p-button-text theme-toggle"
         aria-label="Toggle theme"
@@ -24,17 +22,8 @@
 <div class="app-container">
   <h1>{{ title }}</h1>
   
-  <!-- D2D Views based on menu selection -->
+  <!-- Routed views -->
   <div class="views-container">
-    @switch (currentView) {
-      @case ('top-of-book') {
-        <app-top-of-the-book-view></app-top-of-the-book-view>
-      }
-      @case ('market-data-blotter') {
-        <app-market-data-blotter></app-market-data-blotter>
-      }
-    }
+    <router-outlet></router-outlet>
   </div>
-
 </div>
-<router-outlet></router-outlet>

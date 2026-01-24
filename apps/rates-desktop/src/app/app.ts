@@ -7,10 +7,6 @@ import { ButtonModule } from 'primeng/button';
 import { RatesData } from '@rates-trading/data-access';
 import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
 import { TRANSPORT_SERVICE, ConnectionStatus } from '@rates-trading/transports';
-import { TopOfTheBookViewComponent, MarketDataBlotterComponent } from './d2d';
-
-/** Available D2D views */
-export type D2DView = 'top-of-book' | 'market-data-blotter';
 
 export interface TreasurySecurity {
   cusip: string;
@@ -35,8 +31,6 @@ export interface TreasurySecurity {
     RouterModule,
     MenubarModule,
     ButtonModule,
-    TopOfTheBookViewComponent,
-    MarketDataBlotterComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -52,9 +46,6 @@ export class App implements OnInit, OnDestroy {
   config?: RatesAppConfiguration;
   protected rates: { symbol: string; rate: number; change: number }[] = [];
   
-  /** Currently selected D2D view */
-  currentView: D2DView = 'top-of-book';
-  
   menuItems: MenuItem[] = [];
   isDarkTheme = false;
 
@@ -67,7 +58,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Initialize menu items with proper binding
+    // Initialize menu items with routing
     this.menuItems = [
       { 
         label: 'Market Data', 
@@ -76,12 +67,12 @@ export class App implements OnInit, OnDestroy {
           { 
             label: 'Top of the Book', 
             icon: 'pi pi-list',
-            command: () => this.selectView('top-of-book')
+            routerLink: ['/market-data/top-of-book']
           },
           { 
             label: 'Market Data Blotter', 
             icon: 'pi pi-table',
-            command: () => this.selectView('market-data-blotter')
+            routerLink: ['/market-data/blotter']
           },
         ]
       },
@@ -119,15 +110,6 @@ export class App implements OnInit, OnDestroy {
   ngOnDestroy() {
     // Cleanup subscriptions
     this.disconnectFromTransport();
-  }
-
-  /**
-   * Select a D2D view to display
-   */
-  selectView(view: D2DView): void {
-    console.log('Selecting view:', view);
-    this.currentView = view;
-    this.cdr.detectChanges();
   }
 
   /**
