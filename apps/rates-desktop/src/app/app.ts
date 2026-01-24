@@ -10,6 +10,7 @@ import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/conf
 import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
 import { formatTreasury32nds, formatSpread32nds } from '@rates-trading/shared-utils';
 import { ValueFormatterParams } from 'ag-grid-community';
+import { TopOfTheBookViewComponent } from './d2d';
 
 export interface TreasurySecurity {
   cusip: string;
@@ -36,6 +37,7 @@ export interface TreasurySecurity {
     ButtonModule,
     RateCard,
     DataGrid,
+    TopOfTheBookViewComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

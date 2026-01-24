@@ -1,0 +1,34 @@
+<div class="top-of-the-book-container">
+  <div class="tob-header">
+    <h3>Top of the Book</h3>
+    <span class="row-count">{{ marketDataRows.length }} instruments</span>
+  </div>
+  
+  <div class="tob-grid">
+    <!-- Header Row -->
+    <div class="tob-row tob-header-row">
+      <div class="tob-cell tob-cell-desc">Description</div>
+      <div class="tob-cell tob-cell-bid-size">Bid Size</div>
+      <div class="tob-cell tob-cell-bid">Best Bid</div>
+      <div class="tob-cell tob-cell-ask">Best Ask</div>
+      <div class="tob-cell tob-cell-ask-size">Ask Size</div>
+    </div>
+    
+    <!-- Data Rows -->
+    @if (marketDataRows.length === 0) {
+      <div class="tob-empty">
+        <span>Waiting for market data...</span>
+      </div>
+    } @else {
+      @for (row of marketDataRows; track trackByRow($index, row)) {
+        <div class="tob-row tob-data-row">
+          <div class="tob-cell tob-cell-desc">{{ row.Desc }}</div>
+          <div class="tob-cell tob-cell-bid-size">{{ formatQuantity(row.BestBidQty) }}</div>
+          <div class="tob-cell tob-cell-bid">{{ formatPrice(row.BestBidPrice) }}</div>
+          <div class="tob-cell tob-cell-ask">{{ formatPrice(row.BestAskPrice) }}</div>
+          <div class="tob-cell tob-cell-ask-size">{{ formatQuantity(row.BestAskQty) }}</div>
+        </div>
+      }
+    }
+  </div>
+</div>

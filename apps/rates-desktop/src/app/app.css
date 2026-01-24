@@ -53,6 +53,10 @@ h2 {
   font-size: 1.5rem;
 }
 
+.views-container {
+  margin-bottom: 24px;
+}
+
 .market-data-section {
   margin-bottom: 32px;
 }

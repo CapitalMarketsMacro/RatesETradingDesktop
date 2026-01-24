@@ -24,9 +24,14 @@
 <div class="app-container">
   <h1>{{ title }}</h1>
   
-  <!-- Live Market Data from AMPS -->
+  <!-- D2D: Top of the Book View -->
+  <div class="views-container">
+    <app-top-of-the-book-view></app-top-of-the-book-view>
+  </div>
+  
+  <!-- Full Market Data from AMPS -->
   <div class="market-data-section">
-    <h2>Live Market Data</h2>
+    <h2>Full Market Data</h2>
     <lib-data-grid
       #marketDataGrid
       [columns]="marketDataColumns"
@@ -35,7 +40,7 @@
       [highFrequencyMode]="true"
       [asyncTransactionWaitMillis]="50"
       [showStatusBar]="true"
-      height="400px"
+      height="350px"
       [gridOptions]="{
         pagination: false,
         rowSelection: {
@@ -46,7 +51,6 @@
       }">
     </lib-data-grid>
   </div>
-
 
 </div>
 <router-outlet></router-outlet>
