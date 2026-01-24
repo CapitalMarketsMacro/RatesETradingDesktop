@@ -25,16 +25,39 @@ export interface RatesAppConfiguration {
       userName: string;
       password?: string;
       clientName?: string;
+      connectTimeout?: number;
+      reconnect?: {
+        enabled: boolean;
+        retryWaitMs?: number;
+        maxAttempts?: number;
+      };
+      keepAliveInterval?: number;
+      keepAliveIntervalLimit?: number;
+      generateSendTimestamps?: boolean;
+      generateReceiveTimestamps?: boolean;
+      includeSenderId?: boolean;
+      options?: Record<string, unknown>;
     };
     amps?: {
       url: string;
       user?: string;
       password?: string;
+      messageType?: 'json' | 'fix' | 'nvfix' | 'binary';
+      clientName?: string;
+      heartbeatInterval?: number;
+      reconnect?: {
+        enabled: boolean;
+        initialDelay?: number;
+        maxDelay?: number;
+        maxAttempts?: number;
+      };
       options?: Record<string, unknown>;
     };
     websocket?: {
       url: string;
       reconnectInterval?: number;
+      maxReconnectAttempts?: number;
+      pingInterval?: number;
     };
   };
 

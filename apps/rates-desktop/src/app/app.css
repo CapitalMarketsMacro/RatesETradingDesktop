@@ -2,6 +2,37 @@
   margin-bottom: 20px;
 }
 
+.menubar-end {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.connection-status.status-connected {
+  background-color: rgba(46, 125, 50, 0.1);
+  color: #2e7d32;
+}
+
+.connection-status.status-connecting {
+  background-color: rgba(255, 152, 0, 0.1);
+  color: #f57c00;
+}
+
+.connection-status.status-disconnected {
+  background-color: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+}
+
 .theme-toggle {
   margin-left: auto;
 }
@@ -24,6 +55,25 @@ h2 {
 
 .market-data-section {
   margin-bottom: 32px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  margin-bottom: 0;
+}
+
+.data-count {
+  color: #64748b;
+  font-size: 0.9rem;
+  background-color: rgba(100, 116, 139, 0.1);
+  padding: 4px 12px;
+  border-radius: 12px;
 }
 
 .market-data-section h2 {

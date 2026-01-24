@@ -1,4 +1,4 @@
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, APP_INITIALIZER, inject } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
@@ -6,6 +6,9 @@ import { providePrimeNG } from 'primeng/config';
 import { definePreset } from '@primeuix/themes';
 import Nora from '@primeuix/themes/nora';
 import { appRoutes } from './app.routes';
+import { provideTransport } from '@rates-trading/transports';
+import { ConfigurationService } from '@rates-trading/configuration';
+import { firstValueFrom } from 'rxjs';
 
 const bluePreset = definePreset(Nora, {
   semantic: {
@@ -25,11 +28,30 @@ const bluePreset = definePreset(Nora, {
   },
 });
 
+/**
+ * Factory function to initialize configuration before app starts
+ */
+function initializeApp(): () => Promise<void> {
+  const configService = inject(ConfigurationService);
+  return async () => {
+    await firstValueFrom(configService.loadConfiguration());
+    console.log('Configuration loaded successfully');
+  };
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(appRoutes),
     provideAnimations(),
     provideHttpClient(),
+    // Load configuration before app starts
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeApp,
+      multi: true,
+    },
+    // Transport will use the already-loaded configuration
+    provideTransport(),
     providePrimeNG({
       theme: {
         preset: bluePreset,

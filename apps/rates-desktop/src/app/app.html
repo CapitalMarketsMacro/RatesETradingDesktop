@@ -1,46 +1,52 @@
 <p-menubar [model]="menuItems" class="app-menubar">
   <ng-template pTemplate="end">
-    <button
-      pButton
-      type="button"
-      [icon]="themeIcon"
-      [label]="themeLabel"
-      (click)="toggleTheme()"
-      class="p-button-text theme-toggle"
-    ></button>
+    <div class="menubar-end">
+      <span class="connection-status" [class]="connectionStatusClass">
+        <i class="pi" [class.pi-check-circle]="connectionStatus === 'connected'" 
+           [class.pi-spin]="connectionStatus === 'connecting' || connectionStatus === 'reconnecting'"
+           [class.pi-spinner]="connectionStatus === 'connecting' || connectionStatus === 'reconnecting'"
+           [class.pi-times-circle]="connectionStatus === 'disconnected' || connectionStatus === 'error'"></i>
+        {{ connectionStatusLabel }}
+      </span>
+      <button
+        pButton
+        type="button"
+        [icon]="themeIcon"
+        [label]="themeLabel"
+        (click)="toggleTheme()"
+        class="p-button-text theme-toggle"
+        aria-label="Toggle theme"
+      >{{ themeLabel }}</button>
+    </div>
   </ng-template>
 </p-menubar>
 
 <div class="app-container">
   <h1>{{ title }}</h1>
   
+  <!-- Live Market Data from AMPS -->
   <div class="market-data-section">
-    <h2>On-The-Run Treasuries</h2>
+    <h2>Live Market Data</h2>
     <lib-data-grid
-      [columns]="treasuryColumns"
-      [rowData]="treasuryData"
-      height="500px"
+      #marketDataGrid
+      [columns]="marketDataColumns"
+      [rowData]="[]"
+      [rowIdField]="'Id'"
+      [highFrequencyMode]="true"
+      [asyncTransactionWaitMillis]="50"
+      [showStatusBar]="true"
+      height="400px"
       [gridOptions]="{
-        pagination: true,
-        paginationPageSize: 10,
-        suppressPaginationPanel: false,
+        pagination: false,
         rowSelection: {
           mode: 'singleRow'
         },
-        cellSelection: true
+        cellSelection: true,
+        animateRows: false
       }">
     </lib-data-grid>
   </div>
 
-  <div class="rates-grid">
-    <h2>Key Rates</h2>
-    @for (rate of rates; track rate.symbol) {
-      <lib-rate-card
-        [symbol]="rate.symbol"
-        [rate]="rate.rate"
-        [change]="rate.change"
-      ></lib-rate-card>
-    }
-  </div>
+
 </div>
 <router-outlet></router-outlet>

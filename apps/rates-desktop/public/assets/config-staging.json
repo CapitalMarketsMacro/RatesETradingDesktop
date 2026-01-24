@@ -11,11 +11,29 @@
   },
   "transport": {
     "type": "solace",
+    "amps": {
+      "url": "wss://staging-amps.rates-trading.com:9000/amps/json",
+      "user": "staging-user",
+      "messageType": "json",
+      "clientName": "rates-desktop-staging",
+      "heartbeatInterval": 30,
+      "reconnect": {
+        "enabled": true,
+        "initialDelay": 1000,
+        "maxDelay": 30000,
+        "maxAttempts": 10
+      }
+    },
     "solace": {
       "url": "wss://staging-solace.rates-trading.com:443",
       "vpnName": "staging-vpn",
       "userName": "staging-user",
-      "clientName": "rates-desktop-staging"
+      "clientName": "rates-desktop-staging",
+      "reconnect": {
+        "enabled": true,
+        "retryWaitMs": 3000,
+        "maxAttempts": 10
+      }
     }
   },
   "marketData": {

@@ -12,6 +12,9 @@
     [rowSelection]="mergedGridOptions.rowSelection"
     [animateRows]="mergedGridOptions.animateRows"
     [suppressPaginationPanel]="mergedGridOptions.suppressPaginationPanel"
+    [getRowId]="mergedGridOptions.getRowId"
+    [asyncTransactionWaitMillis]="mergedGridOptions.asyncTransactionWaitMillis"
+    [statusBar]="mergedGridOptions.statusBar"
     (gridReady)="onGridReady($event)"
   ></ag-grid-angular>
 </div>

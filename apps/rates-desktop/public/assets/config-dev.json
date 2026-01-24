@@ -10,7 +10,19 @@
     "retryAttempts": 3
   },
   "transport": {
-    "type": "solace",
+    "type": "amps",
+    "amps": {
+      "url": "ws://MontuNobleNumbat2404:9008/amps/json",
+      "messageType": "json",
+      "clientName": "rates-desktop-dev",
+      "heartbeatInterval": 30,
+      "reconnect": {
+        "enabled": true,
+        "initialDelay": 1000,
+        "maxDelay": 30000,
+        "maxAttempts": 10
+      }
+    },
     "solace": {
       "url": "ws://localhost:8008",
       "vpnName": "dev-vpn",
