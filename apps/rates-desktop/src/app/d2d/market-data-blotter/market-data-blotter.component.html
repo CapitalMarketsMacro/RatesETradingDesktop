@@ -1,0 +1,24 @@
+<div class="market-data-blotter-container">
+  <div class="blotter-header">
+    <h3>Market Data Blotter</h3>
+  </div>
+  
+  <lib-data-grid
+    #marketDataGrid
+    [columns]="columns"
+    [rowData]="[]"
+    [rowIdField]="'Id'"
+    [highFrequencyMode]="true"
+    [asyncTransactionWaitMillis]="50"
+    [showStatusBar]="true"
+    height="500px"
+    [gridOptions]="{
+      pagination: false,
+      rowSelection: {
+        mode: 'singleRow'
+      },
+      cellSelection: true,
+      animateRows: false
+    }">
+  </lib-data-grid>
+</div>

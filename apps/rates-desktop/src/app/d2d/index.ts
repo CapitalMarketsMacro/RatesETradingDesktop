@@ -5,3 +5,4 @@
  */
 
 export * from './top-of-the-book-view/top-of-the-book-view.component';
+export * from './market-data-blotter/market-data-blotter.component';

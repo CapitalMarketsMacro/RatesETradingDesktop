@@ -1,0 +1,30 @@
+.market-data-blotter-container {
+  padding: 1rem;
+  background-color: var(--surface-card, #ffffff);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.blotter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.blotter-header h3 {
+  margin: 0;
+  color: var(--primary-color, #3b82f6);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Dark Mode Support */
+:host-context(.app-dark) .market-data-blotter-container {
+  background-color: var(--surface-card, #1e1e2e);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+:host-context(.app-dark) .blotter-header h3 {
+  color: var(--primary-color, #60a5fa);
+}

@@ -24,32 +24,16 @@
 <div class="app-container">
   <h1>{{ title }}</h1>
   
-  <!-- D2D: Top of the Book View -->
+  <!-- D2D Views based on menu selection -->
   <div class="views-container">
-    <app-top-of-the-book-view></app-top-of-the-book-view>
-  </div>
-  
-  <!-- Full Market Data from AMPS -->
-  <div class="market-data-section">
-    <h2>Full Market Data</h2>
-    <lib-data-grid
-      #marketDataGrid
-      [columns]="marketDataColumns"
-      [rowData]="[]"
-      [rowIdField]="'Id'"
-      [highFrequencyMode]="true"
-      [asyncTransactionWaitMillis]="50"
-      [showStatusBar]="true"
-      height="350px"
-      [gridOptions]="{
-        pagination: false,
-        rowSelection: {
-          mode: 'singleRow'
-        },
-        cellSelection: true,
-        animateRows: false
-      }">
-    </lib-data-grid>
+    @switch (currentView) {
+      @case ('top-of-book') {
+        <app-top-of-the-book-view></app-top-of-the-book-view>
+      }
+      @case ('market-data-blotter') {
+        <app-market-data-blotter></app-market-data-blotter>
+      }
+    }
   </div>
 
 </div>

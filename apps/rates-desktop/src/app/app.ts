@@ -1,16 +1,16 @@
-import { Component, inject, OnInit, OnDestroy, NgZone, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
-import { RatesData, MarketData, MarketDataGridRow, transformMarketDataToGridRow } from '@rates-trading/data-access';
-import { RateCard, DataGrid, ColDef } from '@rates-trading/ui-components';
+import { RatesData } from '@rates-trading/data-access';
 import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
-import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
-import { formatTreasury32nds, formatSpread32nds } from '@rates-trading/shared-utils';
-import { ValueFormatterParams } from 'ag-grid-community';
-import { TopOfTheBookViewComponent } from './d2d';
+import { TRANSPORT_SERVICE, ConnectionStatus } from '@rates-trading/transports';
+import { TopOfTheBookViewComponent, MarketDataBlotterComponent } from './d2d';
+
+/** Available D2D views */
+export type D2DView = 'top-of-book' | 'market-data-blotter';
 
 export interface TreasurySecurity {
   cusip: string;
@@ -35,16 +35,13 @@ export interface TreasurySecurity {
     RouterModule,
     MenubarModule,
     ButtonModule,
-    RateCard,
-    DataGrid,
     TopOfTheBookViewComponent,
+    MarketDataBlotterComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App implements OnInit, OnDestroy {
-  @ViewChild('marketDataGrid') marketDataGrid!: DataGrid<MarketDataGridRow>;
-  
   private ratesData = inject(RatesData);
   private configService = inject(ConfigurationService);
   private transport = inject(TRANSPORT_SERVICE);
@@ -54,100 +51,15 @@ export class App implements OnInit, OnDestroy {
   title = 'Rates E-Trading Desktop';
   config?: RatesAppConfiguration;
   protected rates: { symbol: string; rate: number; change: number }[] = [];
-  menuItems: MenuItem[] = [
-    { label: 'Market Data', icon: 'pi pi-chart-line', routerLink: ['/market-data'] },
-    { label: 'Trading', icon: 'pi pi-briefcase', routerLink: ['/trading'] },
-    { label: 'Preferences', icon: 'pi pi-cog', routerLink: ['/preferences'] },
-  ];
+  
+  /** Currently selected D2D view */
+  currentView: D2DView = 'top-of-book';
+  
+  menuItems: MenuItem[] = [];
   isDarkTheme = false;
 
   // AMPS connection state
   connectionStatus: ConnectionStatus = ConnectionStatus.Disconnected;
-  private marketDataSubscription?: TransportSubscription;
-
-  // Market data grid columns (from AMPS)
-  marketDataColumns: ColDef[] = [
-    {
-      field: 'Id',
-      headerName: 'ID',
-      width: 80,
-      pinned: 'left',
-    },
-    {
-      field: 'MarketId',
-      headerName: 'Market ID',
-      width: 100,
-    },
-    {
-      field: 'Desc',
-      headerName: 'Description',
-      width: 180,
-      cellStyle: { fontWeight: 'bold' },
-    },
-    {
-      field: 'BestBidPrice',
-      headerName: 'Bid',
-      width: 120,
-      valueFormatter: (params: ValueFormatterParams) => formatTreasury32nds(params.value),
-      cellStyle: { textAlign: 'right', color: '#2e7d32', fontWeight: 'bold' },
-    },
-    {
-      field: 'BestBidQty',
-      headerName: 'Bid Qty',
-      width: 100,
-      valueFormatter: (params: ValueFormatterParams) => 
-        params.value != null ? params.value.toLocaleString() : '-',
-      cellStyle: { textAlign: 'right' },
-    },
-    {
-      field: 'BestAskPrice',
-      headerName: 'Ask',
-      width: 120,
-      valueFormatter: (params: ValueFormatterParams) => formatTreasury32nds(params.value),
-      cellStyle: { textAlign: 'right', color: '#d32f2f', fontWeight: 'bold' },
-    },
-    {
-      field: 'BestAskQty',
-      headerName: 'Ask Qty',
-      width: 100,
-      valueFormatter: (params: ValueFormatterParams) => 
-        params.value != null ? params.value.toLocaleString() : '-',
-      cellStyle: { textAlign: 'right' },
-    },
-    {
-      field: 'Spread',
-      headerName: 'Spread',
-      width: 100,
-      valueFormatter: (params: ValueFormatterParams) => formatSpread32nds(params.value),
-      cellStyle: { textAlign: 'right' },
-    },
-    {
-      field: 'LastTradePrice',
-      headerName: 'Last Trade',
-      width: 120,
-      valueFormatter: (params: ValueFormatterParams) => formatTreasury32nds(params.value),
-      cellStyle: { textAlign: 'right' },
-    },
-    {
-      field: 'BidLevels',
-      headerName: 'Bid Depth',
-      width: 100,
-      cellStyle: { textAlign: 'right' },
-    },
-    {
-      field: 'AskLevels',
-      headerName: 'Ask Depth',
-      width: 100,
-      cellStyle: { textAlign: 'right' },
-    },
-    {
-      field: 'Time',
-      headerName: 'Time',
-      width: 150,
-      valueFormatter: (params: ValueFormatterParams) => 
-        params.value ? new Date(params.value).toLocaleTimeString() : '-',
-    },
-  ];
 
 
   constructor() {
@@ -155,6 +67,28 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Initialize menu items with proper binding
+    this.menuItems = [
+      { 
+        label: 'Market Data', 
+        icon: 'pi pi-chart-line',
+        items: [
+          { 
+            label: 'Top of the Book', 
+            icon: 'pi pi-list',
+            command: () => this.selectView('top-of-book')
+          },
+          { 
+            label: 'Market Data Blotter', 
+            icon: 'pi pi-table',
+            command: () => this.selectView('market-data-blotter')
+          },
+        ]
+      },
+      { label: 'Trading', icon: 'pi pi-briefcase', routerLink: ['/trading'] },
+      { label: 'Preferences', icon: 'pi pi-cog', routerLink: ['/preferences'] },
+    ];
+
     // Load configuration
     this.configService.loadConfiguration().subscribe((config) => {
       this.config = config;
@@ -188,74 +122,32 @@ export class App implements OnInit, OnDestroy {
   }
 
   /**
-   * Connect to AMPS and subscribe to market data topic
+   * Select a D2D view to display
+   */
+  selectView(view: D2DView): void {
+    console.log('Selecting view:', view);
+    this.currentView = view;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Connect to AMPS transport
    */
   private async connectToTransport(): Promise<void> {
     try {
       console.log('Connecting to AMPS transport...');
       await this.transport.connect();
       console.log('Connected to AMPS transport');
-      
-      // Subscribe to market data topic
-      await this.subscribeToMarketData();
     } catch (error) {
       console.error('Failed to connect to AMPS:', error);
     }
   }
 
   /**
-   * Subscribe to market data topic
-   */
-  private async subscribeToMarketData(): Promise<void> {
-    const topic = 'rates/marketData';
-    
-    try {
-      console.log(`Subscribing to topic: ${topic}`);
-      
-      this.marketDataSubscription = await this.transport.subscribe<MarketData>(
-        topic,
-        (message) => {
-          this.handleMarketDataMessage(message.data);
-        }
-      );
-      
-      console.log(`Subscribed to ${topic} with subscription ID: ${this.marketDataSubscription.id}`);
-    } catch (error) {
-      console.error(`Failed to subscribe to ${topic}:`, error);
-    }
-  }
-
-  /**
-   * Handle incoming market data messages
-   * Uses ag-Grid's applyTransactionAsync for high-frequency updates
-   */
-  private handleMarketDataMessage(data: MarketData): void {
-    if (!data.Id) {
-      console.warn('Market data missing Id:', data);
-      return;
-    }
-    
-    // Transform to grid row format
-    const gridRow = transformMarketDataToGridRow(data);
-    
-    // Use the grid's high-frequency update API directly
-    if (this.marketDataGrid) {
-      this.marketDataGrid.updateRow(gridRow);
-    } else {
-      console.warn('Market data grid not ready yet');
-    }
-  }
-  
-  /**
    * Disconnect from transport and cleanup
    */
   private async disconnectFromTransport(): Promise<void> {
     try {
-      if (this.marketDataSubscription) {
-        await this.marketDataSubscription.unsubscribe();
-        this.marketDataSubscription = undefined;
-      }
-      
       await this.transport.disconnect();
       console.log('Disconnected from AMPS transport');
     } catch (error) {
