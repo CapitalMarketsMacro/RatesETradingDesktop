@@ -8,6 +8,7 @@ import { RatesData, MarketData, MarketDataGridRow, transformMarketDataToGridRow 
 import { RateCard, DataGrid, ColDef } from '@rates-trading/ui-components';
 import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
 import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
+import { formatTreasury32nds, formatSpread32nds } from '@rates-trading/shared-utils';
 import { ValueFormatterParams } from 'ag-grid-community';
 
 export interface TreasurySecurity {
@@ -85,8 +86,7 @@ export class App implements OnInit, OnDestroy {
       field: 'BestBidPrice',
       headerName: 'Bid',
       width: 120,
-      valueFormatter: (params: ValueFormatterParams) => 
-        params.value != null ? params.value.toFixed(4) : '-',
+      valueFormatter: (params: ValueFormatterParams) => formatTreasury32nds(params.value),
       cellStyle: { textAlign: 'right', color: '#2e7d32', fontWeight: 'bold' },
     },
     {
@@ -101,8 +101,7 @@ export class App implements OnInit, OnDestroy {
       field: 'BestAskPrice',
       headerName: 'Ask',
       width: 120,
-      valueFormatter: (params: ValueFormatterParams) => 
-        params.value != null ? params.value.toFixed(4) : '-',
+      valueFormatter: (params: ValueFormatterParams) => formatTreasury32nds(params.value),
       cellStyle: { textAlign: 'right', color: '#d32f2f', fontWeight: 'bold' },
     },
     {
@@ -117,16 +116,14 @@ export class App implements OnInit, OnDestroy {
       field: 'Spread',
       headerName: 'Spread',
       width: 100,
-      valueFormatter: (params: ValueFormatterParams) => 
-        params.value != null ? params.value.toFixed(4) : '-',
+      valueFormatter: (params: ValueFormatterParams) => formatSpread32nds(params.value),
       cellStyle: { textAlign: 'right' },
     },
     {
       field: 'LastTradePrice',
       headerName: 'Last Trade',
       width: 120,
-      valueFormatter: (params: ValueFormatterParams) => 
-        params.value != null ? params.value.toFixed(4) : '-',
+      valueFormatter: (params: ValueFormatterParams) => formatTreasury32nds(params.value),
       cellStyle: { textAlign: 'right' },
     },
     {
