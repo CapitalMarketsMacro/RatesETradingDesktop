@@ -9,6 +9,15 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { PopoverModule, Popover } from 'primeng/popover';
 import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
+
+/**
+ * Trading book option for dropdown
+ */
+interface TradingBook {
+  name: string;
+  code: string;
+}
 
 /**
  * Trading popover data structure
@@ -18,6 +27,7 @@ interface TradingPopoverData {
   instrumentId: string;
   side: 'buy' | 'sell';
   quantity: number;
+  book: TradingBook;
 }
 
 /**
@@ -39,6 +49,7 @@ interface TradingPopoverData {
     ToastModule,
     PopoverModule,
     ButtonModule,
+    SelectModule,
   ],
   providers: [MessageService],
   templateUrl: './top-of-the-book-view.component.html',
@@ -63,6 +74,15 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
 
   // Trading popover state
   tradingData: TradingPopoverData | null = null;
+
+  // Available trading books
+  tradingBooks: TradingBook[] = [
+    { name: 'Flow Trading', code: 'FLOW' },
+    { name: 'Prop Trading', code: 'PROP' },
+    { name: 'Customer Facilitation', code: 'CUST' },
+    { name: 'Hedge Book', code: 'HEDGE' },
+    { name: 'Market Making', code: 'MM' },
+  ];
 
   // Expose formatter for template
   formatPrice = formatTreasury32nds;
@@ -185,6 +205,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
       instrumentId: row.Id,
       side,
       quantity: 1, // Default quantity
+      book: this.tradingBooks[0], // Default to first book
     };
     
     // Trigger change detection to ensure popover content is rendered
@@ -214,7 +235,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const { side, quantity } = this.tradingData;
+    const { side, quantity, book } = this.tradingData;
     const row = this.liveRow;
     const price = this.livePrice;
     const size = this.liveSize;
@@ -226,7 +247,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
     this.messageService.add({
       severity: side === 'buy' ? 'success' : 'info',
       summary: `${side === 'buy' ? 'Buy' : 'Sell'} Order Submitted`,
-      detail: `${side === 'buy' ? 'Bought' : 'Sold'} ${formattedQty} of ${row.Desc} @ ${formattedPrice} (Size: ${formattedSize})`,
+      detail: `${side === 'buy' ? 'Bought' : 'Sold'} ${formattedQty} of ${row.Desc} @ ${formattedPrice} | Book: ${book.name}`,
       life: 5000,
     });
 

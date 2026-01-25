@@ -93,6 +93,16 @@
     </div>
     
     <div class="trading-popover-actions">
+      <div class="trading-book-select">
+        <label class="trading-label">Book:</label>
+        <p-select 
+          [(ngModel)]="tradingData.book" 
+          [options]="tradingBooks" 
+          optionLabel="name"
+          placeholder="Select Book"
+          [style]="{ width: '140px' }">
+        </p-select>
+      </div>
       <p-button 
         [label]="tradingData.side === 'buy' ? 'Buy' : 'Sell'"
         [severity]="tradingData.side === 'buy' ? 'success' : 'danger'"

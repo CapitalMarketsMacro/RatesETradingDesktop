@@ -130,8 +130,25 @@
   padding-top: 0.5rem;
 }
 
+.trading-popover-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.trading-book-select {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.trading-book-select .trading-label {
+  white-space: nowrap;
+}
+
 .trading-popover-actions .p-button {
-  width: 100%;
+  min-width: 70px;
 }
 
 /* Custom Quantity Spinner */
