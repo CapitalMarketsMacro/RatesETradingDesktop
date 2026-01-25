@@ -21,3 +21,189 @@
 .ag-status-bar {
   font-family: 'IBM Plex Mono', monospace;
 }
+
+/* Trading Popover Global Styles */
+.p-popover {
+  font-family: 'Noto Sans', sans-serif;
+}
+
+.p-popover .p-popover-content {
+  font-family: 'Noto Sans', sans-serif;
+}
+
+.trading-popover {
+  min-width: 280px;
+  padding: 0.5rem;
+  font-family: 'Noto Sans', sans-serif;
+}
+
+.trading-popover * {
+  font-family: 'Noto Sans', sans-serif;
+}
+
+.trading-popover-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 0.75rem;
+}
+
+.trading-side {
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 4px 12px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.trading-side.sell {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.trading-side.buy {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.trading-instrument {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #1e293b;
+}
+
+.trading-popover-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.trading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trading-label {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.trading-value {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.trading-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.trading-price.bid-price {
+  color: #2e7d32;
+}
+
+.trading-price.ask-price {
+  color: #d32f2f;
+}
+
+/* Price group with size */
+.trading-price-group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.trading-size {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.trading-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+.trading-popover-actions .p-button {
+  width: 100%;
+}
+
+/* Dark mode styles for Trading Popover */
+/* app-dark class is on html element */
+html.app-dark .p-popover,
+.app-dark .p-popover {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+html.app-dark .p-popover .p-popover-content,
+.app-dark .p-popover .p-popover-content {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+html.app-dark .trading-popover,
+.app-dark .trading-popover {
+  color: #f1f5f9;
+}
+
+html.app-dark .trading-popover-header,
+.app-dark .trading-popover-header {
+  border-bottom-color: #475569;
+}
+
+html.app-dark .trading-instrument,
+.app-dark .trading-instrument {
+  color: #f1f5f9 !important;
+}
+
+html.app-dark .trading-side.sell,
+.app-dark .trading-side.sell {
+  background-color: rgba(239, 83, 80, 0.2);
+  color: #ef5350;
+}
+
+html.app-dark .trading-side.buy,
+.app-dark .trading-side.buy {
+  background-color: rgba(129, 199, 132, 0.2);
+  color: #81c784;
+}
+
+html.app-dark .trading-label,
+.app-dark .trading-label {
+  color: #94a3b8 !important;
+}
+
+html.app-dark .trading-value,
+.app-dark .trading-value {
+  color: #f1f5f9 !important;
+}
+
+/* Ensure all text in popover is visible in dark mode */
+html.app-dark .p-popover .trading-popover,
+html.app-dark .p-popover .trading-popover span,
+html.app-dark .p-popover .trading-popover div,
+html.app-dark .trading-popover span,
+html.app-dark .trading-popover div {
+  color: #f1f5f9;
+}
+
+html.app-dark .trading-price.bid-price,
+.app-dark .trading-price.bid-price {
+  color: #81c784 !important;
+}
+
+html.app-dark .trading-price.ask-price,
+.app-dark .trading-price.ask-price {
+  color: #ef5350 !important;
+}
+
+html.app-dark .trading-size,
+.app-dark .trading-size {
+  color: #94a3b8 !important;
+}

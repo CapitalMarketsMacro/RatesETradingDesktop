@@ -1,4 +1,7 @@
 <div class="top-of-the-book-container">
+  <!-- Toast for trade notifications -->
+  <p-toast position="top-right"></p-toast>
+  
   <div class="tob-header">
     <h3>Top of the Book</h3>
     <span class="row-count">{{ marketDataRows.length }} instruments</span>
@@ -23,12 +26,72 @@
       @for (row of marketDataRows; track trackByRow($index, row)) {
         <div class="tob-row tob-data-row">
           <div class="tob-cell tob-cell-desc">{{ row.Desc }}</div>
-          <div class="tob-cell tob-cell-bid-size">{{ formatQuantity(row.BestBidQty) }}</div>
+          <div 
+            class="tob-cell tob-cell-bid-size tob-cell-interactive"
+            (click)="showTradingPopover($event, row, 'sell')">
+            {{ formatQuantity(row.BestBidQty) }}
+          </div>
           <div class="tob-cell tob-cell-bid">{{ formatPrice(row.BestBidPrice) }}</div>
           <div class="tob-cell tob-cell-ask">{{ formatPrice(row.BestAskPrice) }}</div>
-          <div class="tob-cell tob-cell-ask-size">{{ formatQuantity(row.BestAskQty) }}</div>
+          <div 
+            class="tob-cell tob-cell-ask-size tob-cell-interactive"
+            (click)="showTradingPopover($event, row, 'buy')">
+            {{ formatQuantity(row.BestAskQty) }}
+          </div>
         </div>
       }
     }
   </div>
 </div>
+
+<!-- Trading Popover - Real-time updates -->
+<p-popover #tradingPopover [dismissable]="true">
+  <div class="trading-popover" *ngIf="tradingData && liveRow">
+    <div class="trading-popover-header">
+      <span class="trading-side" [class.sell]="tradingData.side === 'sell'" [class.buy]="tradingData.side === 'buy'">
+        {{ tradingData.side === 'buy' ? 'BUY' : 'SELL' }}
+      </span>
+      <span class="trading-instrument">{{ liveRow.Desc }}</span>
+    </div>
+    
+    <div class="trading-popover-details">
+      <div class="trading-row">
+        <span class="trading-label">Instrument:</span>
+        <span class="trading-value">{{ liveRow.Desc }}</span>
+      </div>
+      <div class="trading-row trading-row-price">
+        <span class="trading-label">Price:</span>
+        <span class="trading-value trading-price-group">
+          <span class="trading-price" [class.bid-price]="tradingData.side === 'sell'" [class.ask-price]="tradingData.side === 'buy'">
+            {{ formatPrice(livePrice) }}
+          </span>
+          <span class="trading-size">{{ formatQuantity(liveSize) }}</span>
+        </span>
+      </div>
+      <div class="trading-row">
+        <span class="trading-label">Quantity:</span>
+        <p-inputNumber 
+          [(ngModel)]="tradingData.quantity" 
+          [min]="1" 
+          [showButtons]="true"
+          buttonLayout="horizontal"
+          spinnerMode="horizontal"
+          [inputStyle]="{ width: '80px', textAlign: 'center' }"
+          decrementButtonClass="p-button-secondary"
+          incrementButtonClass="p-button-secondary"
+          incrementButtonIcon="pi pi-plus"
+          decrementButtonIcon="pi pi-minus">
+        </p-inputNumber>
+      </div>
+    </div>
+    
+    <div class="trading-popover-actions">
+      <p-button 
+        [label]="tradingData.side === 'buy' ? 'Buy' : 'Sell'"
+        [severity]="tradingData.side === 'buy' ? 'success' : 'danger'"
+        (onClick)="executeTrade()"
+        styleClass="trading-action-btn">
+      </p-button>
+    </div>
+  </div>
+</p-popover>
