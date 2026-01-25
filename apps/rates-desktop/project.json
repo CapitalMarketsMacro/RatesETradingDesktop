@@ -20,7 +20,10 @@
             "input": "apps/rates-desktop/public"
           }
         ],
-        "styles": ["apps/rates-desktop/src/styles.css"]
+        "styles": [
+          "node_modules/primeicons/primeicons.css",
+          "apps/rates-desktop/src/styles.css"
+        ]
       },
       "configurations": {
         "production": {

@@ -1,4 +1,5 @@
 /* You can add global styles to this file, and also import other style files */
+/* PrimeIcons is included via project.json styles array */
 
 /* IBM Plex Mono for ag-Grid data cells */
 .ag-theme-quartz,
@@ -131,6 +132,95 @@
 
 .trading-popover-actions .p-button {
   width: 100%;
+}
+
+/* Custom Quantity Spinner */
+.qty-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.qty-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #cbd5e1;
+  background-color: #f1f5f9;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.qty-btn:hover {
+  background-color: #e2e8f0;
+}
+
+.qty-btn:active {
+  background-color: #cbd5e1;
+}
+
+.qty-decrement {
+  border-radius: 4px 0 0 4px;
+  border-right: none;
+}
+
+.qty-increment {
+  border-radius: 0 4px 4px 0;
+  border-left: none;
+}
+
+.qty-btn svg {
+  color: #334155;
+  stroke: #334155;
+}
+
+.qty-input {
+  width: 60px;
+  height: 36px;
+  border: 1px solid #cbd5e1;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Noto Sans', sans-serif;
+  -moz-appearance: textfield;
+}
+
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Dark mode quantity spinner */
+html.app-dark .qty-btn,
+.app-dark .qty-btn {
+  background-color: #334155;
+  border-color: #475569;
+}
+
+html.app-dark .qty-btn:hover,
+.app-dark .qty-btn:hover {
+  background-color: #475569;
+}
+
+html.app-dark .qty-btn:active,
+.app-dark .qty-btn:active {
+  background-color: #64748b;
+}
+
+html.app-dark .qty-btn svg,
+.app-dark .qty-btn svg {
+  color: #f1f5f9;
+  stroke: #f1f5f9;
+}
+
+html.app-dark .qty-input,
+.app-dark .qty-input {
+  background-color: #1e293b;
+  border-color: #475569;
+  color: #f1f5f9;
 }
 
 /* Dark mode styles for Trading Popover */

@@ -9,7 +9,6 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { PopoverModule, Popover } from 'primeng/popover';
 import { ButtonModule } from 'primeng/button';
-import { InputNumberModule } from 'primeng/inputnumber';
 
 /**
  * Trading popover data structure
@@ -40,7 +39,6 @@ interface TradingPopoverData {
     ToastModule,
     PopoverModule,
     ButtonModule,
-    InputNumberModule,
   ],
   providers: [MessageService],
   templateUrl: './top-of-the-book-view.component.html',
@@ -234,6 +232,33 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
 
     // Hide popover after trade
     this.hideTradingPopover();
+  }
+
+  /**
+   * Increment quantity
+   */
+  incrementQuantity(): void {
+    if (this.tradingData) {
+      this.tradingData.quantity++;
+    }
+  }
+
+  /**
+   * Decrement quantity
+   */
+  decrementQuantity(): void {
+    if (this.tradingData && this.tradingData.quantity > 1) {
+      this.tradingData.quantity--;
+    }
+  }
+
+  /**
+   * Validate quantity is at least 1
+   */
+  validateQuantity(): void {
+    if (this.tradingData && this.tradingData.quantity < 1) {
+      this.tradingData.quantity = 1;
+    }
   }
 
   /**
