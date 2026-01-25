@@ -3,6 +3,7 @@
   background-color: var(--surface-card, #ffffff);
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Noto Sans', sans-serif;
 }
 
 .tob-header {
@@ -67,6 +68,7 @@
   align-items: center;
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
+  font-family: 'Noto Sans', sans-serif;
 }
 
 /* Description Column */

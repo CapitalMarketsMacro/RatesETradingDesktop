@@ -1,1 +1,23 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* IBM Plex Mono for ag-Grid data cells */
+.ag-theme-quartz,
+.ag-theme-quartz-dark {
+  --ag-font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Ensure all grid cells use IBM Plex Mono */
+.ag-cell {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Header cells can use a different weight */
+.ag-header-cell-text {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+}
+
+/* Status bar also uses the mono font */
+.ag-status-bar {
+  font-family: 'IBM Plex Mono', monospace;
+}
