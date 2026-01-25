@@ -243,8 +243,9 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
     const formattedQty = quantity.toLocaleString();
     const formattedSize = size ? size.toLocaleString() : '-';
     
-    // Show toast notification
+    // Show toast notification - using key to target the component's toast
     this.messageService.add({
+      key: 'tob-toast',
       severity: side === 'buy' ? 'success' : 'info',
       summary: `${side === 'buy' ? 'Buy' : 'Sell'} Order Submitted`,
       detail: `${side === 'buy' ? 'Bought' : 'Sold'} ${formattedQty} of ${row.Desc} @ ${formattedPrice} | Book: ${book.name}`,

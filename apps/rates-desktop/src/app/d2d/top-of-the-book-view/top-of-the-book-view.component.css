@@ -1,4 +1,5 @@
 .top-of-the-book-container {
+  position: relative;
   padding: 1rem;
   background-color: var(--surface-card, #ffffff);
   border-radius: 8px;
