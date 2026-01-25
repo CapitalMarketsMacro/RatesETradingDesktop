@@ -19,9 +19,44 @@
   font-weight: 600;
 }
 
+/* ag-Grid Background */
+::ng-deep .ag-root-wrapper,
+::ng-deep .ag-body-viewport,
+::ng-deep .ag-center-cols-viewport {
+  background-color: #333333 !important;
+}
+
+/* ag-Grid Row Styling - Odd/Even coloring */
+::ng-deep .ag-row-odd {
+  background-color: #333333 !important;
+}
+
+::ng-deep .ag-row-even {
+  background-color: #474747 !important;
+}
+
+::ng-deep .ag-row-odd:hover,
+::ng-deep .ag-row-even:hover {
+  background-color: #444444 !important;
+}
+
+/* ag-Grid Header Styling */
+::ng-deep .ag-header {
+  background-color: #333333 !important;
+}
+
+::ng-deep .ag-header-cell {
+  color: #ffffff !important;
+}
+
+/* ag-Grid Cell Text Color */
+::ng-deep .ag-cell {
+  color: #ffffff !important;
+}
+
 /* Dark Mode Support */
 :host-context(.app-dark) .market-data-blotter-container {
-  background-color: var(--surface-card, #1e1e2e);
+  background-color: #333333;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
