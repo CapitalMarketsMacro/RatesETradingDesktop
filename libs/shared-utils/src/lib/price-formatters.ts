@@ -9,25 +9,26 @@
  * Converts a decimal price to Treasury 32nds format.
  * 
  * Treasury securities are quoted in 32nds of a point. For example:
- * - 99-16 means 99 and 16/32 = 99.5
- * - 99-16+ means 99 and 16.5/32 = 99.515625 (the "+" indicates a half-tick or 1/64)
+ * - 99-160 means 99 and 16/32 = 99.5
+ * - 99-164 means 99 and 16.5/32 = 99.515625 (4 = 4/8 = half tick)
  * 
- * Format: handle-ticks[suffix]
+ * Format: handle-XXY
  * - handle: whole number portion (e.g., 99)
- * - ticks: 32nds (00-31), always 2 digits
- * - suffix: fractional ticks
- *   - +: half tick (1/64 = 0.5/32)
- *   - ¼: quarter tick (1/128 = 0.25/32)
- *   - ¾: three-quarter tick (3/128 = 0.75/32)
+ * - XX: 32nds (00-31), always 2 digits
+ * - Y: 8ths of 32nds (0, 2, 4, 6)
+ *   - 0: no fraction
+ *   - 2: quarter tick (2/8 = 1/128 = 0.25/32)
+ *   - 4: half tick (4/8 = 1/64 = 0.5/32)
+ *   - 6: three-quarter tick (6/8 = 3/128 = 0.75/32)
  * 
  * @param decimalPrice - The decimal price to format (e.g., 99.515625)
- * @returns Formatted string in Treasury 32nds notation (e.g., "99-16+")
+ * @returns Formatted string in Treasury 32nds notation (e.g., "99-164")
  * 
  * @example
- * formatTreasury32nds(99.5)       // "99-16"
- * formatTreasury32nds(99.515625)  // "99-16+"
- * formatTreasury32nds(99.40625)   // "99-13"
- * formatTreasury32nds(100.0)      // "100-00"
+ * formatTreasury32nds(99.5)       // "99-160"
+ * formatTreasury32nds(99.515625)  // "99-164"
+ * formatTreasury32nds(99.40625)   // "99-130"
+ * formatTreasury32nds(100.0)      // "100-000"
  * formatTreasury32nds(null)       // "-"
  */
 export function formatTreasury32nds(decimalPrice: number | null | undefined): string {
@@ -46,56 +47,73 @@ export function formatTreasury32nds(decimalPrice: number | null | undefined): st
   // Format the 32nds part with leading zero if needed (00-31)
   const ticksStr = thirtySeconds.toString().padStart(2, '0');
   
-  // Determine the fractional suffix (for 64ths and 128ths)
-  let suffix = '';
+  // Determine the fractional digit (in 8ths of 32nds)
+  // Always show 3 digits: XX0, XX2, XX4, XX6
+  let eighths = '0';
   if (remainder >= 0.75 - 0.001) {
-    // 3/4 of a 32nd = 3/128
-    suffix = '¾';
+    // 3/4 of a 32nd = 6/8 = 3/128
+    eighths = '6';
   } else if (remainder >= 0.5 - 0.001) {
-    // 1/2 of a 32nd = 1/64 (represented as "+")
-    suffix = '+';
+    // 1/2 of a 32nd = 4/8 = 1/64
+    eighths = '4';
   } else if (remainder >= 0.25 - 0.001) {
-    // 1/4 of a 32nd = 1/128
-    suffix = '¼';
+    // 1/4 of a 32nd = 2/8 = 1/128
+    eighths = '2';
   }
   
-  return `${handle}-${ticksStr}${suffix}`;
+  return `${handle}-${ticksStr}${eighths}`;
 }
 
 /**
  * Parses a Treasury 32nds formatted price string to a decimal number.
  * 
- * @param formattedPrice - The formatted price string (e.g., "99-16+")
+ * @param formattedPrice - The formatted price string (e.g., "99-164")
  * @returns The decimal price value (e.g., 99.515625)
  * 
  * @example
- * parseTreasury32nds("99-16")   // 99.5
- * parseTreasury32nds("99-16+")  // 99.515625
- * parseTreasury32nds("100-00")  // 100.0
+ * parseTreasury32nds("99-160")  // 99.5
+ * parseTreasury32nds("99-164")  // 99.515625
+ * parseTreasury32nds("99-162")  // 99.5078125
+ * parseTreasury32nds("100-000") // 100.0
  */
 export function parseTreasury32nds(formattedPrice: string): number | null {
   if (!formattedPrice || formattedPrice === '-') {
     return null;
   }
   
-  // Match pattern: handle-ticks[suffix]
-  const match = formattedPrice.match(/^(\d+)-(\d{2})([+¼½¾])?$/);
+  // Match pattern: handle-XXY (3 digits after hyphen)
+  // XX = 32nds (00-31), Y = 8ths (0, 2, 4, 6)
+  const match = formattedPrice.match(/^(\d+)-(\d{2})(\d)$/);
   if (!match) {
-    return null;
+    // Try legacy format with 2 digits or suffix
+    const legacyMatch = formattedPrice.match(/^(\d+)-(\d{2})([+¼½¾])?$/);
+    if (!legacyMatch) {
+      return null;
+    }
+    
+    const handle = parseInt(legacyMatch[1], 10);
+    const ticks = parseInt(legacyMatch[2], 10);
+    const suffix = legacyMatch[3];
+    
+    let fractionalTicks = 0;
+    if (suffix === '+' || suffix === '½') {
+      fractionalTicks = 0.5;
+    } else if (suffix === '¼') {
+      fractionalTicks = 0.25;
+    } else if (suffix === '¾') {
+      fractionalTicks = 0.75;
+    }
+    
+    const totalTicks = ticks + fractionalTicks;
+    return handle + (totalTicks / 32);
   }
   
   const handle = parseInt(match[1], 10);
   const ticks = parseInt(match[2], 10);
-  const suffix = match[3];
+  const eighths = parseInt(match[3], 10);
   
-  let fractionalTicks = 0;
-  if (suffix === '+' || suffix === '½') {
-    fractionalTicks = 0.5;
-  } else if (suffix === '¼') {
-    fractionalTicks = 0.25;
-  } else if (suffix === '¾') {
-    fractionalTicks = 0.75;
-  }
+  // Convert 8ths to fractional ticks (0, 2, 4, 6 -> 0, 0.25, 0.5, 0.75)
+  const fractionalTicks = eighths / 8;
   
   const totalTicks = ticks + fractionalTicks;
   return handle + (totalTicks / 32);
