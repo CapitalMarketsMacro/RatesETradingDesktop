@@ -1,9 +1,9 @@
 .top-of-the-book-container {
   position: relative;
   padding: 1rem;
-  background-color: var(--surface-card, #ffffff);
+  background-color: #333333;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   font-family: 'Noto Sans', sans-serif;
 }
 
@@ -16,15 +16,15 @@
 
 .tob-header h3 {
   margin: 0;
-  color: var(--primary-color, #3b82f6);
+  color: #ffffff;
   font-size: 1.25rem;
   font-weight: 600;
 }
 
 .row-count {
-  color: #64748b;
+  color: #9ca3af;
   font-size: 0.85rem;
-  background-color: rgba(100, 116, 139, 0.1);
+  background-color: rgba(156, 163, 175, 0.15);
   padding: 4px 12px;
   border-radius: 12px;
 }
@@ -33,7 +33,7 @@
 .tob-grid {
   display: flex;
   flex-direction: column;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #374151;
   border-radius: 6px;
   overflow: hidden;
 }
@@ -45,24 +45,24 @@
 }
 
 .tob-header-row {
-  background-color: #f8fafc;
-  border-bottom: 2px solid #e2e8f0;
+  background-color: #333333;
+  border-bottom: 2px solid #4b5563;
   font-weight: 600;
-  color: #475569;
+  color: #ffffff;
 }
 
 .tob-data-row {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #374151;
   transition: background-color 0.15s ease;
 }
 
 /* Alternate row coloring */
 .tob-data-row:nth-child(odd) {
-  background-color: #ffffff;
+  background-color: #333333;
 }
 
 .tob-data-row:nth-child(even) {
-  background-color: #f8fafc;
+  background-color: #474747;
 }
 
 .tob-data-row:last-child {
@@ -70,7 +70,7 @@
 }
 
 .tob-data-row:hover {
-  background-color: #e2e8f0;
+  background-color: #444444;
 }
 
 .tob-cell {
@@ -84,10 +84,10 @@
 /* Description Column */
 .tob-cell-desc {
   font-weight: 600;
-  color: #1e293b;
+  color: #ffffff;
 }
 
-/* Bid Size Column - Light Green */
+/* Bid Size Column - Bright Green */
 .tob-cell-bid-size {
   justify-content: flex-end;
   font-weight: 600;
@@ -95,15 +95,19 @@
 }
 
 .tob-data-row .tob-cell-bid-size {
-  background-color: #e8f5e9;
-  color: #1b5e20;
+  background-color: #4ead74;
+  color: #ffffff;
+}
+
+.tob-data-row:nth-child(even) .tob-cell-bid-size {
+  background-color: #56b57c;
 }
 
 /* Best Bid Column */
 .tob-cell-bid {
   justify-content: flex-end;
   font-weight: 700;
-  color: #2e7d32;
+  color: #ffffff;
   font-variant-numeric: tabular-nums;
 }
 
@@ -111,11 +115,11 @@
 .tob-cell-ask {
   justify-content: flex-end;
   font-weight: 700;
-  color: #d32f2f;
+  color: #ffffff;
   font-variant-numeric: tabular-nums;
 }
 
-/* Ask Size Column - Salmon */
+/* Ask Size Column - Coral/Pink */
 .tob-cell-ask-size {
   justify-content: flex-end;
   font-weight: 600;
@@ -123,8 +127,12 @@
 }
 
 .tob-data-row .tob-cell-ask-size {
-  background-color: #ffebee;
-  color: #b71c1c;
+  background-color: #a65c5c;
+  color: #ffffff;
+}
+
+.tob-data-row:nth-child(even) .tob-cell-ask-size {
+  background-color: #ae6464;
 }
 
 /* Empty State */
@@ -137,72 +145,80 @@
   font-style: italic;
 }
 
-/* Dark Mode Support */
+/* Dark Mode Support - use same colors as light mode */
 :host-context(.app-dark) .top-of-the-book-container {
-  background-color: var(--surface-card, #1e1e2e);
+  background-color: #333333;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 :host-context(.app-dark) .tob-header h3 {
-  color: var(--primary-color, #60a5fa);
+  color: #ffffff;
 }
 
 :host-context(.app-dark) .row-count {
-  color: #94a3b8;
-  background-color: rgba(148, 163, 184, 0.1);
+  color: #9ca3af;
+  background-color: rgba(156, 163, 175, 0.15);
 }
 
 :host-context(.app-dark) .tob-grid {
-  border-color: #334155;
+  border-color: #374151;
 }
 
 :host-context(.app-dark) .tob-header-row {
-  background-color: #1e293b;
-  border-bottom-color: #334155;
-  color: #94a3b8;
+  background-color: #333333;
+  border-bottom-color: #4b5563;
+  color: #ffffff;
 }
 
 :host-context(.app-dark) .tob-data-row {
-  border-bottom-color: #334155;
+  border-bottom-color: #374151;
 }
 
 /* Dark mode alternate row coloring */
 :host-context(.app-dark) .tob-data-row:nth-child(odd) {
-  background-color: #0f172a;
+  background-color: #333333;
 }
 
 :host-context(.app-dark) .tob-data-row:nth-child(even) {
-  background-color: #1e293b;
+  background-color: #474747;
 }
 
 :host-context(.app-dark) .tob-data-row:hover {
-  background-color: #334155;
+  background-color: #444444;
 }
 
 :host-context(.app-dark) .tob-cell-desc {
-  color: #e2e8f0;
+  color: #ffffff;
 }
 
 :host-context(.app-dark) .tob-data-row .tob-cell-bid-size {
-  background-color: rgba(46, 125, 50, 0.2);
-  color: #81c784;
+  background-color: #4ead74;
+  color: #ffffff;
+}
+
+:host-context(.app-dark) .tob-data-row:nth-child(even) .tob-cell-bid-size {
+  background-color: #56b57c;
 }
 
 :host-context(.app-dark) .tob-cell-bid {
-  color: #81c784;
+  color: #ffffff;
 }
 
 :host-context(.app-dark) .tob-cell-ask {
-  color: #ef5350;
+  color: #ffffff;
 }
 
 :host-context(.app-dark) .tob-data-row .tob-cell-ask-size {
-  background-color: rgba(211, 47, 47, 0.2);
-  color: #ef5350;
+  background-color: #a65c5c;
+  color: #ffffff;
+}
+
+:host-context(.app-dark) .tob-data-row:nth-child(even) .tob-cell-ask-size {
+  background-color: #ae6464;
 }
 
 :host-context(.app-dark) .tob-empty {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 /* Interactive cells - cursor and hover effect */

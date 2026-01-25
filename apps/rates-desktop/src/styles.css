@@ -26,10 +26,13 @@
 /* Trading Popover Global Styles */
 .p-popover {
   font-family: 'Noto Sans', sans-serif;
+  background-color: #333333 !important;
 }
 
 .p-popover .p-popover-content {
   font-family: 'Noto Sans', sans-serif;
+  background-color: #333333 !important;
+  color: #ffffff;
 }
 
 .trading-popover {
@@ -47,7 +50,7 @@
   align-items: center;
   gap: 0.75rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #4b5563;
   margin-bottom: 0.75rem;
 }
 
@@ -72,7 +75,7 @@
 .trading-instrument {
   font-weight: 600;
   font-size: 1rem;
-  color: #1e293b;
+  color: #ffffff;
 }
 
 .trading-popover-details {
@@ -89,13 +92,13 @@
 }
 
 .trading-label {
-  color: #64748b;
+  color: #ffffff;
   font-size: 0.85rem;
 }
 
 .trading-value {
   font-weight: 600;
-  color: #1e293b;
+  color: #ffffff;
 }
 
 .trading-price {
@@ -245,14 +248,14 @@ html.app-dark .qty-input,
 /* app-dark class is on html element */
 html.app-dark .p-popover,
 .app-dark .p-popover {
-  background-color: #1e293b !important;
-  border-color: #475569 !important;
+  background-color: #333333 !important;
+  border-color: #4b5563 !important;
 }
 
 html.app-dark .p-popover .p-popover-content,
 .app-dark .p-popover .p-popover-content {
-  background-color: #1e293b !important;
-  color: #f1f5f9 !important;
+  background-color: #333333 !important;
+  color: #ffffff !important;
 }
 
 html.app-dark .trading-popover,
@@ -284,7 +287,7 @@ html.app-dark .trading-side.buy,
 
 html.app-dark .trading-label,
 .app-dark .trading-label {
-  color: #94a3b8 !important;
+  color: #ffffff !important;
 }
 
 html.app-dark .trading-value,
