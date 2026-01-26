@@ -2,92 +2,66 @@ const fs = require('fs');
 const path = require('path');
 
 // Read package-lock.json
-const packageLockPath = path.join(__dirname, 'package-lock.json');
-const packageLock = JSON.parse(fs.readFileSync(packageLockPath, 'utf8'));
+const lockFile = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
 
-// Extract all packages
-const allPackages = new Map();
+// Extract all packages with their versions
+const allDependencies = new Set();
 
-// Iterate through all packages in the lock file
-for (const [packagePath, packageData] of Object.entries(packageLock.packages)) {
-  // Skip root package (empty string key)
-  if (packagePath === '') continue;
-  
-  // Extract package name from path if name is not present
-  let packageName = packageData.name;
-  if (!packageName && packagePath.startsWith('node_modules/')) {
-    // Extract name from path like "node_modules/@scope/package" or "node_modules/package"
-    const pathParts = packagePath.replace('node_modules/', '').split('/');
-    if (pathParts[0].startsWith('@')) {
-      packageName = `${pathParts[0]}/${pathParts[1]}`;
-    } else {
-      packageName = pathParts[0];
+// Function to recursively collect all dependencies
+function collectDependencies(packages, parentPath = '') {
+  for (const [packagePath, packageData] of Object.entries(packages)) {
+    if (packagePath === '') continue; // Skip root package
+    
+    const packageName = packageData.name || packagePath.split('node_modules/').pop();
+    const version = packageData.version;
+    
+    if (packageName && version) {
+      allDependencies.add(`${packageName}@${version}`);
     }
-  }
-  
-  if (packageName && packageData.version) {
-    const key = `${packageName}@${packageData.version}`;
-    if (!allPackages.has(key)) {
-      allPackages.set(key, {
-        name: packageName,
-        version: packageData.version,
-        license: packageData.license || 'N/A',
-        resolved: packageData.resolved || 'N/A',
-        integrity: packageData.integrity || 'N/A',
-        dev: packageData.dev || false,
-        optional: packageData.optional || false,
-        dependencies: packageData.dependencies ? Object.keys(packageData.dependencies) : []
-      });
+    
+    // Recursively process dependencies
+    if (packageData.dependencies) {
+      collectDependencies(packageData.dependencies, packagePath);
     }
   }
 }
 
-// Sort packages by name
-const sortedPackages = Array.from(allPackages.values()).sort((a, b) => 
-  a.name.localeCompare(b.name)
-);
+// Collect all dependencies from the packages object
+if (lockFile.packages) {
+  collectDependencies(lockFile.packages);
+}
 
-// Generate output files
-const output = {
-  summary: {
-    totalPackages: sortedPackages.length,
-    generatedAt: new Date().toISOString()
-  },
-  packages: sortedPackages
-};
+// Sort dependencies alphabetically
+const sortedDependencies = Array.from(allDependencies).sort();
 
-// Write JSON file
-fs.writeFileSync(
-  'npm-dependencies.json',
-  JSON.stringify(output, null, 2),
-  'utf8'
-);
+// Write to file
+fs.writeFileSync('npm-all-dependencies.txt', sortedDependencies.join('\n'));
 
-// Write text file
-let textOutput = `NPM Transitive Dependencies Report\n`;
-textOutput += `=====================================\n\n`;
-textOutput += `Generated: ${new Date().toISOString()}\n`;
-textOutput += `Total Packages: ${sortedPackages.length}\n\n`;
-textOutput += `Packages:\n`;
-textOutput += `${'='.repeat(80)}\n\n`;
+console.log(`Created npm-all-dependencies.txt with ${sortedDependencies.length} dependencies`);
 
-sortedPackages.forEach((pkg, index) => {
-  textOutput += `${index + 1}. ${pkg.name}@${pkg.version}\n`;
-  textOutput += `   License: ${pkg.license}\n`;
-  if (pkg.dependencies.length > 0) {
-    textOutput += `   Dependencies: ${pkg.dependencies.join(', ')}\n`;
+// Also create a JSON version with more details
+const detailedDeps = [];
+for (const [packagePath, packageData] of Object.entries(lockFile.packages)) {
+  if (packagePath === '') continue;
+  
+  const packageName = packageData.name || packagePath.split('node_modules/').pop();
+  if (packageName && packageData.version) {
+    detailedDeps.push({
+      name: packageName,
+      version: packageData.version,
+      path: packagePath,
+      license: packageData.license || 'N/A',
+      dev: packageData.dev || false,
+      optional: packageData.optional || false,
+      resolved: packageData.resolved || 'N/A',
+      integrity: packageData.integrity || 'N/A'
+    });
   }
-  textOutput += `\n`;
-});
+}
 
-// Write simple list file (just name@version)
-let simpleList = sortedPackages.map(pkg => `${pkg.name}@${pkg.version}`).join('\n');
-fs.writeFileSync('npm-dependencies-list.txt', simpleList, 'utf8');
+// Sort by name
+detailedDeps.sort((a, b) => a.name.localeCompare(b.name));
 
-fs.writeFileSync('npm-dependencies.txt', textOutput, 'utf8');
+fs.writeFileSync('npm-all-dependencies.json', JSON.stringify(detailedDeps, null, 2));
 
-console.log(`Extracted ${sortedPackages.length} packages`);
-console.log('Generated files:');
-console.log('  - npm-dependencies.json (detailed JSON)');
-console.log('  - npm-dependencies.txt (detailed text report)');
-console.log('  - npm-dependencies-list.txt (simple list)');
+console.log(`Created npm-all-dependencies.json with ${detailedDeps.length} detailed dependency entries`);

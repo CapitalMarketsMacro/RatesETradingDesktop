@@ -1,0 +1,292 @@
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm.
+{
+  "version": "1.0.0",
+  "name": "ratesetradingdesktop",
+  "dependencies": {
+    "@analogjs/vite-plugin-angular": {
+      "version": "2.1.3",
+      "resolved": "https://registry.npmjs.org/@analogjs/vite-plugin-angular/-/vite-plugin-angular-2.1.3.tgz",
+      "overridden": false
+    },
+    "@analogjs/vitest-angular": {
+      "version": "2.1.3",
+      "resolved": "https://registry.npmjs.org/@analogjs/vitest-angular/-/vitest-angular-2.1.3.tgz",
+      "overridden": false
+    },
+    "@angular-devkit/core": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular-devkit/core/-/core-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular-devkit/schematics": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular-devkit/schematics/-/schematics-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/animations": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/animations/-/animations-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/build": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/build/-/build-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/cli": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/cli/-/cli-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/common": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/common/-/common-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/compiler-cli": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/compiler-cli/-/compiler-cli-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/compiler": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/compiler/-/compiler-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/core": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/core/-/core-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/forms": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/forms/-/forms-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/language-service": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/language-service/-/language-service-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/platform-browser": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/platform-browser/-/platform-browser-21.1.1.tgz",
+      "overridden": false
+    },
+    "@angular/router": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@angular/router/-/router-21.1.1.tgz",
+      "overridden": false
+    },
+    "@eslint/js": {
+      "version": "9.39.2",
+      "resolved": "https://registry.npmjs.org/@eslint/js/-/js-9.39.2.tgz",
+      "overridden": false
+    },
+    "@nx/angular": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/angular/-/angular-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/devkit": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/devkit/-/devkit-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/eslint-plugin": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/eslint-plugin/-/eslint-plugin-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/eslint": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/eslint/-/eslint-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/js": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/js/-/js-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/playwright": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/playwright/-/playwright-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/vite": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/vite/-/vite-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/vitest": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/vitest/-/vitest-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/web": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/web/-/web-22.4.0.tgz",
+      "overridden": false
+    },
+    "@nx/workspace": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/@nx/workspace/-/workspace-22.4.0.tgz",
+      "overridden": false
+    },
+    "@playwright/test": {
+      "version": "1.57.0",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.57.0.tgz",
+      "overridden": false
+    },
+    "@primeuix/themes": {
+      "version": "2.0.3",
+      "resolved": "https://registry.npmjs.org/@primeuix/themes/-/themes-2.0.3.tgz",
+      "overridden": false
+    },
+    "@schematics/angular": {
+      "version": "21.1.1",
+      "resolved": "https://registry.npmjs.org/@schematics/angular/-/angular-21.1.1.tgz",
+      "overridden": false
+    },
+    "@swc-node/register": {
+      "version": "1.9.2",
+      "resolved": "https://registry.npmjs.org/@swc-node/register/-/register-1.9.2.tgz",
+      "overridden": false
+    },
+    "@swc/core": {
+      "version": "1.5.29",
+      "resolved": "https://registry.npmjs.org/@swc/core/-/core-1.5.29.tgz",
+      "overridden": false
+    },
+    "@swc/helpers": {
+      "version": "0.5.18",
+      "resolved": "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.18.tgz",
+      "overridden": false
+    },
+    "@types/node": {
+      "version": "20.19.9",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.19.9.tgz",
+      "overridden": false
+    },
+    "@typescript-eslint/utils": {
+      "version": "8.53.1",
+      "resolved": "https://registry.npmjs.org/@typescript-eslint/utils/-/utils-8.53.1.tgz",
+      "overridden": false
+    },
+    "@vitest/coverage-v8": {
+      "version": "4.0.17",
+      "resolved": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-4.0.17.tgz",
+      "overridden": false
+    },
+    "@vitest/ui": {
+      "version": "4.0.17",
+      "resolved": "https://registry.npmjs.org/@vitest/ui/-/ui-4.0.17.tgz",
+      "overridden": false
+    },
+    "ag-charts-angular": {
+      "version": "13.0.0",
+      "resolved": "https://registry.npmjs.org/ag-charts-angular/-/ag-charts-angular-13.0.0.tgz",
+      "overridden": false
+    },
+    "ag-charts-community": {
+      "version": "13.0.0",
+      "resolved": "https://registry.npmjs.org/ag-charts-community/-/ag-charts-community-13.0.0.tgz",
+      "overridden": false
+    },
+    "ag-grid-angular": {
+      "version": "35.0.0",
+      "resolved": "https://registry.npmjs.org/ag-grid-angular/-/ag-grid-angular-35.0.0.tgz",
+      "overridden": false
+    },
+    "ag-grid-enterprise": {
+      "version": "35.0.0",
+      "resolved": "https://registry.npmjs.org/ag-grid-enterprise/-/ag-grid-enterprise-35.0.0.tgz",
+      "overridden": false
+    },
+    "amps": {
+      "version": "5.3.4-0.378635.60b2fcc",
+      "resolved": "https://registry.npmjs.org/amps/-/amps-5.3.4-0.378635.60b2fcc.tgz",
+      "overridden": false
+    },
+    "angular-eslint": {
+      "version": "21.1.0",
+      "resolved": "https://registry.npmjs.org/angular-eslint/-/angular-eslint-21.1.0.tgz",
+      "overridden": false
+    },
+    "eslint-config-prettier": {
+      "version": "10.1.8",
+      "resolved": "https://registry.npmjs.org/eslint-config-prettier/-/eslint-config-prettier-10.1.8.tgz",
+      "overridden": false
+    },
+    "eslint-plugin-playwright": {
+      "version": "1.8.3",
+      "resolved": "https://registry.npmjs.org/eslint-plugin-playwright/-/eslint-plugin-playwright-1.8.3.tgz",
+      "overridden": false
+    },
+    "eslint": {
+      "version": "9.39.2",
+      "resolved": "https://registry.npmjs.org/eslint/-/eslint-9.39.2.tgz",
+      "overridden": false
+    },
+    "jsdom": {
+      "version": "27.4.0",
+      "resolved": "https://registry.npmjs.org/jsdom/-/jsdom-27.4.0.tgz",
+      "overridden": false
+    },
+    "nx": {
+      "version": "22.4.0",
+      "resolved": "https://registry.npmjs.org/nx/-/nx-22.4.0.tgz",
+      "overridden": false
+    },
+    "prettier": {
+      "version": "3.6.2",
+      "resolved": "https://registry.npmjs.org/prettier/-/prettier-3.6.2.tgz",
+      "overridden": false
+    },
+    "primeicons": {
+      "version": "7.0.0",
+      "resolved": "https://registry.npmjs.org/primeicons/-/primeicons-7.0.0.tgz",
+      "overridden": false
+    },
+    "primeng": {
+      "version": "21.0.4",
+      "resolved": "https://registry.npmjs.org/primeng/-/primeng-21.0.4.tgz",
+      "overridden": false
+    },
+    "rxjs": {
+      "version": "7.8.2",
+      "resolved": "https://registry.npmjs.org/rxjs/-/rxjs-7.8.2.tgz",
+      "overridden": false
+    },
+    "solclientjs": {
+      "version": "10.18.2",
+      "resolved": "https://registry.npmjs.org/solclientjs/-/solclientjs-10.18.2.tgz",
+      "overridden": false
+    },
+    "tslib": {
+      "version": "2.8.1",
+      "resolved": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+      "overridden": false
+    },
+    "typescript-eslint": {
+      "version": "8.53.1",
+      "resolved": "https://registry.npmjs.org/typescript-eslint/-/typescript-eslint-8.53.1.tgz",
+      "overridden": false
+    },
+    "typescript": {
+      "version": "5.9.3",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+      "overridden": false
+    },
+    "vite": {
+      "version": "7.3.1",
+      "resolved": "https://registry.npmjs.org/vite/-/vite-7.3.1.tgz",
+      "overridden": false
+    },
+    "vitest": {
+      "version": "4.0.17",
+      "resolved": "https://registry.npmjs.org/vitest/-/vitest-4.0.17.tgz",
+      "overridden": false
+    }
+  }
+}
