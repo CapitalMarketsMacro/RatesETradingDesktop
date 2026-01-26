@@ -60,5 +60,9 @@
     "theme": "auto",
     "defaultPageSize": 100,
     "refreshInterval": 2000
+  },
+  "ampsTopics": {
+    "marketData": "rates/marketData",
+    "executions": "rates/executions"
   }
 }

@@ -2,6 +2,7 @@ import { Component, inject, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataGrid, ColDef } from '@rates-trading/ui-components';
 import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
+import { ConfigurationService } from '@rates-trading/configuration';
 import { formatTreasury32nds } from '@rates-trading/shared-utils';
 import { ValueFormatterParams, CellClassParams, GridOptions } from 'ag-grid-community';
 import { Subscription, filter, take } from 'rxjs';
@@ -24,6 +25,7 @@ export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
   @ViewChild('executionsGrid') executionsGrid!: DataGrid<ExecutionGridRow>;
   
   private transport = inject(TRANSPORT_SERVICE);
+  private configService = inject(ConfigurationService);
   private executionsSubscription?: TransportSubscription;
   private connectionSubscription?: Subscription;
 
@@ -153,7 +155,8 @@ export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
    * Subscribe to executions topic
    */
   private async subscribeToExecutions(): Promise<void> {
-    const topic = 'rates/executions';
+    const config = this.configService.getConfiguration();
+    const topic = config?.ampsTopics?.executions || 'rates/executions';
     
     try {
       this.executionsSubscription = await this.transport.subscribe<Execution>(
@@ -162,7 +165,7 @@ export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
           this.handleExecutionMessage(message.data);
         }
       );
-      console.log('ExecutionsBlotter: Subscribed to executions');
+      console.log(`ExecutionsBlotter: Subscribed to executions topic: ${topic}`);
     } catch (error) {
       console.error(`ExecutionsBlotter: Failed to subscribe to ${topic}:`, error);
     }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MarketData, MarketDataGridRow, transformMarketDataToGridRow } from '@rates-trading/data-access';
 import { DataGrid, ColDef } from '@rates-trading/ui-components';
 import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
+import { ConfigurationService } from '@rates-trading/configuration';
 import { formatTreasury32nds, formatSpread32nds } from '@rates-trading/shared-utils';
 import { ValueFormatterParams } from 'ag-grid-community';
 import { Subscription, filter, take } from 'rxjs';
@@ -26,6 +27,7 @@ export class MarketDataBlotterComponent implements OnInit, OnDestroy {
   @ViewChild('marketDataGrid') marketDataGrid!: DataGrid<MarketDataGridRow>;
   
   private transport = inject(TRANSPORT_SERVICE);
+  private configService = inject(ConfigurationService);
   private marketDataSubscription?: TransportSubscription;
   private connectionSubscription?: Subscription;
 
@@ -134,7 +136,8 @@ export class MarketDataBlotterComponent implements OnInit, OnDestroy {
    * Subscribe to market data topic
    */
   private async subscribeToMarketData(): Promise<void> {
-    const topic = 'rates/marketData';
+    const config = this.configService.getConfiguration();
+    const topic = config?.ampsTopics?.marketData || 'rates/marketData';
     
     try {
       this.marketDataSubscription = await this.transport.subscribe<MarketData>(
@@ -143,7 +146,7 @@ export class MarketDataBlotterComponent implements OnInit, OnDestroy {
           this.handleMarketDataMessage(message.data);
         }
       );
-      console.log('MarketDataBlotter: Subscribed to market data');
+      console.log(`MarketDataBlotter: Subscribed to market data topic: ${topic}`);
     } catch (error) {
       console.error(`MarketDataBlotter: Failed to subscribe to ${topic}:`, error);
     }

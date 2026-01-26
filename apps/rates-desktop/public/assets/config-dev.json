@@ -54,5 +54,9 @@
     "theme": "light",
     "defaultPageSize": 20,
     "refreshInterval": 5000
+  },
+  "ampsTopics": {
+    "marketData": "rates/marketData",
+    "executions": "rates/executions"
   }
 }

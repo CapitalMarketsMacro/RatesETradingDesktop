@@ -68,6 +68,12 @@ export interface RatesAppConfiguration {
     symbols?: string[];
   };
 
+  /** AMPS topics configuration */
+  ampsTopics?: {
+    marketData?: string;
+    executions?: string;
+  };
+
   /** Trading configuration */
   trading?: {
     enabled: boolean;

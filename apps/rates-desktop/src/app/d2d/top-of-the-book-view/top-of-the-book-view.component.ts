@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MarketData, MarketDataGridRow, transformMarketDataToGridRow } from '@rates-trading/data-access';
 import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
+import { ConfigurationService } from '@rates-trading/configuration';
 import { formatTreasury32nds } from '@rates-trading/shared-utils';
 import { Subscription, filter, take } from 'rxjs';
 import { MessageService } from 'primeng/api';
@@ -57,6 +58,7 @@ interface TradingPopoverData {
 })
 export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   private transport = inject(TRANSPORT_SERVICE);
+  private configService = inject(ConfigurationService);
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
   private messageService = inject(MessageService);
@@ -141,7 +143,8 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
    * Subscribe to market data topic
    */
   private async subscribeToMarketData(): Promise<void> {
-    const topic = 'rates/marketData';
+    const config = this.configService.getConfiguration();
+    const topic = config?.ampsTopics?.marketData || 'rates/marketData';
     
     try {
       this.marketDataSubscription = await this.transport.subscribe<MarketData>(
@@ -150,7 +153,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
           this.handleMarketDataMessage(message.data);
         }
       );
-      console.log('TopOfTheBook: Subscribed to market data');
+      console.log(`TopOfTheBook: Subscribed to market data topic: ${topic}`);
     } catch (error) {
       console.error(`TopOfTheBook: Failed to subscribe to ${topic}:`, error);
     }
