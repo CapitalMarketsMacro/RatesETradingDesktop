@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { TopOfTheBookViewComponent, MarketDataBlotterComponent } from './d2d';
+import { TopOfTheBookViewComponent, MarketDataBlotterComponent, ExecutionsBlotterComponent } from './d2d';
 
 export const appRoutes: Route[] = [
   // Default route redirects to top-of-book
@@ -8,6 +8,9 @@ export const appRoutes: Route[] = [
   // D2D Market Data views
   { path: 'market-data/top-of-book', component: TopOfTheBookViewComponent },
   { path: 'market-data/blotter', component: MarketDataBlotterComponent },
+  
+  // D2D Executions
+  { path: 'executions', component: ExecutionsBlotterComponent },
   
   // Catch-all redirect
   { path: '**', redirectTo: 'market-data/top-of-book' },

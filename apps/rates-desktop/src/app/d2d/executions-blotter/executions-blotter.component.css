@@ -1,0 +1,76 @@
+.executions-blotter-container {
+  padding: 1rem;
+  background-color: #333333;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.blotter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.blotter-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* ag-Grid Background */
+::ng-deep .ag-root-wrapper,
+::ng-deep .ag-body-viewport,
+::ng-deep .ag-center-cols-viewport {
+  background-color: #333333 !important;
+}
+
+/* ag-Grid Row Styling - Odd/Even coloring */
+::ng-deep .ag-row-odd {
+  background-color: #333333 !important;
+}
+
+::ng-deep .ag-row-even {
+  background-color: #474747 !important;
+}
+
+::ng-deep .ag-row-odd:hover,
+::ng-deep .ag-row-even:hover {
+  background-color: #444444 !important;
+}
+
+/* ag-Grid Header Styling */
+::ng-deep .ag-header {
+  background-color: #333333 !important;
+}
+
+::ng-deep .ag-header-cell {
+  color: #ffffff !important;
+}
+
+/* ag-Grid Cell Text Color */
+::ng-deep .ag-cell {
+  color: #ffffff !important;
+}
+
+/* Side column styling */
+::ng-deep .side-buy {
+  color: #4ead74 !important;
+  font-weight: bold;
+}
+
+::ng-deep .side-sell {
+  color: #ef5350 !important;
+  font-weight: bold;
+}
+
+/* Dark Mode Support */
+:host-context(.app-dark) .executions-blotter-container {
+  background-color: #333333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+:host-context(.app-dark) .blotter-header h3 {
+  color: #ffffff;
+}

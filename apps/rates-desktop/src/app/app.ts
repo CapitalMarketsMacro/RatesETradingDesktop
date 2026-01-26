@@ -76,6 +76,11 @@ export class App implements OnInit, OnDestroy {
           },
         ]
       },
+      { 
+        label: 'Executions', 
+        icon: 'pi pi-check-circle',
+        routerLink: ['/executions']
+      },
       { label: 'Trading', icon: 'pi pi-briefcase', routerLink: ['/trading'] },
       { label: 'Preferences', icon: 'pi pi-cog', routerLink: ['/preferences'] },
     ];

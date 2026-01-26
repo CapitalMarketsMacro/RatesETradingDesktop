@@ -1,0 +1,13 @@
+<div class="executions-blotter-container">
+  <div class="blotter-header">
+    <h3>Executions</h3>
+  </div>
+  
+  <lib-data-grid
+    #executionsGrid
+    [columns]="columns"
+    [rowIdField]="'ExecutionIdString'"
+    [height]="'calc(100vh - 180px)'"
+    [gridOptions]="gridOptions"
+  ></lib-data-grid>
+</div>
