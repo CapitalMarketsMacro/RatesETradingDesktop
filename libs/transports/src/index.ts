@@ -6,6 +6,7 @@ export * from './lib/interfaces/transport-config.interface';
 export * from './lib/services/base-transport.service';
 export * from './lib/services/amps-transport.service';
 export * from './lib/services/solace-transport.service';
+export * from './lib/services/nats-transport.service';
 
 // Tokens and factory
 export * from './lib/transport.tokens';

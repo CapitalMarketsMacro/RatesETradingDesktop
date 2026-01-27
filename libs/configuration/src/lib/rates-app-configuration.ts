@@ -18,7 +18,7 @@ export interface RatesAppConfiguration {
 
   /** Messaging/Transport configuration */
   transport?: {
-    type: 'solace' | 'amps' | 'websocket';
+    type: 'solace' | 'amps' | 'websocket' | 'nats';
     solace?: {
       url: string;
       vpnName: string;
@@ -58,6 +58,26 @@ export interface RatesAppConfiguration {
       reconnectInterval?: number;
       maxReconnectAttempts?: number;
       pingInterval?: number;
+    };
+    nats?: {
+      url: string | string[];
+      user?: string;
+      password?: string;
+      token?: string;
+      name?: string;
+      tls?: boolean;
+      reconnect?: {
+        enabled: boolean;
+        initialDelay?: number;
+        maxDelay?: number;
+        maxAttempts?: number;
+      };
+      maxReconnectAttempts?: number;
+      reconnectTimeWait?: number;
+      timeout?: number;
+      pingInterval?: number;
+      maxPingOut?: number;
+      options?: Record<string, unknown>;
     };
   };
 

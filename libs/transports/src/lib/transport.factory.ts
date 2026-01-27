@@ -4,6 +4,7 @@ import { ITransportService } from './interfaces/transport.interface';
 import { TransportConfig } from './interfaces/transport-config.interface';
 import { AmpsTransportService } from './services/amps-transport.service';
 import { SolaceTransportService } from './services/solace-transport.service';
+import { NatsTransportService } from './services/nats-transport.service';
 import { TRANSPORT_SERVICE, TRANSPORT_CONFIG } from './transport.tokens';
 
 /**
@@ -32,6 +33,15 @@ function transportServiceFactory(config: TransportConfig): ITransportService {
     case 'websocket': {
       // WebSocket implementation can be added later
       throw new Error('WebSocket transport is not yet implemented');
+    }
+
+    case 'nats': {
+      if (!config.nats) {
+        throw new Error('NATS configuration is required when transport type is "nats"');
+      }
+      const natsService = new NatsTransportService();
+      natsService.initialize(config.nats);
+      return natsService;
     }
 
     default:
@@ -128,6 +138,7 @@ export function provideTransport(options?: TransportModuleConfig): EnvironmentPr
   // Also provide the concrete implementations for direct injection if needed
   providers.push(AmpsTransportService);
   providers.push(SolaceTransportService);
+  providers.push(NatsTransportService);
 
   return makeEnvironmentProviders(providers);
 }
@@ -157,6 +168,7 @@ export function createTransportProviders(options?: TransportModuleConfig): Provi
       },
       AmpsTransportService,
       SolaceTransportService,
+      NatsTransportService,
     ];
   }
 
@@ -167,5 +179,6 @@ export function createTransportProviders(options?: TransportModuleConfig): Provi
     },
     AmpsTransportService,
     SolaceTransportService,
+    NatsTransportService,
   ];
 }

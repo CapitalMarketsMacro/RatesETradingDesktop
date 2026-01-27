@@ -2,7 +2,7 @@ import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, NgZone, ViewCh
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MarketData, MarketDataGridRow, transformMarketDataToGridRow } from '@rates-trading/data-access';
-import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
+import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus, AmpsTransportService, NatsTransportService, ITransportService } from '@rates-trading/transports';
 import { ConfigurationService } from '@rates-trading/configuration';
 import { LoggerService } from '@rates-trading/logger';
 import { formatTreasury32nds } from '@rates-trading/shared-utils';
@@ -19,6 +19,14 @@ import { SelectModule } from 'primeng/select';
 interface TradingBook {
   name: string;
   code: string;
+}
+
+/**
+ * Transport type option for dropdown
+ */
+interface TransportOption {
+  label: string;
+  value: 'amps' | 'nats';
 }
 
 /**
@@ -59,6 +67,8 @@ interface TradingPopoverData {
 })
 export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   private transport = inject(TRANSPORT_SERVICE);
+  private ampsTransport = inject(AmpsTransportService);
+  private natsTransport = inject(NatsTransportService);
   private configService = inject(ConfigurationService);
   private logger = inject(LoggerService).child({ component: 'TopOfTheBookView' });
   private ngZone = inject(NgZone);
@@ -69,6 +79,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   
   private marketDataSubscription?: TransportSubscription;
   private connectionSubscription?: Subscription;
+  private currentTransport: 'amps' | 'nats' = 'amps';
 
   // Market data rows stored in a Map for efficient updates
   private marketDataMap = new Map<string, MarketDataGridRow>();
@@ -87,6 +98,14 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
     { name: 'Hedge Book', code: 'HEDGE' },
     { name: 'Market Making', code: 'MM' },
   ];
+
+  // Available transport options
+  transportOptions: TransportOption[] = [
+    { label: 'AMPS', value: 'amps' },
+    { label: 'NATS', value: 'nats' },
+  ];
+
+  selectedTransport: TransportOption = this.transportOptions[0];
 
   // Expose formatter for template
   formatPrice = formatTreasury32nds;
@@ -125,20 +144,119 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Initialize both transports
+    this.initializeTransports();
+    
+    // Wait for current transport to be connected before subscribing
+    this.connectAndSubscribe();
+  }
+
+  /**
+   * Initialize both AMPS and NATS transports
+   */
+  private async initializeTransports(): Promise<void> {
+    const config = this.configService.getConfiguration();
+    
+    // Initialize AMPS transport
+    if (config?.transport?.amps) {
+      this.ampsTransport.initialize(config.transport.amps);
+    }
+    
+    // Initialize NATS transport
+    if (config?.transport?.nats) {
+      this.natsTransport.initialize(config.transport.nats);
+    }
+  }
+
+  /**
+   * Connect to the current transport and subscribe
+   */
+  private async connectAndSubscribe(): Promise<void> {
+    const activeTransport = this.getActiveTransport();
+    
     // Wait for transport to be connected before subscribing
-    this.connectionSubscription = this.transport.connectionStatus$
+    this.connectionSubscription?.unsubscribe();
+    this.connectionSubscription = activeTransport.connectionStatus$
       .pipe(
         filter(status => status === ConnectionStatus.Connected),
         take(1)
       )
-      .subscribe(() => {
-        this.subscribeToMarketData();
+      .subscribe(async () => {
+        await this.subscribeToMarketData();
       });
+
+    // Connect if not already connected
+    if (!activeTransport.isConnected()) {
+      try {
+        await activeTransport.connect();
+      } catch (error) {
+        this.logger.error(error as Error, `Failed to connect to ${this.currentTransport}`);
+      }
+    } else {
+      // Already connected, subscribe immediately
+      await this.subscribeToMarketData();
+    }
   }
 
-  ngOnDestroy(): void {
+  /**
+   * Get the active transport service based on current selection
+   */
+  private getActiveTransport(): ITransportService {
+    return this.currentTransport === 'amps' ? this.ampsTransport : this.natsTransport;
+  }
+
+  /**
+   * Handle transport selection change
+   */
+  async onTransportChange(): Promise<void> {
+    const newTransport = this.selectedTransport.value;
+    
+    if (newTransport === this.currentTransport) {
+      return; // No change
+    }
+
+    this.logger.info({ from: this.currentTransport, to: newTransport }, 'Switching transport');
+
+    // Unsubscribe from current transport
+    await this.unsubscribe();
+
+    // Disconnect from current transport
+    const oldTransport = this.getActiveTransport();
+    if (oldTransport.isConnected()) {
+      try {
+        await oldTransport.disconnect();
+      } catch (error) {
+        this.logger.error(error as Error, `Error disconnecting from ${this.currentTransport}`);
+      }
+    }
+
+    // Update current transport
+    this.currentTransport = newTransport;
+
+    // Connect and subscribe to new transport
+    await this.connectAndSubscribe();
+  }
+
+  async ngOnDestroy(): Promise<void> {
     this.connectionSubscription?.unsubscribe();
-    this.unsubscribe();
+    await this.unsubscribe();
+    
+    // Disconnect from both transports
+    if (this.ampsTransport.isConnected()) {
+      try {
+        await this.ampsTransport.disconnect();
+      } catch (error) {
+        this.logger.error(error as Error, 'Error disconnecting AMPS transport');
+      }
+    }
+    
+    if (this.natsTransport.isConnected()) {
+      try {
+        await this.natsTransport.disconnect();
+      } catch (error) {
+        this.logger.error(error as Error, 'Error disconnecting NATS transport');
+      }
+    }
   }
 
   /**
@@ -146,18 +264,27 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
    */
   private async subscribeToMarketData(): Promise<void> {
     const config = this.configService.getConfiguration();
-    const topic = config?.ampsTopics?.marketData || 'rates/marketData';
+    const activeTransport = this.getActiveTransport();
+    
+    // Determine topic based on transport type
+    let topic: string;
+    if (this.currentTransport === 'amps') {
+      topic = config?.ampsTopics?.marketData || 'rates/marketData';
+    } else {
+      // NATS uses dot notation instead of slash
+      topic = 'rates.marketData';
+    }
     
     try {
-      this.marketDataSubscription = await this.transport.subscribe<MarketData>(
+      this.marketDataSubscription = await activeTransport.subscribe<MarketData>(
         topic,
         (message) => {
           this.handleMarketDataMessage(message.data);
         }
       );
-      this.logger.info({ topic }, 'Subscribed to market data topic');
+      this.logger.info({ transport: this.currentTransport, topic }, 'Subscribed to market data topic');
     } catch (error) {
-      this.logger.error(error as Error, `Failed to subscribe to ${topic}`);
+      this.logger.error(error as Error, `Failed to subscribe to ${topic} on ${this.currentTransport}`);
     }
   }
 

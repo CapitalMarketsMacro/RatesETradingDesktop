@@ -14,6 +14,12 @@
   margin-bottom: 1rem;
 }
 
+.tob-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .tob-header h3 {
   margin: 0;
   color: #ffffff;

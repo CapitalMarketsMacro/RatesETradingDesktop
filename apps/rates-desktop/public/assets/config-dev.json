@@ -28,6 +28,19 @@
       "vpnName": "dev-vpn",
       "userName": "dev-user",
       "clientName": "rates-desktop-dev"
+    },
+    "nats": {
+      "url": "ws://MontuNobleNumbat2404:8224",
+      "name": "rates-desktop-dev",
+      "reconnect": {
+        "enabled": true,
+        "initialDelay": 2000,
+        "maxDelay": 30000,
+        "maxAttempts": 10
+      },
+      "timeout": 5000,
+      "pingInterval": 20000,
+      "maxPingOut": 2
     }
   },
   "marketData": {

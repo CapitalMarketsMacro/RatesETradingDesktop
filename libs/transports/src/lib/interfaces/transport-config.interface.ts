@@ -1,7 +1,7 @@
 /**
  * Transport type supported by the application
  */
-export type TransportType = 'amps' | 'solace' | 'websocket';
+export type TransportType = 'amps' | 'solace' | 'websocket' | 'nats';
 
 /**
  * AMPS-specific configuration
@@ -88,6 +88,47 @@ export interface WebSocketConfig {
 }
 
 /**
+ * NATS-specific configuration
+ */
+export interface NatsConfig {
+  /** NATS server URL(s) - can be a single URL or array of URLs for clustering */
+  url: string | string[];
+  /** Username for authentication */
+  user?: string;
+  /** Password or token for authentication */
+  password?: string;
+  /** Token for authentication (alternative to user/password) */
+  token?: string;
+  /** Client name for identification */
+  name?: string;
+  /** Whether to use TLS/SSL */
+  tls?: boolean;
+  /** Reconnection settings */
+  reconnect?: {
+    /** Whether to automatically reconnect */
+    enabled: boolean;
+    /** Initial delay before reconnecting in ms */
+    initialDelay?: number;
+    /** Maximum delay between reconnection attempts in ms */
+    maxDelay?: number;
+    /** Maximum number of reconnection attempts */
+    maxAttempts?: number;
+  };
+  /** Maximum number of reconnection attempts */
+  maxReconnectAttempts?: number;
+  /** Reconnect time wait in milliseconds */
+  reconnectTimeWait?: number;
+  /** Connection timeout in milliseconds */
+  timeout?: number;
+  /** Ping interval in milliseconds */
+  pingInterval?: number;
+  /** Maximum number of ping failures before considering connection lost */
+  maxPingOut?: number;
+  /** Additional NATS-specific options */
+  options?: Record<string, unknown>;
+}
+
+/**
  * Complete transport configuration
  */
 export interface TransportConfig {
@@ -99,4 +140,6 @@ export interface TransportConfig {
   solace?: SolaceConfig;
   /** WebSocket configuration (required when type is 'websocket') */
   websocket?: WebSocketConfig;
+  /** NATS configuration (required when type is 'nats') */
+  nats?: NatsConfig;
 }
