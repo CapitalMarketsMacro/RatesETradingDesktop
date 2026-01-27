@@ -96,7 +96,8 @@ export abstract class BaseTransportService {
       try {
         callback(error);
       } catch (e) {
-        console.error('Error in error callback:', e);
+        // Silently ignore errors in error callbacks to prevent infinite loops
+        // Child classes should handle logging if needed
       }
     });
   }

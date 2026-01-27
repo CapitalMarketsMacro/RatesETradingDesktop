@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   ITransportService,
   ConnectionStatus,
@@ -10,6 +10,7 @@ import {
 } from '../interfaces/transport.interface';
 import { SolaceConfig } from '../interfaces/transport-config.interface';
 import { BaseTransportService } from './base-transport.service';
+import { LoggerService } from '@rates-trading/logger';
 
 /**
  * Solace Transport Service Implementation
@@ -26,6 +27,7 @@ import { BaseTransportService } from './base-transport.service';
  */
 @Injectable()
 export class SolaceTransportService extends BaseTransportService implements ITransportService {
+  private logger = inject(LoggerService).child({ service: 'SolaceTransport' });
   private session: unknown = null;
   private subscriptions = new Map<
     string,
@@ -53,7 +55,7 @@ export class SolaceTransportService extends BaseTransportService implements ITra
     }
 
     if (this.isConnected()) {
-      console.warn('Solace: Already connected');
+      this.logger.warn('Already connected');
       return;
     }
 
@@ -197,7 +199,7 @@ export class SolaceTransportService extends BaseTransportService implements ITra
         subscriber: null,
       });
 
-      console.log(`Solace: Subscribed to ${topic} with options:`, options);
+      this.logger.info({ topic, options }, 'Subscribed to topic');
 
       return {
         id: subscriptionId,
@@ -252,7 +254,7 @@ export class SolaceTransportService extends BaseTransportService implements ITra
       //
       // this.session.send(solaceMessage);
 
-      console.log(`Solace: Published to ${topic}:`, message, options);
+      this.logger.debug({ topic }, 'Published to topic');
     } catch (error) {
       const transportError = this.createTransportError(
         error,
@@ -299,7 +301,7 @@ export class SolaceTransportService extends BaseTransportService implements ITra
       //   );
       // });
 
-      console.log(`Solace: Request to ${topic}:`, message, timeout);
+      this.logger.debug({ topic, timeout }, 'Request sent to topic');
 
       // Mock response
       return {
@@ -339,7 +341,7 @@ export class SolaceTransportService extends BaseTransportService implements ITra
       // }
 
       this.subscriptions.delete(subscriptionId);
-      console.log(`Solace: Unsubscribed from ${subscriptionId}`);
+      this.logger.debug({ subscriptionId }, 'Unsubscribed from subscription');
     } catch (error) {
       const transportError = this.createTransportError(
         error,

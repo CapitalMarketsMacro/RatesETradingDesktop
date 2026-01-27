@@ -9,9 +9,11 @@ import {
   effect,
   OnChanges,
   SimpleChanges,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AgGridAngular, AgGridModule } from 'ag-grid-angular';
+import { LoggerService } from '@rates-trading/logger';
 import {
   ColDef,
   GridApi,
@@ -54,6 +56,7 @@ export interface HighFrequencyUpdate<T = any> {
   styleUrl: './data-grid.css',
 })
 export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnChanges {
+  private logger = inject(LoggerService).child({ component: 'DataGrid' });
   @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
 
   @Input() columns: ColDef[] | string = [];
@@ -139,7 +142,7 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
       try {
         this.parsedColumns = JSON.parse(this.columns);
       } catch (error) {
-        console.error('Error parsing columns JSON:', error);
+        this.logger.error(error as Error, 'Error parsing columns JSON');
         this.parsedColumns = [];
       }
     } else {
@@ -223,7 +226,7 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
         try {
           this.parsedColumns = JSON.parse(this.columns);
         } catch (error) {
-          console.error('Error parsing columns JSON:', error);
+          this.logger.error(error as Error, 'Error parsing columns JSON');
         }
       } else {
         this.parsedColumns = this.columns;
@@ -406,7 +409,7 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
    */
   applyHighFrequencyUpdate(transaction: HighFrequencyUpdate<T>): void {
     if (!this.gridApi) {
-      console.warn('Grid API not ready for high-frequency update');
+      this.logger.warn('Grid API not ready for high-frequency update');
       return;
     }
     
@@ -432,7 +435,7 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
    */
   updateRows(rows: T[]): void {
     if (!this.gridApi) {
-      console.warn('Grid API not ready for updateRows');
+      this.logger.warn('Grid API not ready for updateRows');
       return;
     }
     
@@ -478,7 +481,7 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
    */
   removeRows(rows: T[]): void {
     if (!this.gridApi) {
-      console.warn('Grid API not ready for removeRows');
+      this.logger.warn('Grid API not ready for removeRows');
       return;
     }
     

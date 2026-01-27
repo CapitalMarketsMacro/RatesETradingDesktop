@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   ITransportService,
   ConnectionStatus,
@@ -10,6 +10,7 @@ import {
 } from '../interfaces/transport.interface';
 import { AmpsConfig } from '../interfaces/transport-config.interface';
 import { BaseTransportService } from './base-transport.service';
+import { LoggerService } from '@rates-trading/logger';
 
 // Import AMPS client
 import * as ampsModule from 'amps';
@@ -81,6 +82,7 @@ const amps = ampsModule as unknown as {
  */
 @Injectable()
 export class AmpsTransportService extends BaseTransportService implements ITransportService {
+  private logger = inject(LoggerService).child({ service: 'AmpsTransport' });
   private client: AmpsClient | null = null;
   private subscriptions = new Map<
     string,
@@ -110,7 +112,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
     }
 
     if (this.isConnected()) {
-      console.warn('AMPS: Already connected');
+      this.logger.warn('Already connected');
       return;
     }
 
@@ -123,14 +125,14 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
 
       // Set up disconnect handler for reconnection
       this.client.disconnectHandler((client: unknown, err: Error) => {
-        console.error('AMPS: Disconnected', err);
+        this.logger.error(err, 'Disconnected');
         this.handleDisconnect(err);
       });
 
       // Connect to AMPS server
-      console.log(`AMPS: Connecting to ${this.config.url}...`);
+      this.logger.info({ url: this.config.url }, 'Connecting to AMPS server');
       await this.client.connect(this.config.url);
-      console.log('AMPS: WebSocket connection established');
+      this.logger.debug('WebSocket connection established');
 
       // Reset reconnect attempts on successful connection
       this.reconnectAttempts = 0;
@@ -139,9 +141,9 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
         ConnectionStatus.Connected,
         `Connected to AMPS at ${this.config.url}`
       );
-      console.log('AMPS: Successfully connected');
+      this.logger.info({ url: this.config.url }, 'Successfully connected');
     } catch (error) {
-      console.error('AMPS: Connection failed', error);
+      this.logger.error(error as Error, 'Connection failed');
       const transportError = this.createTransportError(
         error,
         'AMPS_CONNECTION_ERROR',
@@ -187,7 +189,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
 
     const maxAttempts = this.config?.reconnect?.maxAttempts || 10;
     if (this.reconnectAttempts >= maxAttempts) {
-      console.error(`AMPS: Max reconnection attempts (${maxAttempts}) reached`);
+      this.logger.error(`Max reconnection attempts (${maxAttempts}) reached`);
       this.updateConnectionStatus(
         ConnectionStatus.Error,
         'Max reconnection attempts reached'
@@ -199,7 +201,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
     const maxDelay = this.config?.reconnect?.maxDelay || 30000;
     const delay = Math.min(initialDelay * Math.pow(2, this.reconnectAttempts), maxDelay);
 
-    console.log(`AMPS: Scheduling reconnect attempt ${this.reconnectAttempts + 1} in ${delay}ms`);
+    this.logger.debug({ attempt: this.reconnectAttempts + 1, delay }, 'Scheduling reconnect attempt');
     this.updateConnectionStatus(ConnectionStatus.Reconnecting, `Reconnecting in ${delay}ms`);
 
     this.reconnectTimer = setTimeout(async () => {
@@ -224,9 +226,9 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
     for (const [, sub] of subscriptionsCopy) {
       try {
         await this.subscribe(sub.topic, sub.callback);
-        console.log(`AMPS: Resubscribed to ${sub.topic}`);
+        this.logger.info({ topic: sub.topic }, 'Resubscribed to topic');
       } catch (error) {
-        console.error(`AMPS: Failed to resubscribe to ${sub.topic}`, error);
+        this.logger.error(error as Error, `Failed to resubscribe to ${sub.topic}`);
       }
     }
   }
@@ -260,7 +262,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
       this.client = null;
 
       this.updateConnectionStatus(ConnectionStatus.Disconnected, 'Disconnected from AMPS');
-      console.log('AMPS: Disconnected');
+      this.logger.info('Disconnected');
     } catch (error) {
       const transportError = this.createTransportError(
         error,
@@ -295,7 +297,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
           const transformedMessage = this.transformMessage<T>(message);
           callback(transformedMessage);
         } catch (error) {
-          console.error('AMPS: Error processing message', error);
+          this.logger.error(error as Error, 'Error processing message');
         }
       };
 
@@ -330,7 +332,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
         subId: subId || subscriptionId,
       });
 
-      console.log(`AMPS: Subscribed to ${topic} with ID: ${subscriptionId}`);
+      this.logger.info({ topic, subscriptionId }, 'Subscribed to topic');
 
       return {
         id: subscriptionId,
@@ -338,7 +340,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
         unsubscribe: () => this.unsubscribeById(subscriptionId),
       };
     } catch (error) {
-      console.error(`AMPS: Subscribe failed for ${topic}`, error);
+      this.logger.error(error as Error, `Subscribe failed for ${topic}`);
       const transportError = this.createTransportError(
         error,
         'AMPS_SUBSCRIBE_ERROR',
@@ -377,9 +379,9 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
       }
 
       await this.client.publish(topic, data, publishOptions);
-      console.log(`AMPS: Published to ${topic}`);
+      this.logger.debug({ topic }, 'Published to topic');
     } catch (error) {
-      console.error(`AMPS: Publish failed for ${topic}`, error);
+      this.logger.error(error as Error, `Publish failed for ${topic}`);
       const transportError = this.createTransportError(
         error,
         'AMPS_PUBLISH_ERROR',
@@ -431,10 +433,10 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
         sowOptions
       );
 
-      console.log(`AMPS: SOW query on ${topic} returned ${messages.length} records`);
+      this.logger.debug({ topic, recordCount: messages.length }, 'SOW query returned records');
       return messages;
     } catch (error) {
-      console.error(`AMPS: SOW query failed for ${topic}`, error);
+      this.logger.error(error as Error, `SOW query failed for ${topic}`);
       const transportError = this.createTransportError(error, 'AMPS_SOW_ERROR', true);
       this.notifyError(transportError);
       throw error;
@@ -467,7 +469,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
           const transformedMessage = this.transformMessage<T>(message);
           callback(transformedMessage);
         } catch (error) {
-          console.error('AMPS: Error processing SOW message', error);
+          this.logger.error(error as Error, 'Error processing SOW message');
         }
       };
 
@@ -498,7 +500,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
         subId: subId || subscriptionId,
       });
 
-      console.log(`AMPS: SOW and subscribed to ${topic} with ID: ${subscriptionId}`);
+      this.logger.info({ topic, subscriptionId }, 'SOW and subscribed to topic');
 
       return {
         id: subscriptionId,
@@ -506,7 +508,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
         unsubscribe: () => this.unsubscribeById(subscriptionId),
       };
     } catch (error) {
-      console.error(`AMPS: SOW and subscribe failed for ${topic}`, error);
+      this.logger.error(error as Error, `SOW and subscribe failed for ${topic}`);
       const transportError = this.createTransportError(
         error,
         'AMPS_SOW_SUBSCRIBE_ERROR',
@@ -527,9 +529,9 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
 
     try {
       await this.client.sowDelete(topic, filter);
-      console.log(`AMPS: SOW delete on ${topic} with filter: ${filter}`);
+      this.logger.debug({ topic, filter }, 'SOW delete executed');
     } catch (error) {
-      console.error(`AMPS: SOW delete failed for ${topic}`, error);
+      this.logger.error(error as Error, `SOW delete failed for ${topic}`);
       const transportError = this.createTransportError(
         error,
         'AMPS_SOW_DELETE_ERROR',
@@ -560,7 +562,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
           const transformedMessage = this.transformMessage<T>(message);
           callback(transformedMessage);
         } catch (error) {
-          console.error('AMPS: Error processing delta message', error);
+          this.logger.error(error as Error, 'Error processing delta message');
         }
       };
 
@@ -585,7 +587,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
         subId: subId || subscriptionId,
       });
 
-      console.log(`AMPS: Delta subscribed to ${topic} with ID: ${subscriptionId}`);
+      this.logger.info({ topic, subscriptionId }, 'Delta subscribed to topic');
 
       return {
         id: subscriptionId,
@@ -593,7 +595,7 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
         unsubscribe: () => this.unsubscribeById(subscriptionId),
       };
     } catch (error) {
-      console.error(`AMPS: Delta subscribe failed for ${topic}`, error);
+      this.logger.error(error as Error, `Delta subscribe failed for ${topic}`);
       const transportError = this.createTransportError(
         error,
         'AMPS_DELTA_SUBSCRIBE_ERROR',
@@ -619,9 +621,9 @@ export class AmpsTransportService extends BaseTransportService implements ITrans
       }
 
       this.subscriptions.delete(subscriptionId);
-      console.log(`AMPS: Unsubscribed from ${subscriptionId}`);
+      this.logger.debug({ subscriptionId }, 'Unsubscribed from subscription');
     } catch (error) {
-      console.error(`AMPS: Unsubscribe failed for ${subscriptionId}`, error);
+      this.logger.error(error as Error, `Unsubscribe failed for ${subscriptionId}`);
       // Still remove from local tracking
       this.subscriptions.delete(subscriptionId);
       const transportError = this.createTransportError(

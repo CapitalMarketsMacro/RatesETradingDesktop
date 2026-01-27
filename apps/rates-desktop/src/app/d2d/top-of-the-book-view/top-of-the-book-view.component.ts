@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MarketData, MarketDataGridRow, transformMarketDataToGridRow } from '@rates-trading/data-access';
 import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
 import { ConfigurationService } from '@rates-trading/configuration';
+import { LoggerService } from '@rates-trading/logger';
 import { formatTreasury32nds } from '@rates-trading/shared-utils';
 import { Subscription, filter, take } from 'rxjs';
 import { MessageService } from 'primeng/api';
@@ -59,6 +60,7 @@ interface TradingPopoverData {
 export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   private transport = inject(TRANSPORT_SERVICE);
   private configService = inject(ConfigurationService);
+  private logger = inject(LoggerService).child({ component: 'TopOfTheBookView' });
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
   private messageService = inject(MessageService);
@@ -153,9 +155,9 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
           this.handleMarketDataMessage(message.data);
         }
       );
-      console.log(`TopOfTheBook: Subscribed to market data topic: ${topic}`);
+      this.logger.info({ topic }, 'Subscribed to market data topic');
     } catch (error) {
-      console.error(`TopOfTheBook: Failed to subscribe to ${topic}:`, error);
+      this.logger.error(error as Error, `Failed to subscribe to ${topic}`);
     }
   }
 

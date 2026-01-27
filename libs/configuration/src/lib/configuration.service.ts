@@ -1,13 +1,15 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, map, shareReplay } from 'rxjs/operators';
 import { RatesAppConfiguration } from './rates-app-configuration';
+import { LoggerService } from '@rates-trading/logger';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ConfigurationService {
+  private logger = inject(LoggerService).child({ service: 'ConfigurationService' });
   private configCache$?: Observable<RatesAppConfiguration>;
   private currentConfig?: RatesAppConfiguration;
   private currentEnvironment?: string;
@@ -56,7 +58,7 @@ export class ConfigurationService {
         return config;
       }),
       catchError((error) => {
-        console.error(`Failed to load configuration from ${configPath}:`, error);
+        this.logger.error(error as Error, `Failed to load configuration from ${configPath}`);
         // Fallback to dev config if available
         if (env !== 'dev') {
           return this.http.get<RatesAppConfiguration>('assets/config-dev.json').pipe(
@@ -69,7 +71,7 @@ export class ConfigurationService {
               return config;
             }),
             catchError((fallbackError) => {
-              console.error('Failed to load fallback configuration:', fallbackError);
+              this.logger.error(fallbackError as Error, 'Failed to load fallback configuration');
               return throwError(
                 () =>
                   new Error(

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { DataGrid, ColDef } from '@rates-trading/ui-components';
 import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
 import { ConfigurationService } from '@rates-trading/configuration';
+import { LoggerService } from '@rates-trading/logger';
 import { formatTreasury32nds } from '@rates-trading/shared-utils';
 import { ValueFormatterParams, CellClassParams, GridOptions } from 'ag-grid-community';
 import { Subscription, filter, take } from 'rxjs';
@@ -26,6 +27,7 @@ export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
   
   private transport = inject(TRANSPORT_SERVICE);
   private configService = inject(ConfigurationService);
+  private logger = inject(LoggerService).child({ component: 'ExecutionsBlotter' });
   private executionsSubscription?: TransportSubscription;
   private connectionSubscription?: Subscription;
 
@@ -165,9 +167,9 @@ export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
           this.handleExecutionMessage(message.data);
         }
       );
-      console.log(`ExecutionsBlotter: Subscribed to executions topic: ${topic}`);
+      this.logger.info({ topic }, 'Subscribed to executions topic');
     } catch (error) {
-      console.error(`ExecutionsBlotter: Failed to subscribe to ${topic}:`, error);
+      this.logger.error(error as Error, `Failed to subscribe to ${topic}`);
     }
   }
 

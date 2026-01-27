@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { RatesData } from '@rates-trading/data-access';
 import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
 import { TRANSPORT_SERVICE, ConnectionStatus } from '@rates-trading/transports';
+import { LoggerService } from '@rates-trading/logger';
 
 export interface TreasurySecurity {
   cusip: string;
@@ -39,6 +40,7 @@ export class App implements OnInit, OnDestroy {
   private ratesData = inject(RatesData);
   private configService = inject(ConfigurationService);
   private transport = inject(TRANSPORT_SERVICE);
+  private logger = inject(LoggerService).child({ component: 'App' });
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
   
@@ -99,7 +101,7 @@ export class App implements OnInit, OnDestroy {
     this.transport.connectionStatus$.subscribe((status) => {
       this.ngZone.run(() => {
         this.connectionStatus = status;
-        console.log('Transport connection status:', status);
+        this.logger.debug({ status }, 'Transport connection status changed');
         this.cdr.detectChanges();
       });
     });
@@ -122,11 +124,11 @@ export class App implements OnInit, OnDestroy {
    */
   private async connectToTransport(): Promise<void> {
     try {
-      console.log('Connecting to AMPS transport...');
+      this.logger.info('Connecting to AMPS transport...');
       await this.transport.connect();
-      console.log('Connected to AMPS transport');
+      this.logger.info('Connected to AMPS transport');
     } catch (error) {
-      console.error('Failed to connect to AMPS:', error);
+      this.logger.error(error as Error, 'Failed to connect to AMPS');
     }
   }
 
@@ -136,9 +138,9 @@ export class App implements OnInit, OnDestroy {
   private async disconnectFromTransport(): Promise<void> {
     try {
       await this.transport.disconnect();
-      console.log('Disconnected from AMPS transport');
+      this.logger.info('Disconnected from AMPS transport');
     } catch (error) {
-      console.error('Error disconnecting from transport:', error);
+      this.logger.error(error as Error, 'Error disconnecting from transport');
     }
   }
 

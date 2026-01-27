@@ -8,6 +8,7 @@ import Nora from '@primeuix/themes/nora';
 import { appRoutes } from './app.routes';
 import { provideTransport } from '@rates-trading/transports';
 import { ConfigurationService } from '@rates-trading/configuration';
+import { LoggerService } from '@rates-trading/logger';
 import { firstValueFrom } from 'rxjs';
 
 const bluePreset = definePreset(Nora, {
@@ -33,9 +34,10 @@ const bluePreset = definePreset(Nora, {
  */
 function initializeApp(): () => Promise<void> {
   const configService = inject(ConfigurationService);
+  const logger = inject(LoggerService).child({ component: 'AppConfig' });
   return async () => {
     await firstValueFrom(configService.loadConfiguration());
-    console.log('Configuration loaded successfully');
+    logger.info('Configuration loaded successfully');
   };
 }
 
