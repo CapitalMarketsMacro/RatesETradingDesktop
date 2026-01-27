@@ -64,5 +64,9 @@
   "ampsTopics": {
     "marketData": "rates/marketData",
     "executions": "rates/executions"
+  },
+  "natsTopics": {
+    "marketData": "rates.marketData",
+    "executions": "rates.executions"
   }
 }

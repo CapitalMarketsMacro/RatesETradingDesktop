@@ -272,7 +272,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
       topic = config?.ampsTopics?.marketData || 'rates/marketData';
     } else {
       // NATS uses dot notation instead of slash
-      topic = 'rates.marketData';
+      topic = config?.natsTopics?.marketData || 'rates.marketData';
     }
     
     try {

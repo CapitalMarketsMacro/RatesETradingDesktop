@@ -101,24 +101,10 @@ export class LoggerService {
       };
     }
 
-    // Add pretty print for development if enabled
-    if (this.config.prettyPrint && typeof window === 'undefined') {
-      // Only in Node.js environment
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const pinoPretty = require('pino-pretty');
-        pinoOptions.transport = {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'HH:MM:ss.l',
-            ignore: 'pid,hostname',
-          },
-        };
-      } catch (e) {
-        // pino-pretty not available, continue without it
-      }
-    }
+    // Pretty print is disabled in browser builds to avoid bundling Node.js modules
+    // Pretty print can be enabled in Node.js environments (e.g., SSR, tests)
+    // by setting prettyPrint: true in the config, but it won't work in browser bundles
+    // For browser builds, logs will use the browser console formatter above
 
     this.logger = pino(pinoOptions);
   }

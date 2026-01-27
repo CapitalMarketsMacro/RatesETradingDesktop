@@ -94,6 +94,12 @@ export interface RatesAppConfiguration {
     executions?: string;
   };
 
+  /** NATS topics configuration */
+  natsTopics?: {
+    marketData?: string;
+    executions?: string;
+  };
+
   /** Trading configuration */
   trading?: {
     enabled: boolean;
