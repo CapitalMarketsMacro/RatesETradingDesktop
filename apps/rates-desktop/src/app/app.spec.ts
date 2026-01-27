@@ -1,16 +1,52 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
-import { NxWelcome } from './nx-welcome';
 import { RouterModule } from '@angular/router';
-import { UiComponentsModule } from '@rates-trading/ui-components';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { ConfigurationService } from '@rates-trading/configuration';
+import { LoggerService } from '@rates-trading/logger';
+import { TRANSPORT_SERVICE } from '@rates-trading/transports';
+import { of } from 'rxjs';
 
 describe('App', () => {
   beforeEach(async () => {
+    // Mock configuration service
+    const mockConfigService = {
+      loadConfiguration: () => of({
+        app: { name: 'Rates E-Trading Desktop', version: '1.0.0', environment: 'test' },
+        transport: { type: 'amps' as const },
+      }),
+      getConfiguration: () => ({
+        app: { name: 'Rates E-Trading Desktop', version: '1.0.0', environment: 'test' },
+        transport: { type: 'amps' as const },
+      }),
+    };
+
+    // Mock transport service
+    const mockTransportService = {
+      connectionStatus$: of({}),
+      connect: () => Promise.resolve(),
+      disconnect: () => Promise.resolve(),
+      isConnected: () => false,
+    };
+
+    // Mock logger service
+    const mockLoggerService = {
+      child: () => ({
+        info: () => {},
+        debug: () => {},
+        error: () => {},
+        warn: () => {},
+      }),
+    };
+
     await TestBed.configureTestingModule({
-      imports: [RouterModule.forRoot([]), UiComponentsModule],
-      declarations: [App, NxWelcome],
-      schemas: [NO_ERRORS_SCHEMA],
+      imports: [App, RouterModule.forRoot([])],
+      providers: [
+        provideHttpClient(),
+        { provide: ConfigurationService, useValue: mockConfigService },
+        { provide: TRANSPORT_SERVICE, useValue: mockTransportService },
+        { provide: LoggerService, useValue: mockLoggerService },
+      ],
     }).compileComponents();
   });
 
