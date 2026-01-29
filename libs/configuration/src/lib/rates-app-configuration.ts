@@ -100,6 +100,12 @@ export interface RatesAppConfiguration {
     executions?: string;
   };
 
+  /** Solace topics configuration */
+  solaceTopics?: {
+    marketData?: string;
+    executions?: string;
+  };
+
   /** Trading configuration */
   trading?: {
     enabled: boolean;

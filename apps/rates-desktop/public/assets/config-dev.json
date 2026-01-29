@@ -24,10 +24,17 @@
       }
     },
     "solace": {
-      "url": "ws://localhost:8008",
-      "vpnName": "dev-vpn",
-      "userName": "dev-user",
-      "clientName": "rates-desktop-dev"
+      "url": "wss://mr-connection-phl1nf5g1gy.messaging.solace.cloud:443",
+      "vpnName": "capitalmarkets",
+      "userName": "solace-cloud-client",
+      "password": "ftlhfjdlhp12un7lea63uuadkv",
+      "clientName": "rates-desktop-dev",
+      "connectTimeout": 10000,
+      "reconnect": {
+        "enabled": true,
+        "retryWaitMs": 3000,
+        "maxAttempts": 10
+      }
     },
     "nats": {
       "url": "ws://MontuNobleNumbat2404:8224",
@@ -75,5 +82,9 @@
   "natsTopics": {
     "marketData": "rates.marketData",
     "executions": "rates.executions"
+  },
+  "solaceTopics": {
+    "marketData": "rates/marketData/treasury",
+    "executions": "rates/executions"
   }
 }

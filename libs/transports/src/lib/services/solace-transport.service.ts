@@ -12,43 +12,72 @@ import { SolaceConfig } from '../interfaces/transport-config.interface';
 import { BaseTransportService } from './base-transport.service';
 import { LoggerService } from '@rates-trading/logger';
 
+// Solace JavaScript API - package.json "browser" field resolves to lib-browser for Angular
+import solace from 'solclientjs';
+
+/** Solace session type (EventEmitter with connect, disconnect, subscribe, etc.) */
+type SolaceSession = ReturnType<typeof solace.SolclientFactory.createSession>;
+
+/** Event names for Session (EventEmitter expects string | symbol) */
+const SessionEvent = {
+  MESSAGE: solace.SessionEventCode.MESSAGE as unknown as string,
+  UP_NOTICE: solace.SessionEventCode.UP_NOTICE as unknown as string,
+  CONNECT_FAILED_ERROR: solace.SessionEventCode.CONNECT_FAILED_ERROR as unknown as string,
+  DISCONNECTED: solace.SessionEventCode.DISCONNECTED as unknown as string,
+  RECONNECTING_NOTICE: solace.SessionEventCode.RECONNECTING_NOTICE as unknown as string,
+  RECONNECTED_NOTICE: solace.SessionEventCode.RECONNECTED_NOTICE as unknown as string,
+  SUBSCRIPTION_OK: solace.SessionEventCode.SUBSCRIPTION_OK as unknown as string,
+  SUBSCRIPTION_ERROR: solace.SessionEventCode.SUBSCRIPTION_ERROR as unknown as string,
+  DOWN_ERROR: solace.SessionEventCode.DOWN_ERROR as unknown as string,
+};
+
+/** Minimal Solace message shape for parsing (API may return string | Uint8Array | null) */
+interface SolaceMessageLike {
+  getBinaryAttachment(): string | Uint8Array | ArrayBuffer | null;
+  getDestination?(): { getName?(): string };
+  getSenderTimestamp?(): number;
+}
+
+/** One-time Solace factory initialization */
+let solaceFactoryInitialized = false;
+
+function initSolaceFactory(): void {
+  if (solaceFactoryInitialized) {
+    return;
+  }
+  const factoryProps = new solace.SolclientFactoryProperties();
+  factoryProps.profile = solace.SolclientFactoryProfiles.version10;
+  solace.SolclientFactory.init(factoryProps);
+  solaceFactoryInitialized = true;
+}
+
 /**
  * Solace Transport Service Implementation
  *
- * This service provides messaging capabilities using Solace PubSub+.
- * Solace is an enterprise messaging platform with features like:
- * - Guaranteed messaging
- * - Topic-based pub/sub
- * - Request/reply patterns
- * - Queue-based messaging
- *
- * Note: This implementation uses a mock/stub approach. In production, you would integrate
- * with the actual Solace JavaScript client library (solclientjs).
+ * Provides messaging using Solace PubSub+ via the solclientjs library.
+ * Supports topic subscribe/unsubscribe, publish, and request/reply.
  */
 @Injectable()
 export class SolaceTransportService extends BaseTransportService implements ITransportService {
   private logger = inject(LoggerService).child({ service: 'SolaceTransport' });
-  private session: unknown = null;
+  private session: SolaceSession | null = null;
   private subscriptions = new Map<
     string,
-    { topic: string; callback: MessageCallback; subscriber: unknown }
+    { topic: string; callback: MessageCallback; correlationKey: string }
   >();
   private config: SolaceConfig | null = null;
+  private messageHandler = (message: SolaceMessageLike): void => {
+    this.handleSolaceMessage(message);
+  };
 
   constructor() {
     super();
   }
 
-  /**
-   * Initializes the service with Solace configuration
-   */
   initialize(config: SolaceConfig): void {
     this.config = config;
   }
 
-  /**
-   * Establishes a connection to the Solace broker
-   */
   async connect(): Promise<void> {
     if (!this.config) {
       throw new Error('Solace configuration not initialized. Call initialize() first.');
@@ -62,45 +91,59 @@ export class SolaceTransportService extends BaseTransportService implements ITra
     this.updateConnectionStatus(ConnectionStatus.Connecting, 'Connecting to Solace broker');
 
     try {
-      // In production, this would use the actual Solace client:
-      // import * as solace from 'solclientjs';
-      //
-      // const factoryProps = new solace.SolclientFactoryProperties();
-      // factoryProps.profile = solace.SolclientFactoryProfiles.version10;
-      // solace.SolclientFactory.init(factoryProps);
-      //
-      // const sessionProperties = {
-      //   url: this.config.url,
-      //   vpnName: this.config.vpnName,
-      //   userName: this.config.userName,
-      //   password: this.config.password,
-      //   clientName: this.config.clientName,
-      //   connectTimeoutInMsecs: this.config.connectTimeout,
-      //   keepAliveIntervalInMsecs: this.config.keepAliveInterval,
-      //   keepAliveIntervalsLimit: this.config.keepAliveIntervalLimit,
-      //   generateSendTimestamps: this.config.generateSendTimestamps,
-      //   generateReceiveTimestamps: this.config.generateReceiveTimestamps,
-      //   includeSenderId: this.config.includeSenderId,
-      //   reconnectRetries: this.config.reconnect?.maxAttempts,
-      //   reconnectRetryWaitInMsecs: this.config.reconnect?.retryWaitMs,
-      // };
-      //
-      // this.session = solace.SolclientFactory.createSession(sessionProperties);
-      // this.setupSessionEventHandlers();
-      // await new Promise((resolve, reject) => {
-      //   this.session.on(solace.SessionEventCode.UP_NOTICE, resolve);
-      //   this.session.on(solace.SessionEventCode.CONNECT_FAILED_ERROR, reject);
-      //   this.session.connect();
-      // });
+      initSolaceFactory();
 
-      // Mock connection for development
-      await this.mockConnect();
+      const sessionProperties = {
+        url: this.config.url,
+        vpnName: this.config.vpnName,
+        userName: this.config.userName,
+        password: this.config.password ?? '',
+        clientName: this.config.clientName ?? 'rates-desktop',
+        connectTimeoutInMsecs: this.config.connectTimeout ?? 10000,
+        keepAliveIntervalInMsecs: this.config.keepAliveInterval ?? 3000,
+        keepAliveIntervalsLimit: this.config.keepAliveIntervalLimit ?? 3,
+        generateSendTimestamps: this.config.generateSendTimestamps ?? false,
+        generateReceiveTimestamps: this.config.generateReceiveTimestamps ?? false,
+        includeSenderId: this.config.includeSenderId ?? false,
+        reconnectRetries: this.config.reconnect?.maxAttempts ?? 10,
+        reconnectRetryWaitInMsecs: this.config.reconnect?.retryWaitMs ?? 3000,
+      };
+
+      const session = solace.SolclientFactory.createSession(sessionProperties);
+      this.session = session;
+
+      await new Promise<void>((resolve, reject) => {
+        session.on(SessionEvent.UP_NOTICE, () => {
+          this.logger.info('Solace session connected');
+          resolve();
+        });
+        session.on(SessionEvent.CONNECT_FAILED_ERROR, (event: { infoStr?: string }) => {
+          reject(new Error(event?.infoStr ?? 'Solace connection failed'));
+        });
+        session.on(SessionEvent.DISCONNECTED, () => {
+          this.updateConnectionStatus(ConnectionStatus.Disconnected, 'Disconnected from Solace');
+        });
+        session.on(SessionEvent.RECONNECTING_NOTICE, () => {
+          this.updateConnectionStatus(ConnectionStatus.Reconnecting, 'Reconnecting to Solace');
+        });
+        session.on(SessionEvent.RECONNECTED_NOTICE, () => {
+          this.updateConnectionStatus(ConnectionStatus.Connected, 'Reconnected to Solace');
+        });
+        session.on(SessionEvent.MESSAGE, this.messageHandler);
+
+        try {
+          session.connect();
+        } catch (err) {
+          reject(err);
+        }
+      });
 
       this.updateConnectionStatus(
         ConnectionStatus.Connected,
         `Connected to Solace at ${this.config.url}`
       );
     } catch (error) {
+      this.session = null;
       const transportError = this.createTransportError(
         error,
         'SOLACE_CONNECTION_ERROR',
@@ -116,26 +159,51 @@ export class SolaceTransportService extends BaseTransportService implements ITra
     }
   }
 
-  /**
-   * Disconnects from the Solace broker
-   */
   async disconnect(): Promise<void> {
-    if (!this.isConnected()) {
+    if (!this.isConnected() || !this.session) {
       return;
     }
 
+    const sessionToDisconnect = this.session;
+    this.updateConnectionStatus(ConnectionStatus.Disconnected, 'Disconnecting from Solace');
+
     try {
-      // Unsubscribe from all subscriptions
+      sessionToDisconnect.removeListener(SessionEvent.MESSAGE, this.messageHandler);
+
       const unsubscribePromises = Array.from(this.subscriptions.keys()).map((id) =>
         this.unsubscribeById(id)
       );
       await Promise.all(unsubscribePromises);
 
-      // In production: this.session.disconnect();
-      this.session = null;
-
-      this.updateConnectionStatus(ConnectionStatus.Disconnected, 'Disconnected from Solace');
+      await new Promise<void>((resolve, reject) => {
+        const onDisconnected = () => {
+          sessionToDisconnect.removeListener(SessionEvent.DISCONNECTED, onDisconnected);
+          sessionToDisconnect.removeListener(SessionEvent.DOWN_ERROR, onError);
+          try {
+            sessionToDisconnect.dispose();
+          } catch (e) {
+            this.logger.warn({ err: e }, 'Error disposing Solace session');
+          }
+          this.session = null;
+          resolve();
+        };
+        const onError = (event: { infoStr?: string }) => {
+          sessionToDisconnect.removeListener(SessionEvent.DISCONNECTED, onDisconnected);
+          sessionToDisconnect.removeListener(SessionEvent.DOWN_ERROR, onError);
+          try {
+            sessionToDisconnect.dispose();
+          } catch (e) {
+            this.logger.warn({ err: e }, 'Error disposing Solace session');
+          }
+          this.session = null;
+          reject(new Error(event?.infoStr ?? 'Solace disconnect error'));
+        };
+        sessionToDisconnect.on(SessionEvent.DISCONNECTED, onDisconnected);
+        sessionToDisconnect.on(SessionEvent.DOWN_ERROR, onError);
+        sessionToDisconnect.disconnect();
+      });
     } catch (error) {
+      this.session = null;
       const transportError = this.createTransportError(
         error,
         'SOLACE_DISCONNECT_ERROR',
@@ -146,60 +214,49 @@ export class SolaceTransportService extends BaseTransportService implements ITra
     }
   }
 
-  /**
-   * Subscribes to a topic on Solace
-   */
   async subscribe<T = unknown>(
     topic: string,
     callback: MessageCallback<T>,
     options?: SubscriptionOptions
   ): Promise<Subscription> {
-    if (!this.isConnected()) {
+    const session = this.session;
+    if (!session || !this.isConnected()) {
       throw new Error('Not connected to Solace. Call connect() first.');
     }
 
     const subscriptionId = this.generateSubscriptionId();
+    const requestTimeout = options?.timeout ?? 10000;
 
     try {
-      // In production, this would use the actual Solace client:
-      // const topicDestination = solace.SolclientFactory.createTopicDestination(topic);
-      //
-      // const messageHandler = (message: solace.Message) => {
-      //   callback(this.transformMessage(message));
-      // };
-      //
-      // if (options?.queueName) {
-      //   // Queue-based subscription for guaranteed messaging
-      //   const messageConsumer = this.session.createMessageConsumer({
-      //     queueDescriptor: { name: options.queueName, type: solace.QueueType.QUEUE },
-      //     acknowledgeMode: options.ackMode === 'manual'
-      //       ? solace.MessageConsumerAcknowledgeMode.CLIENT
-      //       : solace.MessageConsumerAcknowledgeMode.AUTO,
-      //   });
-      //   messageConsumer.on(solace.MessageConsumerEventName.MESSAGE, messageHandler);
-      //   messageConsumer.connect();
-      // } else {
-      //   // Direct topic subscription
-      //   this.session.subscribe(
-      //     topicDestination,
-      //     true,
-      //     subscriptionId,
-      //     options?.timeout || 10000
-      //   );
-      //   this.session.on(solace.SessionEventCode.MESSAGE, (message) => {
-      //     if (message.getDestination().getName() === topic) {
-      //       messageHandler(message);
-      //     }
-      //   });
-      // }
+      const topicDestination = solace.SolclientFactory.createTopicDestination(topic);
 
       this.subscriptions.set(subscriptionId, {
         topic,
         callback: callback as MessageCallback,
-        subscriber: null,
+        correlationKey: subscriptionId,
       });
 
-      this.logger.info({ topic, options }, 'Subscribed to topic');
+      await new Promise<void>((resolve, reject) => {
+        const onSubOk = (event: { correlationKey?: string }) => {
+          if (event?.correlationKey === subscriptionId) {
+            session.removeListener(SessionEvent.SUBSCRIPTION_OK, onSubOk);
+            session.removeListener(SessionEvent.SUBSCRIPTION_ERROR, onSubErr);
+            resolve();
+          }
+        };
+        const onSubErr = (event: { reason?: string; correlationKey?: string }) => {
+          if (event?.correlationKey === subscriptionId) {
+            session.removeListener(SessionEvent.SUBSCRIPTION_OK, onSubOk);
+            session.removeListener(SessionEvent.SUBSCRIPTION_ERROR, onSubErr);
+            reject(new Error(event?.reason ?? 'Subscribe failed'));
+          }
+        };
+        session.on(SessionEvent.SUBSCRIPTION_OK, onSubOk);
+        session.on(SessionEvent.SUBSCRIPTION_ERROR, onSubErr);
+        session.subscribe(topicDestination, true, subscriptionId, requestTimeout);
+      });
+
+      this.logger.info({ topic, subscriptionId }, 'Subscribed to topic');
 
       return {
         id: subscriptionId,
@@ -207,6 +264,7 @@ export class SolaceTransportService extends BaseTransportService implements ITra
         unsubscribe: () => this.unsubscribeById(subscriptionId),
       };
     } catch (error) {
+      this.subscriptions.delete(subscriptionId);
       const transportError = this.createTransportError(
         error,
         'SOLACE_SUBSCRIBE_ERROR',
@@ -217,43 +275,34 @@ export class SolaceTransportService extends BaseTransportService implements ITra
     }
   }
 
-  /**
-   * Publishes a message to a topic on Solace
-   */
   async publish<T = unknown>(
     topic: string,
     message: T,
     options?: PublishOptions
   ): Promise<void> {
-    if (!this.isConnected()) {
+    const session = this.session;
+    if (!session || !this.isConnected()) {
       throw new Error('Not connected to Solace. Call connect() first.');
     }
 
     try {
-      // In production:
-      // const solaceMessage = solace.SolclientFactory.createMessage();
-      // solaceMessage.setDestination(
-      //   solace.SolclientFactory.createTopicDestination(topic)
-      // );
-      // solaceMessage.setBinaryAttachment(JSON.stringify(message));
-      // solaceMessage.setDeliveryMode(
-      //   options?.deliveryMode === 'persistent'
-      //     ? solace.MessageDeliveryModeType.PERSISTENT
-      //     : solace.MessageDeliveryModeType.DIRECT
-      // );
-      //
-      // if (options?.correlationId) {
-      //   solaceMessage.setCorrelationId(options.correlationId);
-      // }
-      // if (options?.ttl) {
-      //   solaceMessage.setTimeToLive(options.ttl);
-      // }
-      // if (options?.priority !== undefined) {
-      //   solaceMessage.setPriority(options.priority);
-      // }
-      //
-      // this.session.send(solaceMessage);
+      const solaceMessage = solace.SolclientFactory.createMessage();
+      solaceMessage.setDestination(solace.SolclientFactory.createTopicDestination(topic));
+      const payload = typeof message === 'string' ? message : JSON.stringify(message);
+      solaceMessage.setBinaryAttachment(payload);
+      solaceMessage.setDeliveryMode(
+        options?.deliveryMode === 'persistent'
+          ? solace.MessageDeliveryModeType.PERSISTENT
+          : solace.MessageDeliveryModeType.DIRECT
+      );
+      if (options?.correlationId) {
+        solaceMessage.setCorrelationId(options.correlationId);
+      }
+      if (options?.ttl) {
+        solaceMessage.setTimeToLive(options.ttl);
+      }
 
+      session.send(solaceMessage);
       this.logger.debug({ topic }, 'Published to topic');
     } catch (error) {
       const transportError = this.createTransportError(
@@ -266,83 +315,137 @@ export class SolaceTransportService extends BaseTransportService implements ITra
     }
   }
 
-  /**
-   * Sends a request and waits for a reply (request/reply pattern)
-   */
   async request<TRequest, TResponse>(
     topic: string,
     message: TRequest,
     timeout = 10000
   ): Promise<TransportMessage<TResponse>> {
-    if (!this.isConnected()) {
+    const session = this.session;
+    if (!session || !this.isConnected()) {
       throw new Error('Not connected to Solace. Call connect() first.');
     }
 
-    try {
-      // In production:
-      // const solaceMessage = solace.SolclientFactory.createMessage();
-      // solaceMessage.setDestination(
-      //   solace.SolclientFactory.createTopicDestination(topic)
-      // );
-      // solaceMessage.setBinaryAttachment(JSON.stringify(message));
-      // solaceMessage.setDeliveryMode(solace.MessageDeliveryModeType.DIRECT);
-      //
-      // return new Promise((resolve, reject) => {
-      //   this.session.sendRequest(
-      //     solaceMessage,
-      //     timeout,
-      //     (session, replyMessage) => {
-      //       resolve(this.transformMessage(replyMessage));
-      //     },
-      //     (session, event) => {
-      //       reject(new Error(`Request failed: ${event.infoStr}`));
-      //     },
-      //     null
-      //   );
-      // });
+    return new Promise((resolve, reject) => {
+      const solaceMessage = solace.SolclientFactory.createMessage();
+      solaceMessage.setDestination(solace.SolclientFactory.createTopicDestination(topic));
+      const payload = typeof message === 'string' ? message : JSON.stringify(message);
+      solaceMessage.setBinaryAttachment(payload);
+      solaceMessage.setDeliveryMode(solace.MessageDeliveryModeType.DIRECT);
 
-      this.logger.debug({ topic, timeout }, 'Request sent to topic');
-
-      // Mock response
-      return {
-        data: {} as TResponse,
-        topic,
-        timestamp: new Date(),
-      };
-    } catch (error) {
-      const transportError = this.createTransportError(
-        error,
-        'SOLACE_REQUEST_ERROR',
-        true
+      session.sendRequest(
+        solaceMessage,
+        timeout,
+        (_session: unknown, replyMessage: unknown) => {
+          resolve(this.transformSolaceMessage(replyMessage as SolaceMessageLike));
+        },
+        (_session: unknown, error: unknown) => {
+          const msg =
+            error != null && typeof error === 'object' && 'infoStr' in error
+              ? String((error as { infoStr?: string }).infoStr)
+              : error != null
+                ? String(error)
+                : 'Request failed';
+          reject(new Error(msg || 'Request failed'));
+        },
+        undefined
       );
-      this.notifyError(transportError);
-      throw error;
+    });
+  }
+
+  private handleSolaceMessage(solaceMessage: SolaceMessageLike): void {
+    const topicName = solaceMessage.getDestination?.()?.getName?.() ?? '';
+    for (const sub of this.subscriptions.values()) {
+      if (this.topicMatches(sub.topic, topicName)) {
+        try {
+          const transportMsg = this.transformSolaceMessage(solaceMessage);
+          sub.callback(transportMsg);
+        } catch (err) {
+          this.logger.error(err as Error, 'Error in Solace message callback');
+        }
+        return;
+      }
     }
   }
 
-  /**
-   * Unsubscribes from a subscription by ID
-   */
+  /** Simple topic match: exact or prefix (e.g. "rates/>" or "rates/marketData") */
+  private topicMatches(subTopic: string, receivedTopic: string): boolean {
+    if (subTopic === receivedTopic) {
+      return true;
+    }
+    if (subTopic.endsWith('>')) {
+      const prefix = subTopic.slice(0, -1);
+      return receivedTopic === prefix || receivedTopic.startsWith(prefix);
+    }
+    return false;
+  }
+
+  private transformSolaceMessage<T>(solaceMessage: SolaceMessageLike): TransportMessage<T> {
+    const raw = solaceMessage.getBinaryAttachment();
+    const str =
+      raw == null
+        ? ''
+        : typeof raw === 'string'
+          ? raw
+          : new TextDecoder().decode(raw as ArrayBuffer | Uint8Array);
+    let data: T;
+    try {
+      data = (str ? JSON.parse(str) : {}) as T;
+    } catch {
+      data = str as unknown as T;
+    }
+    const topic = solaceMessage.getDestination?.()?.getName?.() ?? '';
+    const ts = solaceMessage.getSenderTimestamp?.();
+    const timestamp = ts != null ? new Date(ts) : new Date();
+    return {
+      data,
+      topic,
+      timestamp,
+      raw: solaceMessage,
+    };
+  }
+
   private async unsubscribeById(subscriptionId: string): Promise<void> {
     const subscription = this.subscriptions.get(subscriptionId);
-    if (!subscription) {
+    const session = this.session;
+    if (!subscription || !session) {
       return;
     }
 
     try {
-      // In production:
-      // const topicDestination = solace.SolclientFactory.createTopicDestination(
-      //   subscription.topic
-      // );
-      // this.session.unsubscribe(topicDestination, true, subscriptionId, 10000);
-      //
-      // if (subscription.subscriber) {
-      //   subscription.subscriber.disconnect();
-      // }
+      const topicDestination = solace.SolclientFactory.createTopicDestination(subscription.topic);
+
+      await new Promise<void>((resolve) => {
+        const timeoutMs = 10000;
+        const onOk = (event: { correlationKey?: string }) => {
+          if (event?.correlationKey === subscriptionId) {
+            clearTimeout(timer);
+            session.removeListener(SessionEvent.SUBSCRIPTION_OK, onOk);
+            session.removeListener(SessionEvent.SUBSCRIPTION_ERROR, onErr);
+            resolve();
+          }
+        };
+        const onErr = (event: { correlationKey?: string }) => {
+          if (event?.correlationKey === subscriptionId) {
+            clearTimeout(timer);
+            session.removeListener(SessionEvent.SUBSCRIPTION_OK, onOk);
+            session.removeListener(SessionEvent.SUBSCRIPTION_ERROR, onErr);
+            resolve();
+          }
+        };
+        const timer = setTimeout(() => {
+          session.removeListener(SessionEvent.SUBSCRIPTION_OK, onOk);
+          session.removeListener(SessionEvent.SUBSCRIPTION_ERROR, onErr);
+          resolve();
+        }, timeoutMs);
+        session.on(SessionEvent.SUBSCRIPTION_OK, onOk);
+        session.on(SessionEvent.SUBSCRIPTION_ERROR, onErr);
+        session.unsubscribe(topicDestination, true, subscriptionId, timeoutMs);
+      });
 
       this.subscriptions.delete(subscriptionId);
-      this.logger.debug({ subscriptionId }, 'Unsubscribed from subscription');
+      this.logger.debug({ subscriptionId }, 'Unsubscribed from topic');
     } catch (error) {
+      this.subscriptions.delete(subscriptionId);
       const transportError = this.createTransportError(
         error,
         'SOLACE_UNSUBSCRIBE_ERROR',
@@ -351,43 +454,5 @@ export class SolaceTransportService extends BaseTransportService implements ITra
       this.notifyError(transportError);
       throw error;
     }
-  }
-
-  /**
-   * Mock connection for development
-   */
-  private async mockConnect(): Promise<void> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        this.session = { connected: true };
-        resolve();
-      }, 100);
-    });
-  }
-
-  /**
-   * Transforms a Solace message to the common TransportMessage format
-   */
-  private transformMessage<T>(solaceMessage: unknown): TransportMessage<T> {
-    // In production, this would transform the actual Solace message:
-    // const binaryAttachment = solaceMessage.getBinaryAttachment();
-    // return {
-    //   data: JSON.parse(binaryAttachment),
-    //   topic: solaceMessage.getDestination().getName(),
-    //   messageId: solaceMessage.getApplicationMessageId(),
-    //   correlationId: solaceMessage.getCorrelationId(),
-    //   timestamp: new Date(solaceMessage.getSenderTimestamp()),
-    //   raw: solaceMessage,
-    //   acknowledge: solaceMessage.acknowledge
-    //     ? () => Promise.resolve(solaceMessage.acknowledge())
-    //     : undefined,
-    // };
-
-    return {
-      data: solaceMessage as T,
-      topic: '',
-      timestamp: new Date(),
-      raw: solaceMessage,
-    };
   }
 }

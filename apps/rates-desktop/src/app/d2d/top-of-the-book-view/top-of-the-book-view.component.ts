@@ -2,7 +2,7 @@ import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, NgZone, ViewCh
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MarketData, MarketDataGridRow, transformMarketDataToGridRow } from '@rates-trading/data-access';
-import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus, AmpsTransportService, NatsTransportService, ITransportService } from '@rates-trading/transports';
+import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus, AmpsTransportService, NatsTransportService, SolaceTransportService, ITransportService } from '@rates-trading/transports';
 import { ConfigurationService } from '@rates-trading/configuration';
 import { LoggerService } from '@rates-trading/logger';
 import { formatTreasury32nds } from '@rates-trading/shared-utils';
@@ -26,7 +26,7 @@ interface TradingBook {
  */
 interface TransportOption {
   label: string;
-  value: 'amps' | 'nats';
+  value: 'amps' | 'nats' | 'solace';
 }
 
 /**
@@ -69,6 +69,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   private transport = inject(TRANSPORT_SERVICE);
   private ampsTransport = inject(AmpsTransportService);
   private natsTransport = inject(NatsTransportService);
+  private solaceTransport = inject(SolaceTransportService);
   private configService = inject(ConfigurationService);
   private logger = inject(LoggerService).child({ component: 'TopOfTheBookView' });
   private ngZone = inject(NgZone);
@@ -79,7 +80,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   
   private marketDataSubscription?: TransportSubscription;
   private connectionSubscription?: Subscription;
-  private currentTransport: 'amps' | 'nats' = 'amps';
+  private currentTransport: 'amps' | 'nats' | 'solace' = 'amps';
 
   // Market data rows stored in a Map for efficient updates
   private marketDataMap = new Map<string, MarketDataGridRow>();
@@ -103,9 +104,11 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   transportOptions: TransportOption[] = [
     { label: 'AMPS', value: 'amps' },
     { label: 'NATS', value: 'nats' },
+    { label: 'Solace', value: 'solace' },
   ];
 
-  selectedTransport: TransportOption = this.transportOptions[0];
+  /** Selected transport value - bound to dropdown via optionValue="value" */
+  selectedTransport: 'amps' | 'nats' | 'solace' = 'amps';
 
   // Expose formatter for template
   formatPrice = formatTreasury32nds;
@@ -152,19 +155,21 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Initialize both AMPS and NATS transports
+   * Initialize AMPS, NATS, and Solace transports from configuration
    */
   private async initializeTransports(): Promise<void> {
     const config = this.configService.getConfiguration();
     
-    // Initialize AMPS transport
     if (config?.transport?.amps) {
       this.ampsTransport.initialize(config.transport.amps);
     }
     
-    // Initialize NATS transport
     if (config?.transport?.nats) {
       this.natsTransport.initialize(config.transport.nats);
+    }
+    
+    if (config?.transport?.solace) {
+      this.solaceTransport.initialize(config.transport.solace);
     }
   }
 
@@ -174,27 +179,34 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   private async connectAndSubscribe(): Promise<void> {
     const activeTransport = this.getActiveTransport();
     
-    // Wait for transport to be connected before subscribing
+    if (activeTransport.isConnected()) {
+      await this.subscribeToMarketData();
+      return;
+    }
+
+    // Connect then wait for Connected status before subscribing
     this.connectionSubscription?.unsubscribe();
-    this.connectionSubscription = activeTransport.connectionStatus$
-      .pipe(
+    const connectedOnce = new Promise<void>((resolve, reject) => {
+      const sub = activeTransport.connectionStatus$.pipe(
         filter(status => status === ConnectionStatus.Connected),
         take(1)
-      )
-      .subscribe(async () => {
-        await this.subscribeToMarketData();
+      ).subscribe({
+        next: () => {
+          sub.unsubscribe();
+          resolve();
+        },
+        error: reject,
       });
+      this.connectionSubscription = sub;
+    });
 
-    // Connect if not already connected
-    if (!activeTransport.isConnected()) {
-      try {
-        await activeTransport.connect();
-      } catch (error) {
-        this.logger.error(error as Error, `Failed to connect to ${this.currentTransport}`);
-      }
-    } else {
-      // Already connected, subscribe immediately
+    try {
+      await activeTransport.connect();
+      await connectedOnce;
       await this.subscribeToMarketData();
+    } catch (error) {
+      this.logger.error(error as Error, `Failed to connect to ${this.currentTransport}`);
+      this.connectionSubscription?.unsubscribe();
     }
   }
 
@@ -202,14 +214,23 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
    * Get the active transport service based on current selection
    */
   private getActiveTransport(): ITransportService {
-    return this.currentTransport === 'amps' ? this.ampsTransport : this.natsTransport;
+    switch (this.currentTransport) {
+      case 'amps':
+        return this.ampsTransport;
+      case 'nats':
+        return this.natsTransport;
+      case 'solace':
+        return this.solaceTransport;
+      default:
+        return this.ampsTransport;
+    }
   }
 
   /**
    * Handle transport selection change
    */
   async onTransportChange(): Promise<void> {
-    const newTransport = this.selectedTransport.value;
+    const newTransport = this.selectedTransport;
     
     if (newTransport === this.currentTransport) {
       return; // No change
@@ -220,7 +241,7 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
     // Unsubscribe from current transport
     await this.unsubscribe();
 
-    // Disconnect from current transport
+    // Disconnect from current transport (use currentTransport before we update it)
     const oldTransport = this.getActiveTransport();
     if (oldTransport.isConnected()) {
       try {
@@ -230,18 +251,22 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Update current transport
+    // Update current transport then connect and subscribe
     this.currentTransport = newTransport;
+    this.cdr.detectChanges();
 
-    // Connect and subscribe to new transport
-    await this.connectAndSubscribe();
+    try {
+      await this.connectAndSubscribe();
+    } catch (error) {
+      this.logger.error(error as Error, `Failed to switch to ${newTransport}`);
+    }
+    this.cdr.detectChanges();
   }
 
   async ngOnDestroy(): Promise<void> {
     this.connectionSubscription?.unsubscribe();
     await this.unsubscribe();
     
-    // Disconnect from both transports
     if (this.ampsTransport.isConnected()) {
       try {
         await this.ampsTransport.disconnect();
@@ -257,6 +282,14 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
         this.logger.error(error as Error, 'Error disconnecting NATS transport');
       }
     }
+    
+    if (this.solaceTransport.isConnected()) {
+      try {
+        await this.solaceTransport.disconnect();
+      } catch (error) {
+        this.logger.error(error as Error, 'Error disconnecting Solace transport');
+      }
+    }
   }
 
   /**
@@ -266,13 +299,20 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
     const config = this.configService.getConfiguration();
     const activeTransport = this.getActiveTransport();
     
-    // Determine topic based on transport type
+    // Determine topic based on transport type (from config)
     let topic: string;
-    if (this.currentTransport === 'amps') {
-      topic = config?.ampsTopics?.marketData || 'rates/marketData';
-    } else {
-      // NATS uses dot notation instead of slash
-      topic = config?.natsTopics?.marketData || 'rates.marketData';
+    switch (this.currentTransport) {
+      case 'amps':
+        topic = config?.ampsTopics?.marketData || 'rates/marketData';
+        break;
+      case 'nats':
+        topic = config?.natsTopics?.marketData || 'rates.marketData';
+        break;
+      case 'solace':
+        topic = config?.solaceTopics?.marketData || 'rates/marketData';
+        break;
+      default:
+        topic = config?.ampsTopics?.marketData || 'rates/marketData';
     }
     
     try {

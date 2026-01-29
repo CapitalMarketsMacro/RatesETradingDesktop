@@ -68,5 +68,9 @@
   "natsTopics": {
     "marketData": "rates.marketData",
     "executions": "rates.executions"
+  },
+  "solaceTopics": {
+    "marketData": "rates/marketData",
+    "executions": "rates/executions"
   }
 }

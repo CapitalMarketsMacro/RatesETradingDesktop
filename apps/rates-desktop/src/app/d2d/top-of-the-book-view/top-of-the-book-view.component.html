@@ -5,10 +5,11 @@
   <div class="tob-header">
     <h3>Top of the Book</h3>
     <div class="tob-header-controls">
-      <p-select 
+        <p-select 
         [(ngModel)]="selectedTransport" 
         [options]="transportOptions" 
         optionLabel="label"
+        optionValue="value"
         placeholder="Transport"
         [style]="{ width: '120px' }"
         styleClass="transport-select"
