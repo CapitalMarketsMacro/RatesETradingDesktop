@@ -6,7 +6,7 @@
     },
     "ag-mcp": {
       "command": "npx",
-      "args": ["ag-mcp"]
+      "args": ["-y", "ag-mcp"]
     }
   }
 }
