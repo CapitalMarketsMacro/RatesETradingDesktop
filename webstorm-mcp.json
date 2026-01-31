@@ -1,0 +1,45 @@
+{
+  "servers": {
+    "angular-cli": {
+      "command": "npx",
+      "args": ["-y", "@angular/cli", "mcp"],
+      "type": "stdio"
+    },
+    "primeng": {
+      "command": "npx",
+      "args": ["-y", "@primeng/mcp"],
+      "type": "stdio"
+    },
+    "ag-mcp": {
+      "command": "npx",
+      "args": ["-y", "ag-mcp"],
+      "type": "stdio"
+    },
+    "nx-mcp": {
+      "command": "npx",
+      "args": ["nx-mcp@latest"],
+      "type": "stdio"
+    },
+    "react-docs": {
+      "command": "npx",
+      "args": ["-y", "react-docs-mcp"],
+      "type": "stdio"
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp",
+      "type": "http"
+    },
+    "figma-desktop": {
+      "url": "http://127.0.0.1:3845/mcp",
+      "type": "http"
+    },
+    "nats": {
+      "command": "npx",
+      "args": ["-y", "nats-mcp-server"],
+      "type": "stdio",
+      "env": {
+        "NATS_URL": "nats://localhost:4222"
+      }
+    }
+  }
+}
