@@ -64,9 +64,10 @@
   color: #ffffff !important;
 }
 
-/* ag-Grid Cell Text Color */
+/* ag-Grid Cell Text */
 ::ng-deep .ag-cell {
   color: #ffffff !important;
+  font-size: 12px !important;
 }
 
 /* Side column styling */

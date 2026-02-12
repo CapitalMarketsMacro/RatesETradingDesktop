@@ -1,17 +1,26 @@
-/* Host fills the entire iframe/panel */
+/* --------------------------------------------------------
+   Host: fills the OpenFin iframe/panel and acts as a
+   CSS container so children can use cqw / cqh units.
+   -------------------------------------------------------- */
 :host {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   overflow: hidden;
+  container-type: size;
+  container-name: tob;
 }
 
+/* --------------------------------------------------------
+   Main wrapper — flex column that stretches to fill host.
+   Padding scales with container width.
+   -------------------------------------------------------- */
 .top-of-the-book-container {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: 1rem;
+  padding: clamp(4px, 1.5cqw, 1rem);
   background-color: #333333;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -21,36 +30,43 @@
   overflow: hidden;
 }
 
+/* --------------------------------------------------------
+   Header — title + controls; scales font with container
+   -------------------------------------------------------- */
 .tob-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: clamp(2px, 0.6cqh, 0.5rem);
   flex-shrink: 0;
 }
 
 .tob-header-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: clamp(4px, 1cqw, 1rem);
 }
 
 .tob-header h3 {
   margin: 0;
   color: #ffffff;
-  font-size: 1.25rem;
+  font-size: clamp(0.7rem, 2.5cqw, 1.25rem);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .row-count {
   color: #9ca3af;
-  font-size: 0.85rem;
+  font-size: clamp(0.6rem, 1.8cqw, 0.85rem);
   background-color: rgba(156, 163, 175, 0.15);
-  padding: 4px 12px;
+  padding: clamp(2px, 0.4cqh, 4px) clamp(4px, 1cqw, 12px);
   border-radius: 12px;
+  white-space: nowrap;
 }
 
-/* Grid Layout — fills remaining space and scrolls */
+/* --------------------------------------------------------
+   Grid — fills remaining space and scrolls vertically
+   -------------------------------------------------------- */
 .tob-grid {
   display: flex;
   flex-direction: column;
@@ -62,10 +78,13 @@
   min-height: 0;
 }
 
+/* --------------------------------------------------------
+   Rows — grid columns scale; row height adapts to panel
+   -------------------------------------------------------- */
 .tob-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-  min-height: 40px;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  min-height: clamp(20px, 4.5cqh, 44px);
 }
 
 .tob-header-row {
@@ -100,12 +119,18 @@
   background-color: #444444;
 }
 
+/* --------------------------------------------------------
+   Cells — padding and font scale with container size
+   -------------------------------------------------------- */
 .tob-cell {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
-  font-size: 1.5rem;
+  padding: clamp(2px, 0.5cqh, 0.5rem) clamp(4px, 1cqw, 1rem);
+  font-size: clamp(0.65rem, 2.2cqw, 1.5rem);
   font-family: 'Noto Sans', sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Description Column */
@@ -167,9 +192,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: clamp(0.5rem, 2cqh, 2rem);
   color: #94a3b8;
   font-style: italic;
+  font-size: clamp(0.7rem, 2cqw, 1rem);
 }
 
 /* Dark Mode Support - use same colors as light mode */
@@ -398,4 +424,32 @@
 
 :host-context(.app-dark) .tob-data-row .tob-cell-ask-size.tob-cell-interactive:hover::after {
   border-color: #ef5350;
+}
+
+/* --------------------------------------------------------
+   Container-query breakpoints for very small panels
+   -------------------------------------------------------- */
+
+/* When panel width is below 300px — hide transport dropdown, compact header */
+@container tob (max-width: 300px) {
+  .tob-header {
+    flex-wrap: wrap;
+    gap: 2px;
+  }
+  .tob-header-controls {
+    gap: 4px;
+  }
+}
+
+/* When panel height is below 200px — minimize header, tighter rows */
+@container tob (max-height: 200px) {
+  .tob-header {
+    margin-bottom: 2px;
+  }
+  .tob-header h3 {
+    font-size: 0.7rem;
+  }
+  .row-count {
+    display: none;
+  }
 }
