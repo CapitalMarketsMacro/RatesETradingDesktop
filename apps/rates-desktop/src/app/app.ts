@@ -1,10 +1,9 @@
 import { Component, inject, OnInit, OnDestroy, AfterViewInit, NgZone, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
-import { filter } from 'rxjs/operators';
 import { RatesData } from '@rates-trading/data-access';
 import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
 import { TRANSPORT_SERVICE, ConnectionStatus } from '@rates-trading/transports';
@@ -58,24 +57,21 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   openfinStatus: OpenFinConnectionStatus = OpenFinConnectionStatus.Disconnected;
   private pendingOpenFinConfig?: RatesAppConfiguration;
 
-  /** True on the default route (host page with layout), false on sub-routes (iframe views) */
-  isDefaultRoute = true;
+  /**
+   * True on the default route (host page with layout), false on sub-routes (iframe views).
+   * Uses window.location.pathname directly — this is synchronous and immediately correct,
+   * unlike router events which may fire after lifecycle hooks.
+   */
+  isDefaultRoute = window.location.pathname === '/' || window.location.pathname === '';
 
   private router = inject(Router);
 
   constructor() {
     this.rates = this.ratesData.getRates();
-
-    // Detect whether we're on the default route (host) or a sub-route (iframe view)
-    this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe((event: NavigationEnd) => {
-        this.isDefaultRoute = event.urlAfterRedirects === '/' || event.urlAfterRedirects === '';
-      });
   }
 
   ngOnInit() {
-    // Initialize menu items with routing
+    // Initialize menu items — commands add views to the OpenFin layout
     this.menuItems = [
       {
         label: 'Market Data',
@@ -84,22 +80,30 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
           {
             label: 'Top of the Book',
             icon: 'pi pi-list',
-            routerLink: ['/market-data/top-of-book'],
+            command: () => this.addViewFromMenu('top-of-book', '/market-data/top-of-book'),
           },
           {
             label: 'Market Data Blotter',
             icon: 'pi pi-table',
-            routerLink: ['/market-data/blotter'],
+            command: () => this.addViewFromMenu('market-data-blotter', '/market-data/blotter'),
           },
         ],
       },
       {
         label: 'Executions',
         icon: 'pi pi-check-circle',
-        routerLink: ['/executions'],
+        command: () => this.addViewFromMenu('executions-blotter', '/executions'),
       },
-      { label: 'Trading', icon: 'pi pi-briefcase', routerLink: ['/trading'] },
-      { label: 'Preferences', icon: 'pi pi-cog', routerLink: ['/preferences'] },
+      {
+        label: 'Trading',
+        icon: 'pi pi-briefcase',
+        command: () => this.addViewFromMenu('trading', '/trading'),
+      },
+      {
+        label: 'Preferences',
+        icon: 'pi pi-cog',
+        command: () => this.addViewFromMenu('preferences', '/preferences'),
+      },
     ];
 
     // Load configuration
@@ -200,6 +204,22 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
    */
   async addViewToLayout(name: string, url: string): Promise<void> {
     await this.openfinService.addView(name, url);
+  }
+
+  /**
+   * Called by PrimeNG menu commands — adds a view to the OpenFin layout.
+   * Appends a timestamp so each click opens a new tab even for the same route.
+   * Falls back to Angular router navigation when OpenFin is not connected.
+   */
+  private async addViewFromMenu(baseName: string, url: string): Promise<void> {
+    if (this.openfinService.isConnected) {
+      const viewName = `${baseName}-${Date.now()}`;
+      this.logger.info({ viewName, url }, 'Adding view to layout from menu');
+      await this.addViewToLayout(viewName, url);
+    } else {
+      // OpenFin not available — fall back to standard routing
+      this.router.navigate([url]);
+    }
   }
 
   /**

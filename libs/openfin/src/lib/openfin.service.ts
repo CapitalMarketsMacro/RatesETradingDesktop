@@ -50,6 +50,9 @@ export class OpenFinService {
   /** Runtime configuration */
   private config: OpenFinConfig = DEFAULT_OPENFIN_CONFIG;
 
+  /** Layout container element — kept so we can re-init the layout after all views are closed */
+  private layoutContainerEl: HTMLElement | null = null;
+
   /** Connection status observable */
   private connectionStatusSubject = new BehaviorSubject<OpenFinConnectionStatus>(
     OpenFinConnectionStatus.Disconnected
@@ -145,10 +148,18 @@ export class OpenFinService {
       });
 
       this.finApi = fin;
+      this.layoutContainerEl = layoutContainer;
 
-      // Initialize Interop
-      await fin.Interop.init(this.config.providerId);
-      this.logger.info('OpenFin Interop initialized');
+      // Initialize Interop — may fail on page reload if the SharedWorker
+      // still holds the channel from the previous session. Treat as non-fatal.
+      try {
+        await fin.Interop.init(this.config.providerId);
+        this.logger.info('OpenFin Interop initialized');
+      } catch (_interopError) {
+        this.logger.warn(
+          'Interop.init failed (broker channel may already exist from previous session), continuing...'
+        );
+      }
 
       // Initialize the Layout engine and bind to the container element
       await fin.Platform.Layout.init({
@@ -211,6 +222,11 @@ export class OpenFinService {
   /**
    * Add a view (iframe) to the current layout.
    *
+   * If all views were previously closed the GoldenLayout instance is
+   * destroyed and `getCurrentSync().addView()` throws. In that case we
+   * re-initialize the layout with a snapshot that contains the requested
+   * view so the layout is recreated from scratch.
+   *
    * @param name Unique name for the view.
    * @param url  URL to load inside the view iframe (can be relative).
    */
@@ -220,15 +236,51 @@ export class OpenFinService {
       return;
     }
 
+    const resolvedUrl = this.resolveUrl(url);
+
     try {
+      // Try adding to the existing layout first
       const layout = this.finApi.Platform.Layout.getCurrentSync();
-      await layout.addView({
-        name,
-        url: this.resolveUrl(url),
-      } as never);
+      await layout.addView({ name, url: resolvedUrl } as never);
       this.logger.info({ name, url }, 'View added to layout');
-    } catch (error) {
-      this.logger.error(error as Error, 'Failed to add view to layout');
+    } catch (_firstError) {
+      // Layout likely destroyed (all views were closed) — re-init with this view
+      this.logger.warn('Layout appears destroyed, re-initializing with new view');
+
+      if (!this.layoutContainerEl) {
+        this.logger.error('No layout container reference, cannot re-initialize layout');
+        return;
+      }
+
+      try {
+        // Build a GoldenLayout config containing just the requested view
+        const layoutConfig = {
+          settings: { showMaximiseIcon: true },
+          content: [
+            {
+              type: 'stack',
+              content: [
+                {
+                  type: 'component',
+                  componentName: 'view',
+                  title: name,
+                  componentState: { url: resolvedUrl, name },
+                },
+              ],
+            },
+          ],
+        };
+
+        // Layout.init was already called once — use Layout.create to rebuild
+        await this.finApi.Platform.Layout.create({
+          container: this.layoutContainerEl,
+          layout: layoutConfig,
+        } as never);
+
+        this.logger.info({ name, url }, 'Layout re-created with view');
+      } catch (reinitError) {
+        this.logger.error(reinitError as Error, 'Failed to re-initialize layout');
+      }
     }
   }
 

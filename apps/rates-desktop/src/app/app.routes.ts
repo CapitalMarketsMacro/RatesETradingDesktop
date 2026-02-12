@@ -6,11 +6,11 @@ export const appRoutes: Route[] = [
   //{ path: '', redirectTo: 'market-data/top-of-book', pathMatch: 'full' },
   
   // D2D Market Data views
-  { path: 'market-data/top-of-book', component: TopOfTheBookViewComponent },
-  { path: 'market-data/blotter', component: MarketDataBlotterComponent },
+  { path: 'market-data/top-of-book', title: 'Top of the Book', component: TopOfTheBookViewComponent },
+  { path: 'market-data/blotter', title: 'Market Data Blotter', component: MarketDataBlotterComponent },
   
   // D2D Executions
-  { path: 'executions', component: ExecutionsBlotterComponent },
+  { path: 'executions', title: 'Executions Blotter', component: ExecutionsBlotterComponent },
   
   // // Catch-all redirect
   // { path: '**', redirectTo: 'market-data/top-of-book' },
