@@ -72,5 +72,14 @@
   "solaceTopics": {
     "marketData": "rates/marketData",
     "executions": "rates/executions"
+  },
+  "openfin": {
+    "enabled": true,
+    "brokerUrl": "/assets/openfin/iframe-broker.html",
+    "sharedWorkerUrl": "/assets/openfin/shared-worker.js",
+    "layoutUrl": "/assets/openfin/default.layout.fin.json",
+    "providerId": "rates-desktop-staging",
+    "defaultContextGroup": "green",
+    "logLevel": "info"
   }
 }

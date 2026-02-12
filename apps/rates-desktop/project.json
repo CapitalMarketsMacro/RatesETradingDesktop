@@ -18,8 +18,29 @@
           {
             "glob": "**/*",
             "input": "apps/rates-desktop/public"
+          },
+          {
+            "glob": "shared-worker.js",
+            "input": "node_modules/@openfin/core-web/out",
+            "output": "assets/openfin"
+          },
+          {
+            "glob": "iframe-broker.esm.js",
+            "input": "node_modules/@openfin/core-web/out",
+            "output": "assets/openfin"
+          },
+          {
+            "glob": "main-*.js",
+            "input": "node_modules/@openfin/core-web/out",
+            "output": "assets/openfin"
+          },
+          {
+            "glob": "styles.css",
+            "input": "node_modules/@openfin/core-web/out",
+            "output": "assets/openfin"
           }
         ],
+        "allowedCommonJsDependencies": ["events", "buffer"],
         "styles": [
           "node_modules/primeicons/primeicons.css",
           "apps/rates-desktop/src/styles.css"

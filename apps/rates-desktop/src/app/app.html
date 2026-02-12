@@ -1,29 +1,34 @@
-<p-menubar [model]="menuItems" class="app-menubar">
-  <ng-template pTemplate="end">
-    <div class="menubar-end">
-      <span class="connection-status" [class]="connectionStatusClass">
-        <i class="pi" [class.pi-check-circle]="connectionStatus === 'connected'" 
-           [class.pi-spin]="connectionStatus === 'connecting' || connectionStatus === 'reconnecting'"
-           [class.pi-spinner]="connectionStatus === 'connecting' || connectionStatus === 'reconnecting'"
-           [class.pi-times-circle]="connectionStatus === 'disconnected' || connectionStatus === 'error'"></i>
-        {{ connectionStatusLabel }}
-      </span>
-      <button
-        pButton
-        type="button"
-        (click)="toggleTheme()"
-        class="p-button-text theme-toggle"
-        aria-label="Toggle theme"
-      >{{ themeLabel }}</button>
-    </div>
-  </ng-template>
-</p-menubar>
+@if (isDefaultRoute) {
+  <p-menubar [model]="menuItems" class="app-menubar">
+    <ng-template pTemplate="start">
+      <span class="app-title">{{ title }}</span>
+    </ng-template>
+    <ng-template pTemplate="end">
+      <div class="menubar-end">
+        <span class="connection-status" [class]="connectionStatusClass">
+          <i class="pi" [class.pi-check-circle]="connectionStatus === 'connected'" 
+             [class.pi-spin]="connectionStatus === 'connecting' || connectionStatus === 'reconnecting'"
+             [class.pi-spinner]="connectionStatus === 'connecting' || connectionStatus === 'reconnecting'"
+             [class.pi-times-circle]="connectionStatus === 'disconnected' || connectionStatus === 'error'"></i>
+          {{ connectionStatusLabel }}
+        </span>
+        @if (openfinStatus === 'connected') {
+          <span class="openfin-status status-connected" title="OpenFin Web Broker connected">
+            <i class="pi pi-th-large"></i> OpenFin
+          </span>
+        }
+        <button
+          pButton
+          type="button"
+          (click)="toggleTheme()"
+          class="p-button-text theme-toggle"
+          aria-label="Toggle theme"
+        >{{ themeLabel }}</button>
+      </div>
+    </ng-template>
+  </p-menubar>
 
-<div class="app-container">
-  <h1>{{ title }}</h1>
-  
-  <!-- Routed views -->
-  <div class="views-container">
-    <router-outlet></router-outlet>
-  </div>
-</div>
+  <main #layoutContainer id="layout_container" class="openfin-layout-container"></main>
+}
+
+<router-outlet></router-outlet>

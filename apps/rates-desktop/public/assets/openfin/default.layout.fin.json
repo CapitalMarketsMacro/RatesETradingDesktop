@@ -1,0 +1,73 @@
+{
+  "layouts": {
+    "default": {
+      "settings": {
+        "showMaximiseIcon": true
+      },
+      "content": [
+        {
+          "type": "row",
+          "content": [
+            {
+              "type": "column",
+              "width": 60,
+              "content": [
+                {
+                  "type": "stack",
+                  "height": 100,
+                  "content": [
+                    {
+                      "type": "component",
+                      "componentName": "view",
+                      "title": "Top of the Book",
+                      "componentState": {
+                        "url": "/market-data/top-of-book",
+                        "name": "top-of-book"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "column",
+              "width": 40,
+              "content": [
+                {
+                  "type": "stack",
+                  "height": 50,
+                  "content": [
+                    {
+                      "type": "component",
+                      "componentName": "view",
+                      "title": "Executions Blotter",
+                      "componentState": {
+                        "url": "/executions",
+                        "name": "executions-blotter"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "stack",
+                  "height": 50,
+                  "content": [
+                    {
+                      "type": "component",
+                      "componentName": "view",
+                      "title": "Market Data Blotter",
+                      "componentState": {
+                        "url": "/market-data/blotter",
+                        "name": "market-data-blotter"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

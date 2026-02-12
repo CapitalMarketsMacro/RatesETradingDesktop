@@ -131,4 +131,15 @@ export interface RatesAppConfiguration {
     defaultPageSize?: number;
     refreshInterval?: number;
   };
+
+  /** OpenFin core-web configuration */
+  openfin?: {
+    enabled: boolean;
+    brokerUrl: string;
+    sharedWorkerUrl: string;
+    layoutUrl: string;
+    providerId: string;
+    defaultContextGroup: string;
+    logLevel: 'debug' | 'info' | 'warn' | 'error' | 'none';
+  };
 }

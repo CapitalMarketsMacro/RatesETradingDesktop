@@ -20,7 +20,8 @@
       "@rates-trading/data-access": ["libs/data-access/src/index.ts"],
       "@rates-trading/configuration": ["libs/configuration/src/index.ts"],
       "@rates-trading/transports": ["libs/transports/src/index.ts"],
-      "@rates-trading/logger": ["libs/logger/src/index.ts"]
+      "@rates-trading/logger": ["libs/logger/src/index.ts"],
+      "@rates-trading/openfin": ["libs/openfin/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

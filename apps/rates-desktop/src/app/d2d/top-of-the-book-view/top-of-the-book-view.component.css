@@ -1,17 +1,32 @@
+/* Host fills the entire iframe/panel */
+:host {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
 .top-of-the-book-container {
+  display: flex;
+  flex-direction: column;
   position: relative;
   padding: 1rem;
   background-color: #333333;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   font-family: 'Noto Sans', sans-serif;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .tob-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  flex-shrink: 0;
 }
 
 .tob-header-controls {
@@ -35,13 +50,16 @@
   border-radius: 12px;
 }
 
-/* Grid Layout */
+/* Grid Layout — fills remaining space and scrolls */
 .tob-grid {
   display: flex;
   flex-direction: column;
   border: 1px solid #374151;
   border-radius: 6px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 .tob-row {
@@ -55,6 +73,9 @@
   border-bottom: 2px solid #4b5563;
   font-weight: 600;
   color: #ffffff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .tob-data-row {

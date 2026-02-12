@@ -86,5 +86,14 @@
   "solaceTopics": {
     "marketData": "rates/marketData/treasury",
     "executions": "rates/executions"
+  },
+  "openfin": {
+    "enabled": true,
+    "brokerUrl": "/assets/openfin/iframe-broker.html",
+    "sharedWorkerUrl": "/assets/openfin/shared-worker.js",
+    "layoutUrl": "/assets/openfin/default.layout.fin.json",
+    "providerId": "rates-desktop-dev",
+    "defaultContextGroup": "green",
+    "logLevel": "info"
   }
 }

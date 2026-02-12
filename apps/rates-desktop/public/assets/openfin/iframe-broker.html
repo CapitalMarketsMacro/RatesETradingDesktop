@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenFin Web Broker</title>
+</head>
+<body>
+  <script type="module">
+    import { init } from './iframe-broker.esm.js';
+
+    async function initBroker() {
+      console.log('[OpenFin Broker] Initializing HERE broker connection...');
+      try {
+        await init({
+          sharedWorkerUrl: new URL('./shared-worker.js', window.location.href).href,
+          logLevel: 'info',
+        });
+        console.log('[OpenFin Broker] Connected to the HERE IFrame Web Broker.');
+      } catch (err) {
+        console.error('[OpenFin Broker] Failed to initialize:', err);
+      }
+    }
+
+    initBroker();
+  </script>
+</body>
+</html>

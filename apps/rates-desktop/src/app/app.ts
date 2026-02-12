@@ -1,13 +1,15 @@
-import { Component, inject, OnInit, OnDestroy, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, AfterViewInit, NgZone, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
+import { filter } from 'rxjs/operators';
 import { RatesData } from '@rates-trading/data-access';
 import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
 import { TRANSPORT_SERVICE, ConnectionStatus } from '@rates-trading/transports';
 import { LoggerService } from '@rates-trading/logger';
+import { OpenFinService, OpenFinConnectionStatus } from '@rates-trading/openfin';
 
 export interface TreasurySecurity {
   cusip: string;
@@ -27,61 +29,74 @@ export interface TreasurySecurity {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    MenubarModule,
-    ButtonModule,
-  ],
+  imports: [CommonModule, RouterModule, MenubarModule, ButtonModule],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnInit, OnDestroy {
+export class App implements OnInit, AfterViewInit, OnDestroy {
   private ratesData = inject(RatesData);
   private configService = inject(ConfigurationService);
   private transport = inject(TRANSPORT_SERVICE);
+  readonly openfinService = inject(OpenFinService);
   private logger = inject(LoggerService).child({ component: 'App' });
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
-  
+
+  @ViewChild('layoutContainer') layoutContainer?: ElementRef;
+
   title = 'Rates E-Trading Desktop';
   config?: RatesAppConfiguration;
   protected rates: { symbol: string; rate: number; change: number }[] = [];
-  
+
   menuItems: MenuItem[] = [];
   isDarkTheme = false;
 
   // AMPS connection state
   connectionStatus: ConnectionStatus = ConnectionStatus.Disconnected;
 
+  // OpenFin state
+  openfinStatus: OpenFinConnectionStatus = OpenFinConnectionStatus.Disconnected;
+  private pendingOpenFinConfig?: RatesAppConfiguration;
+
+  /** True on the default route (host page with layout), false on sub-routes (iframe views) */
+  isDefaultRoute = true;
+
+  private router = inject(Router);
 
   constructor() {
     this.rates = this.ratesData.getRates();
+
+    // Detect whether we're on the default route (host) or a sub-route (iframe view)
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe((event: NavigationEnd) => {
+        this.isDefaultRoute = event.urlAfterRedirects === '/' || event.urlAfterRedirects === '';
+      });
   }
 
   ngOnInit() {
     // Initialize menu items with routing
     this.menuItems = [
-      { 
-        label: 'Market Data', 
+      {
+        label: 'Market Data',
         icon: 'pi pi-chart-line',
         items: [
-          { 
-            label: 'Top of the Book', 
+          {
+            label: 'Top of the Book',
             icon: 'pi pi-list',
-            routerLink: ['/market-data/top-of-book']
+            routerLink: ['/market-data/top-of-book'],
           },
-          { 
-            label: 'Market Data Blotter', 
+          {
+            label: 'Market Data Blotter',
             icon: 'pi pi-table',
-            routerLink: ['/market-data/blotter']
+            routerLink: ['/market-data/blotter'],
           },
-        ]
+        ],
       },
-      { 
-        label: 'Executions', 
+      {
+        label: 'Executions',
         icon: 'pi pi-check-circle',
-        routerLink: ['/executions']
+        routerLink: ['/executions'],
       },
       { label: 'Trading', icon: 'pi pi-briefcase', routerLink: ['/trading'] },
       { label: 'Preferences', icon: 'pi pi-cog', routerLink: ['/preferences'] },
@@ -92,9 +107,12 @@ export class App implements OnInit, OnDestroy {
       this.config = config;
       // Set title from configuration
       this.title = config.app.name;
-      
+
       // Connect to AMPS and subscribe to market data
       this.connectToTransport();
+
+      // Defer OpenFin init until AfterViewInit (layout container must be in DOM)
+      this.pendingOpenFinConfig = config;
     });
 
     // Subscribe to connection status changes
@@ -102,6 +120,15 @@ export class App implements OnInit, OnDestroy {
       this.ngZone.run(() => {
         this.connectionStatus = status;
         this.logger.debug({ status }, 'Transport connection status changed');
+        this.cdr.detectChanges();
+      });
+    });
+
+    // Subscribe to OpenFin connection status
+    this.openfinService.connectionStatus$.subscribe((status) => {
+      this.ngZone.run(() => {
+        this.openfinStatus = status;
+        this.logger.debug({ status }, 'OpenFin connection status changed');
         this.cdr.detectChanges();
       });
     });
@@ -114,9 +141,65 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
+  ngAfterViewInit() {
+    // Layout container is now in the DOM — initialize OpenFin if config is ready
+    if (this.pendingOpenFinConfig) {
+      this.initializeOpenFin(this.pendingOpenFinConfig);
+      this.pendingOpenFinConfig = undefined;
+    }
+  }
+
   ngOnDestroy() {
     // Cleanup subscriptions
     this.disconnectFromTransport();
+    // Disconnect OpenFin
+    this.openfinService.disconnect();
+  }
+
+  /**
+   * Initialize OpenFin core-web if enabled in configuration.
+   *
+   * - Host page: connects to broker, loads default layout from JSON, and
+   *   initializes the layout engine. Additional views can be added via
+   *   `openfinService.addView()`.
+   * - Iframe view: uses `connectAsView()` to inherit the broker session
+   *   without re-creating the layout (prevents infinite recursion).
+   */
+  private async initializeOpenFin(config: RatesAppConfiguration): Promise<void> {
+    if (!config.openfin?.enabled) {
+      this.logger.info('OpenFin is not enabled in configuration');
+      return;
+    }
+
+    try {
+      this.openfinService.initialize(config.openfin);
+
+      if (this.isDefaultRoute) {
+        // Host page — connect to broker and initialize the layout engine
+        const container = this.layoutContainer?.nativeElement;
+        if (!container) {
+          this.logger.error('Layout container element not found, cannot init OpenFin layout');
+          return;
+        }
+        await this.openfinService.connectToBroker(container);
+        this.logger.info('OpenFin Web Broker connected with layout');
+      } else {
+        // Sub-route (loaded in an OpenFin layout iframe) — inherit broker connection
+        await this.openfinService.connectAsView();
+        this.logger.info('Connected as OpenFin view (inherited broker)');
+      }
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to initialize OpenFin');
+    }
+  }
+
+  /**
+   * Add a view to the OpenFin layout.
+   * @param name Unique view name.
+   * @param url  URL to load (can be relative, e.g. '/market-data/blotter').
+   */
+  async addViewToLayout(name: string, url: string): Promise<void> {
+    await this.openfinService.addView(name, url);
   }
 
   /**

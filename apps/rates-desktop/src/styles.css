@@ -1,6 +1,19 @@
 /* You can add global styles to this file, and also import other style files */
 /* PrimeIcons is included via project.json styles array */
 
+/* Full viewport layout — matches OpenFin example pattern */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  display: flex;
+  overflow: hidden;
+}
+
+
 /* IBM Plex Mono for ag-Grid data cells */
 .ag-theme-quartz,
 .ag-theme-quartz-dark {

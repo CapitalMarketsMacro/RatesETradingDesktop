@@ -15,6 +15,50 @@
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Noto Sans for Top of the Book view -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- OpenFin core-web GoldenLayout + tab styling -->
+    <link rel="stylesheet" href="assets/openfin/styles.css">
+    <!-- Neutralize the desktop frame-chrome parts of the OpenFin CSS -->
+    <style>
+      /* The OpenFin CSS sets body background to dark #111118 — override to transparent
+         so our app's own body styles take effect instead. */
+      body {
+        background-color: transparent !important;
+        color: inherit !important;
+      }
+      /* Hide the desktop title-bar (we have our own menubar) */
+      #title-bar {
+        display: none !important;
+      }
+      /* Reset frame-chrome variables that affect layout sizing */
+      :root {
+        --title-bar-height: 0px;
+        --title-bar-border-bottom-height: 0px;
+        --body-container-padding-top: 0px;
+        --body-container-padding-right: 0px;
+        --body-container-padding-bottom: 0px;
+        --body-container-padding-left: 0px;
+        --layout-container-padding-top: 0px;
+        --layout-container-padding-right: 0px;
+        --layout-container-padding-bottom: 0px;
+        --layout-container-padding-left: 0px;
+      }
+      /* Frame containers should fill parent, not use absolute positioning */
+      #of-frame-main {
+        position: relative !important;
+        height: 100% !important;
+        width: 100% !important;
+      }
+      #body-container {
+        height: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+      }
+      #layout-container {
+        height: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+      }
+    </style>
   </head>
   <body>
     <app-root></app-root>
