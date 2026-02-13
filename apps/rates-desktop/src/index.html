@@ -44,11 +44,11 @@
 
         /* ── Tab header theming ── */
         /* Tab bar background (row behind all tabs) */
-        --tabs-bar-background-color: #333333;
+        --tabs-bar-background-color: #18181b;
         /* Individual tab background */
         --tab-background-color: #1e293b;
         /* Active / selected tab background */
-        --tab-background-active-color: #04142b;
+        --tab-background-active-color: #09090b;
         /* Tab text color */
         --tab-font-color: #e2e8f0;
         /* Active tab top-border accent stripe */
@@ -87,6 +87,34 @@
         height: 100% !important;
         width: 100% !important;
         padding: 0 !important;
+      }
+
+      /* ── Status Bar view tab header overrides ── */
+      /* Hide header when Status is the only tab in its stack */
+      .lm_header:has(.lm_tab[title="Status"]:only-child) {
+        display: none !important;
+        height: 0 !important;
+      }
+      .lm_stack:has(.lm_tab[title="Status"]:only-child) > .lm_items {
+        top: 0 !important;
+      }
+
+      /* Style the Status tab when it shares a stack with other tabs */
+      .lm_tab[title="Status"] {
+        background-color: #333333 !important;
+        border-top-color: transparent !important;
+        opacity: 0.6 !important;
+        pointer-events: none !important;
+      }
+      .lm_tab[title="Status"] .lm_title {
+        font-size: 10px !important;
+        font-weight: 400 !important;
+        color: #64748b !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+      }
+      .lm_tab[title="Status"] .lm_close_tab {
+        display: none !important;
       }
     </style>
   </head>
