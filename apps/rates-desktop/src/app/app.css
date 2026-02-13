@@ -134,6 +134,23 @@ h2 {
   color: #1976d2;
 }
 
+/* Save-layout dialog form */
+.save-layout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.save-layout-form label {
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.save-layout-input {
+  width: 100%;
+}
+
 /* OpenFin layout container — fills remaining space after menubar */
 .openfin-layout-container {
   flex: 1;

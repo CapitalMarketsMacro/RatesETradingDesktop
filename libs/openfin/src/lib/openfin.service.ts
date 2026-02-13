@@ -126,9 +126,24 @@ export class OpenFinService {
     try {
       const brokerUrl = this.resolveUrl(this.config.brokerUrl);
 
-      // Load the default layout snapshot (falls back to empty if fetch fails)
+      // Check if there is a pending restore request (set by restoreLayout)
       let layoutSnapshot: WebLayoutSnapshot = EMPTY_LAYOUT_SNAPSHOT;
-      if (this.config.layoutUrl) {
+      const pendingRestore = localStorage.getItem(OpenFinService.PENDING_RESTORE_KEY);
+      if (pendingRestore) {
+        // Clear the flag immediately so it doesn't loop on next reload
+        localStorage.removeItem(OpenFinService.PENDING_RESTORE_KEY);
+        try {
+          const pending = JSON.parse(pendingRestore) as { name: string; snapshot: unknown };
+          // Wrap the saved GoldenLayout config inside the WebLayoutSnapshot envelope
+          layoutSnapshot = { layouts: { default: pending.snapshot } } as WebLayoutSnapshot;
+          this.logger.info({ name: pending.name }, 'Restoring saved layout on startup');
+        } catch {
+          this.logger.warn('Failed to parse pending layout restore, falling back to default');
+        }
+      }
+
+      // If no pending restore, load the default layout from config
+      if (!pendingRestore && this.config.layoutUrl) {
         const fetched = await this.fetchLayoutSnapshot(
           this.resolveUrl(this.config.layoutUrl),
         );
@@ -262,6 +277,108 @@ export class OpenFinService {
     } catch (error) {
       this.logger.error(error as Error, 'Failed to add view to layout');
     }
+  }
+
+  // ────────────────────────────────────────────────────────
+  // Layout persistence (localStorage)
+  // ────────────────────────────────────────────────────────
+
+  private static readonly LAYOUT_STORAGE_KEY = 'openfin-saved-layouts';
+  private static readonly PENDING_RESTORE_KEY = 'openfin-pending-restore';
+
+  /**
+   * Saved-layout entry stored in localStorage.
+   */
+  static readonly LAYOUT_ENTRY_KEYS = ['name', 'timestamp', 'snapshot'] as const;
+
+  /**
+   * Save the current layout under a user-provided name.
+   * Overwrites any existing layout with the same name.
+   */
+  async saveLayout(name: string): Promise<void> {
+    if (!this.finApi) {
+      this.logger.error('Cannot save layout: OpenFin not initialized');
+      return;
+    }
+
+    try {
+      const layout = this.finApi.Platform.Layout.getCurrentSync();
+      const config = await (layout as unknown as { getConfig(): Promise<unknown> }).getConfig();
+
+      const entry = {
+        name,
+        timestamp: Date.now(),
+        snapshot: config,
+      };
+
+      const all = this.getSavedLayouts();
+      // Replace existing entry with same name, or append
+      const idx = all.findIndex((l) => l.name === name);
+      if (idx >= 0) {
+        all[idx] = entry;
+      } else {
+        all.push(entry);
+      }
+
+      localStorage.setItem(
+        OpenFinService.LAYOUT_STORAGE_KEY,
+        JSON.stringify(all),
+      );
+      this.logger.info({ name }, 'Layout saved');
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to save layout');
+    }
+  }
+
+  /**
+   * Restore a previously-saved layout by name.
+   *
+   * Because `@openfin/core-web` does not implement `layout.replace()`,
+   * we store the target layout in localStorage and reload the page.
+   * `connectToBroker()` picks up the pending restore flag on startup and
+   * passes the saved snapshot to `connect()` instead of the default layout.
+   */
+  restoreLayout(name: string): void {
+    const all = this.getSavedLayouts();
+    const entry = all.find((l) => l.name === name);
+    if (!entry) {
+      this.logger.warn({ name }, 'No saved layout found with this name');
+      return;
+    }
+
+    // Stash the layout to restore, then reload
+    localStorage.setItem(
+      OpenFinService.PENDING_RESTORE_KEY,
+      JSON.stringify({ name: entry.name, snapshot: entry.snapshot }),
+    );
+    this.logger.info({ name }, 'Pending layout restore set, reloading page...');
+    window.location.reload();
+  }
+
+  /**
+   * Return the list of all saved layouts (name + timestamp).
+   */
+  getSavedLayouts(): { name: string; timestamp: number; snapshot: unknown }[] {
+    try {
+      const raw = localStorage.getItem(OpenFinService.LAYOUT_STORAGE_KEY);
+      if (!raw) return [];
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Delete a saved layout by name.
+   */
+  deleteLayout(name: string): void {
+    const all = this.getSavedLayouts();
+    const filtered = all.filter((l) => l.name !== name);
+    localStorage.setItem(
+      OpenFinService.LAYOUT_STORAGE_KEY,
+      JSON.stringify(filtered),
+    );
+    this.logger.info({ name }, 'Saved layout deleted');
   }
 
   /**

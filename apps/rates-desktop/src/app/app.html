@@ -29,6 +29,33 @@
   </p-menubar>
 
   <main #layoutContainer id="layout_container" class="openfin-layout-container"></main>
+
+  <!-- Save Layout dialog -->
+  <p-dialog
+    header="Save Layout"
+    [(visible)]="showSaveDialog"
+    [modal]="true"
+    [closable]="true"
+    [style]="{ width: '400px' }"
+    [draggable]="false"
+  >
+    <div class="save-layout-form">
+      <label for="layoutName">Layout Name</label>
+      <input
+        pInputText
+        id="layoutName"
+        [(ngModel)]="saveLayoutName"
+        placeholder="e.g. My Trading View"
+        (keydown.enter)="confirmSaveLayout()"
+        class="save-layout-input"
+        autofocus
+      />
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton label="Cancel" class="p-button-text" (click)="showSaveDialog = false"></button>
+      <button pButton label="Save" icon="pi pi-save" (click)="confirmSaveLayout()" [disabled]="!saveLayoutName.trim()"></button>
+    </ng-template>
+  </p-dialog>
 }
 
 <router-outlet></router-outlet>
