@@ -83,7 +83,7 @@
    -------------------------------------------------------- */
 .tob-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: minmax(40px, 0.5fr) 1fr 1fr 1fr 1fr;
   min-height: clamp(20px, 4.5cqh, 44px);
 }
 
