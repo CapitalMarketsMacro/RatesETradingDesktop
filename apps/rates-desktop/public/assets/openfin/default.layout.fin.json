@@ -2,64 +2,89 @@
   "layouts": {
     "default": {
       "settings": {
-        "showMaximiseIcon": true
+        "showMaximiseIcon": true,
+        "showPopoutIcon": true
       },
       "content": [
         {
-          "type": "row",
+          "type": "column",
           "content": [
             {
-              "type": "column",
-              "width": 60,
+              "type": "stack",
+              "height": 8,
               "content": [
                 {
-                  "type": "stack",
-                  "height": 100,
-                  "content": [
-                    {
-                      "type": "component",
-                      "componentName": "view",
-                      "title": "Top of the Book",
-                      "componentState": {
-                        "url": "/market-data/top-of-book",
-                        "name": "top-of-book"
-                      }
-                    }
-                  ]
+                  "type": "component",
+                  "componentName": "view",
+                  "title": "Status",
+                  "isClosable": false,
+                  "reorderEnabled": false,
+                  "componentState": {
+                    "url": "/status-bar",
+                    "name": "status-bar"
+                  }
                 }
               ]
             },
             {
-              "type": "column",
-              "width": 40,
+              "type": "row",
+              "height": 92,
               "content": [
                 {
-                  "type": "stack",
-                  "height": 50,
+                  "type": "column",
+                  "width": 60,
                   "content": [
                     {
-                      "type": "component",
-                      "componentName": "view",
-                      "title": "Executions Blotter",
-                      "componentState": {
-                        "url": "/executions",
-                        "name": "executions-blotter"
-                      }
+                      "type": "stack",
+                      "height": 100,
+                      "content": [
+                        {
+                          "type": "component",
+                          "componentName": "view",
+                          "title": "Top of the Book",
+
+                          "componentState": {
+                            "url": "/market-data/top-of-book",
+                            "name": "top-of-book"
+                          }
+                        }
+                      ]
                     }
                   ]
                 },
                 {
-                  "type": "stack",
-                  "height": 50,
+                  "type": "column",
+                  "width": 40,
                   "content": [
                     {
-                      "type": "component",
-                      "componentName": "view",
-                      "title": "Market Data Blotter",
-                      "componentState": {
-                        "url": "/market-data/blotter",
-                        "name": "market-data-blotter"
-                      }
+                      "type": "stack",
+                      "height": 50,
+                      "content": [
+                        {
+                          "type": "component",
+                          "componentName": "view",
+                          "title": "Executions Blotter",
+                          "componentState": {
+                            "url": "/executions",
+                            "name": "executions-blotter"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "stack",
+                      "height": 50,
+                      "content": [
+                        {
+                          "type": "component",
+                          "componentName": "view",
+                          "title": "Market Data Blotter",
+                          "componentState": {
+                            "url": "/market-data/blotter",
+                            "name": "market-data-blotter"
+                          }
+                        }
+                      ]
                     }
                   ]
                 }

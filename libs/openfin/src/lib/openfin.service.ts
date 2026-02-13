@@ -54,9 +54,10 @@ export class OpenFinService {
   private layoutContainerEl: HTMLElement | null = null;
 
   /** Connection status observable */
-  private connectionStatusSubject = new BehaviorSubject<OpenFinConnectionStatus>(
-    OpenFinConnectionStatus.Disconnected
-  );
+  private connectionStatusSubject =
+    new BehaviorSubject<OpenFinConnectionStatus>(
+      OpenFinConnectionStatus.Disconnected,
+    );
   public connectionStatus$: Observable<OpenFinConnectionStatus> =
     this.connectionStatusSubject.asObservable();
 
@@ -70,7 +71,9 @@ export class OpenFinService {
 
   /** Whether the service is currently connected to the broker */
   get isConnected(): boolean {
-    return this.connectionStatusSubject.value === OpenFinConnectionStatus.Connected;
+    return (
+      this.connectionStatusSubject.value === OpenFinConnectionStatus.Connected
+    );
   }
 
   /** Whether OpenFin integration is enabled in config */
@@ -89,7 +92,10 @@ export class OpenFinService {
    */
   initialize(config: Partial<OpenFinConfig>): void {
     this.config = { ...DEFAULT_OPENFIN_CONFIG, ...config };
-    this.logger.info({ providerId: this.config.providerId }, 'OpenFin service initialized');
+    this.logger.info(
+      { providerId: this.config.providerId },
+      'OpenFin service initialized',
+    );
   }
 
   /**
@@ -104,7 +110,9 @@ export class OpenFinService {
    */
   async connectToBroker(layoutContainer: HTMLElement): Promise<unknown> {
     if (!this.config.enabled) {
-      this.logger.info('OpenFin is disabled in configuration, skipping connection');
+      this.logger.info(
+        'OpenFin is disabled in configuration, skipping connection',
+      );
       return null;
     }
 
@@ -122,7 +130,7 @@ export class OpenFinService {
       let layoutSnapshot: WebLayoutSnapshot = EMPTY_LAYOUT_SNAPSHOT;
       if (this.config.layoutUrl) {
         const fetched = await this.fetchLayoutSnapshot(
-          this.resolveUrl(this.config.layoutUrl)
+          this.resolveUrl(this.config.layoutUrl),
         );
         if (fetched) {
           layoutSnapshot = fetched;
@@ -131,7 +139,7 @@ export class OpenFinService {
 
       this.logger.info(
         { brokerUrl, providerId: this.config.providerId },
-        'Connecting to OpenFin Web Broker (host)...'
+        'Connecting to OpenFin Web Broker (host)...',
       );
 
       const fin = await connect({
@@ -150,6 +158,7 @@ export class OpenFinService {
       this.finApi = fin;
       this.layoutContainerEl = layoutContainer;
 
+
       // Initialize Interop — may fail on page reload if the SharedWorker
       // still holds the channel from the previous session. Treat as non-fatal.
       try {
@@ -157,7 +166,7 @@ export class OpenFinService {
         this.logger.info('OpenFin Interop initialized');
       } catch (_interopError) {
         this.logger.warn(
-          'Interop.init failed (broker channel may already exist from previous session), continuing...'
+          'Interop.init failed (broker channel may already exist from previous session), continuing...',
         );
       }
 
@@ -173,7 +182,10 @@ export class OpenFinService {
       return fin;
     } catch (error) {
       this.connectionStatusSubject.next(OpenFinConnectionStatus.Error);
-      this.logger.error(error as Error, 'Failed to connect to OpenFin Web Broker');
+      this.logger.error(
+        error as Error,
+        'Failed to connect to OpenFin Web Broker',
+      );
       throw error;
     }
   }
@@ -200,7 +212,9 @@ export class OpenFinService {
     this.connectionStatusSubject.next(OpenFinConnectionStatus.Connecting);
 
     try {
-      this.logger.info('Connecting to OpenFin Web Broker (view, inheriting from host)...');
+      this.logger.info(
+        'Connecting to OpenFin Web Broker (view, inheriting from host)...',
+      );
 
       const fin = await connect({
         connectionInheritance: 'enabled',
@@ -214,18 +228,21 @@ export class OpenFinService {
       return fin;
     } catch (error) {
       this.connectionStatusSubject.next(OpenFinConnectionStatus.Error);
-      this.logger.error(error as Error, 'Failed to connect view to OpenFin Web Broker');
+      this.logger.error(
+        error as Error,
+        'Failed to connect view to OpenFin Web Broker',
+      );
       throw error;
     }
   }
 
+
   /**
    * Add a view (iframe) to the current layout.
    *
-   * If all views were previously closed the GoldenLayout instance is
-   * destroyed and `getCurrentSync().addView()` throws. In that case we
-   * re-initialize the layout with a snapshot that contains the requested
-   * view so the layout is recreated from scratch.
+   * When only the status bar remains (all closable views removed), uses
+   * `layout.replace()` to rebuild the layout with the status bar row and
+   * the new view below it. Otherwise adds the view to the existing layout.
    *
    * @param name Unique name for the view.
    * @param url  URL to load inside the view iframe (can be relative).
@@ -239,48 +256,11 @@ export class OpenFinService {
     const resolvedUrl = this.resolveUrl(url);
 
     try {
-      // Try adding to the existing layout first
       const layout = this.finApi.Platform.Layout.getCurrentSync();
-      await layout.addView({ name, url: resolvedUrl } as never);
+      await layout.addView({ name, url: resolvedUrl });
       this.logger.info({ name, url }, 'View added to layout');
-    } catch (_firstError) {
-      // Layout likely destroyed (all views were closed) — re-init with this view
-      this.logger.warn('Layout appears destroyed, re-initializing with new view');
-
-      if (!this.layoutContainerEl) {
-        this.logger.error('No layout container reference, cannot re-initialize layout');
-        return;
-      }
-
-      try {
-        // Build a GoldenLayout config containing just the requested view
-        const layoutConfig = {
-          settings: { showMaximiseIcon: true },
-          content: [
-            {
-              type: 'stack',
-              content: [
-                {
-                  type: 'component',
-                  componentName: 'view',
-                  title: name,
-                  componentState: { url: resolvedUrl, name },
-                },
-              ],
-            },
-          ],
-        };
-
-        // Layout.init was already called once — use Layout.create to rebuild
-        await this.finApi.Platform.Layout.create({
-          container: this.layoutContainerEl,
-          layout: layoutConfig,
-        } as never);
-
-        this.logger.info({ name, url }, 'Layout re-created with view');
-      } catch (reinitError) {
-        this.logger.error(reinitError as Error, 'Failed to re-initialize layout');
-      }
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to add view to layout');
     }
   }
 
@@ -322,7 +302,7 @@ export class OpenFinService {
    */
   async addContextListener(
     handler: (context: Record<string, unknown>) => void,
-    contextType?: string
+    contextType?: string,
   ): Promise<void> {
     if (!this.finApi) {
       this.logger.warn('Cannot add context listener: not connected to OpenFin');
@@ -345,7 +325,9 @@ export class OpenFinService {
    */
   async getChannel(channelName: string): Promise<unknown> {
     if (!this.finApi) {
-      throw new Error('Not connected to OpenFin. Call connectToBroker() first.');
+      throw new Error(
+        'Not connected to OpenFin. Call connectToBroker() first.',
+      );
     }
     return this.finApi.InterApplicationBus.Channel.connect(channelName);
   }
@@ -364,16 +346,24 @@ export class OpenFinService {
   /**
    * Fetch a layout snapshot JSON from a URL.
    */
-  private async fetchLayoutSnapshot(url: string): Promise<WebLayoutSnapshot | undefined> {
+  private async fetchLayoutSnapshot(
+    url: string,
+  ): Promise<WebLayoutSnapshot | undefined> {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        this.logger.warn({ url, status: response.status }, 'Failed to fetch layout snapshot');
+        this.logger.warn(
+          { url, status: response.status },
+          'Failed to fetch layout snapshot',
+        );
         return undefined;
       }
       return (await response.json()) as WebLayoutSnapshot;
     } catch (error) {
-      this.logger.warn({ err: error }, 'Error fetching layout snapshot, using empty layout');
+      this.logger.warn(
+        { err: error },
+        'Error fetching layout snapshot, using empty layout',
+      );
       return undefined;
     }
   }

@@ -1,0 +1,21 @@
+<div class="status-bar">
+  <span class="app-name">{{ appName }}</span>
+  <span class="app-version">v{{ appVersion }}</span>
+  <span class="env-badge" [class]="envClass">{{ environment | uppercase }}</span>
+
+  <span class="divider">|</span>
+
+  <span class="status-dot" [class]="transportStatusClass"></span>
+  <span class="status-label">{{ transportType }}:</span>
+  <span class="status-value" [class]="transportStatusClass">{{ transportStatusLabel }}</span>
+
+  <span class="divider">|</span>
+
+  <span class="status-dot" [class]="openfinStatusClass"></span>
+  <span class="status-label">OpenFin:</span>
+  <span class="status-value" [class]="openfinStatusClass">{{ openfinStatusLabel }}</span>
+
+  <span class="divider">|</span>
+
+  <span class="clock">{{ currentTime }}</span>
+</div>
