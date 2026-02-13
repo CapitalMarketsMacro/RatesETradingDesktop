@@ -21,12 +21,12 @@
   
   <div class="tob-grid">
     <!-- Header Row -->
-    <div class="tob-row tob-header-row">
-      <div class="tob-cell tob-cell-desc">Description</div>
-      <div class="tob-cell tob-cell-bid-size">Bid Size</div>
-      <div class="tob-cell tob-cell-bid">Best Bid</div>
-      <div class="tob-cell tob-cell-ask">Best Ask</div>
-      <div class="tob-cell tob-cell-ask-size">Ask Size</div>
+    <div class="tob-row tob-header-row" [style.grid-template-columns]="gridTemplateColumns">
+      <div class="tob-cell tob-cell-desc">Description<span class="col-resize-handle" (mousedown)="onResizeStart($event, 0)"></span></div>
+      <div class="tob-cell tob-cell-bid-size">Bid Size<span class="col-resize-handle" (mousedown)="onResizeStart($event, 1)"></span></div>
+      <div class="tob-cell tob-cell-bid">Best Bid<span class="col-resize-handle" (mousedown)="onResizeStart($event, 2)"></span></div>
+      <div class="tob-cell tob-cell-ask">Best Ask<span class="col-resize-handle" (mousedown)="onResizeStart($event, 3)"></span></div>
+      <div class="tob-cell tob-cell-ask-size"><span class="col-resize-handle col-resize-handle-left" (mousedown)="onResizeStart($event, 3)"></span>Ask Size<span class="col-resize-handle" (mousedown)="onResizeSoloStart($event, 4)"></span></div>
     </div>
     
     <!-- Data Rows -->
@@ -36,7 +36,7 @@
       </div>
     } @else {
       @for (row of marketDataRows; track trackByRow($index, row)) {
-        <div class="tob-row tob-data-row">
+        <div class="tob-row tob-data-row" [style.grid-template-columns]="gridTemplateColumns">
           <div class="tob-cell tob-cell-desc">{{ row.Desc }}</div>
           <div 
             class="tob-cell tob-cell-bid-size tob-cell-interactive"

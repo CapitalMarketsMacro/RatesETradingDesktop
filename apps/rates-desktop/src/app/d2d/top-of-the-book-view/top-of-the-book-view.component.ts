@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, NgZone, ViewChild } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ChangeDetectorRef, NgZone, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MarketData, MarketDataGridRow, transformMarketDataToGridRow } from '@rates-trading/data-access';
@@ -112,6 +112,22 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
 
   // Expose formatter for template
   formatPrice = formatTreasury32nds;
+
+  // ── Column resize state ──
+  /** Column widths as fr values; order: Desc, BidSize, Bid, Ask, AskSize */
+  columnWidths = [0.5, 1, 1, 1, 1];
+  private resizeIndex = -1;
+  private resizeStartX = 0;
+  private resizeStartWidthLeft = 0;
+  private resizeStartWidthRight = 0;
+  private resizing = false;
+  private resizeSolo = false; // true when resizing a single column (right edge of last col)
+  private static readonly MIN_COL_FR = 0.2;
+
+  /** Dynamic grid-template-columns binding */
+  get gridTemplateColumns(): string {
+    return this.columnWidths.map(w => `${w}fr`).join(' ');
+  }
 
   /**
    * Get live row data for the trading popover
@@ -452,6 +468,80 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
   validateQuantity(): void {
     if (this.tradingData && this.tradingData.quantity < 1) {
       this.tradingData.quantity = 1;
+    }
+  }
+
+  // ── Column resize handlers ──
+
+  /**
+   * Start column resize between two adjacent columns.
+   * @param event  MouseEvent from the handle
+   * @param index  Column index (left column of the divider)
+   */
+  onResizeStart(event: MouseEvent, index: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizing = true;
+    this.resizeSolo = false;
+    this.resizeIndex = index;
+    this.resizeStartX = event.clientX;
+    this.resizeStartWidthLeft = this.columnWidths[index];
+    this.resizeStartWidthRight = this.columnWidths[index + 1];
+  }
+
+  /**
+   * Start solo column resize (right edge of the last column).
+   * Grows/shrinks only that column without affecting neighbours.
+   */
+  onResizeSoloStart(event: MouseEvent, index: number): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.resizing = true;
+    this.resizeSolo = true;
+    this.resizeIndex = index;
+    this.resizeStartX = event.clientX;
+    this.resizeStartWidthLeft = this.columnWidths[index];
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onResizeMove(event: MouseEvent): void {
+    if (!this.resizing) return;
+    event.preventDefault();
+
+    const gridEl = (event.target as HTMLElement).closest('.tob-grid') ??
+                   document.querySelector('.tob-grid');
+    const gridWidth = gridEl ? gridEl.clientWidth : 800;
+    const totalFr = this.columnWidths.reduce((a, b) => a + b, 0);
+    const pxPerFr = gridWidth / totalFr;
+    const deltaFr = (event.clientX - this.resizeStartX) / pxPerFr;
+
+    if (this.resizeSolo) {
+      // Solo mode — adjust only the target column
+      const newWidth = this.resizeStartWidthLeft + deltaFr;
+      if (newWidth >= TopOfTheBookViewComponent.MIN_COL_FR) {
+        this.columnWidths[this.resizeIndex] = Math.round(newWidth * 1000) / 1000;
+        this.cdr.detectChanges();
+      }
+    } else {
+      // Paired mode — trade width between adjacent columns
+      const newLeft = this.resizeStartWidthLeft + deltaFr;
+      const newRight = this.resizeStartWidthRight - deltaFr;
+
+      if (newLeft >= TopOfTheBookViewComponent.MIN_COL_FR &&
+          newRight >= TopOfTheBookViewComponent.MIN_COL_FR) {
+        this.columnWidths[this.resizeIndex] = Math.round(newLeft * 1000) / 1000;
+        this.columnWidths[this.resizeIndex + 1] = Math.round(newRight * 1000) / 1000;
+        this.cdr.detectChanges();
+      }
+    }
+  }
+
+  @HostListener('document:mouseup')
+  onResizeEnd(): void {
+    if (this.resizing) {
+      this.resizing = false;
+      this.resizeSolo = false;
+      this.resizeIndex = -1;
     }
   }
 
