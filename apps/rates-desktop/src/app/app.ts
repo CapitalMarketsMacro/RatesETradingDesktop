@@ -279,20 +279,25 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
     const env = this.openfinService.environment;
     const viewName = `${baseName}-${Date.now()}`;
 
+    // Append viewId to the URL so each view instance has a unique
+    // identifier for per-instance state persistence.
+    const separator = url.includes('?') ? '&' : '?';
+    const urlWithViewId = `${url}${separator}viewId=${encodeURIComponent(viewName)}`;
+
     if (env === 'platform') {
       // OpenFin Platform — add view as a tab in the platform window's layout
-      this.logger.info({ viewName, url, env }, 'Adding view to platform layout');
-      await this.openfinService.addPlatformView(viewName, url);
+      this.logger.info({ viewName, url: urlWithViewId, env }, 'Adding view to platform layout');
+      await this.openfinService.addPlatformView(viewName, urlWithViewId);
     } else if (env === 'container') {
       // Native OpenFin container (startup_app) — open each view in its own native window
-      this.logger.info({ viewName, url, env }, 'Opening view in new OpenFin window');
-      await this.openfinService.createWindow(viewName, url);
+      this.logger.info({ viewName, url: urlWithViewId, env }, 'Opening view in new OpenFin window');
+      await this.openfinService.createWindow(viewName, urlWithViewId);
     } else if (env === 'web' && this.openfinService.isConnected) {
       // core-web mode — add as a tab in the GoldenLayout
-      this.logger.info({ viewName, url, env }, 'Adding view to layout');
-      await this.addViewToLayout(viewName, url);
+      this.logger.info({ viewName, url: urlWithViewId, env }, 'Adding view to layout');
+      await this.addViewToLayout(viewName, urlWithViewId);
     } else {
-      // Plain browser fallback
+      // Plain browser fallback — use stateKey (route path) as instance ID
       this.router.navigate([url]);
     }
   }

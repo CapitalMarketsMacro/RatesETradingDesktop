@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { connect, WebLayoutSnapshot } from '@openfin/core-web';
 import { OpenFinConfig, DEFAULT_OPENFIN_CONFIG } from './openfin-config.interface';
 import { LoggerService } from '@rates-trading/logger';
+import { WorkspaceStorageService } from '@rates-trading/shared-utils';
 
 /**
  * Connection states for the OpenFin Web Broker.
@@ -65,6 +66,7 @@ const EMPTY_LAYOUT_SNAPSHOT: WebLayoutSnapshot = {
 @Injectable({ providedIn: 'root' })
 export class OpenFinService {
   private logger = inject(LoggerService).child({ service: 'OpenFin' });
+  private workspaceStorage = inject(WorkspaceStorageService);
 
   /** The OpenFin `fin` API object, available after successful connection */
   private finApi: Awaited<ReturnType<typeof connect>> | null = null;
@@ -656,12 +658,18 @@ export class OpenFinService {
         return;
       }
 
+      // Collect all workspace component states so they are bundled
+      // with the layout snapshot and can be restored later.
+      const componentStates = this.workspaceStorage.collectAllStates();
+
       const entry = {
         name,
         timestamp: Date.now(),
         snapshot,
         /** Tag the environment so restore uses the right strategy */
         env,
+        /** Bundled component states (column widths, filters, etc.) */
+        componentStates,
       };
 
       const all = this.getAllSavedLayouts();
@@ -696,6 +704,13 @@ export class OpenFinService {
     if (!entry) {
       this.logger.warn({ name }, 'No saved layout found with this name');
       return;
+    }
+
+    // Restore bundled component states BEFORE views load.
+    // Each WorkspaceComponent reads its state via the service in ngOnInit.
+    const componentStates = (entry as Record<string, unknown>)['componentStates'] as Record<string, unknown> | undefined;
+    if (componentStates && typeof componentStates === 'object') {
+      this.workspaceStorage.restoreAllStates(componentStates);
     }
 
     const env = this.environment;

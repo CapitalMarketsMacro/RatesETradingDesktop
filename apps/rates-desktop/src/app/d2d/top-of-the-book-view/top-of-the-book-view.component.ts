@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MarketDataGridRow } from '@rates-trading/data-access';
 import { LoggerService } from '@rates-trading/logger';
-import { formatTreasury32nds } from '@rates-trading/shared-utils';
+import { formatTreasury32nds, WorkspaceComponent } from '@rates-trading/shared-utils';
 import { Subscription } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
@@ -56,7 +56,9 @@ interface TradingPopoverData {
   templateUrl: './top-of-the-book-view.component.html',
   styleUrl: './top-of-the-book-view.component.css',
 })
-export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
+export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnInit, OnDestroy {
+  readonly stateKey = 'market-data/top-of-book';
+
   private marketDataService = inject(MarketDataService);
   private logger = inject(LoggerService).child({ component: 'TopOfTheBookView' });
   private ngZone = inject(NgZone);
@@ -134,7 +136,25 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
     return this.tradingData.side === 'sell' ? row.BestBidQty : row.BestAskQty;
   }
 
+  // ── WorkspaceComponent contract ──
+
+  getState(): Record<string, unknown> {
+    return {
+      columnWidths: [...this.columnWidths],
+    };
+  }
+
+  setState(state: Record<string, unknown>): void {
+    if (Array.isArray(state['columnWidths']) && state['columnWidths'].length === this.columnWidths.length) {
+      this.columnWidths = (state['columnWidths'] as number[]).map(Number);
+      this.logger.info({ columnWidths: this.columnWidths }, 'Restored column widths from saved state');
+    }
+  }
+
   ngOnInit(): void {
+    // Restore persisted state (column widths) before anything else
+    this.loadPersistedState();
+
     // Ensure the shared market data service is connected
     this.marketDataService.connect();
 
@@ -329,6 +349,8 @@ export class TopOfTheBookViewComponent implements OnInit, OnDestroy {
       this.resizing = false;
       this.resizeSolo = false;
       this.resizeIndex = -1;
+      // Persist column widths after user finishes resizing
+      this.persistState();
     }
   }
 }

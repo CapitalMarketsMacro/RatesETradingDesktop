@@ -555,6 +555,26 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
   getGridApi(): GridApi | undefined {
     return this.gridApi;
   }
+
+  // ── Column State (for WorkspaceComponent integration) ──
+
+  /**
+   * Return the current AG Grid column state (widths, order, pinned, sort, etc.)
+   * Useful for persisting user customizations across layout save/restore.
+   */
+  getColumnState(): unknown[] | null {
+    if (!this.gridApi) return null;
+    return this.gridApi.getColumnState();
+  }
+
+  /**
+   * Apply a previously saved column state.
+   * Call this after the grid is ready (e.g. in a gridReady handler or after init).
+   */
+  setColumnState(state: unknown[]): void {
+    if (!this.gridApi || !state) return;
+    this.gridApi.applyColumnState({ state: state as any, applyOrder: true });
+  }
   
   /**
    * Get the current row count.
