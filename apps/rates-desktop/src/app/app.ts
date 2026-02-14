@@ -223,6 +223,9 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
         if (this.isDefaultRoute) {
           await this.openfinService.initPlatformLayout();
           this.logger.info('OpenFin Platform layout initialized — views will be added via platform.createView()');
+
+          // Auto-restore the last-used layout (if any)
+          await this.autoRestoreLastLayout();
         } else {
           // Sub-route loaded as a platform view — just mark connected
           this.openfinService.markContainerConnected();
@@ -233,6 +236,12 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
         // Each view opens in its own native window via fin.Window.create().
         this.openfinService.markContainerConnected();
         this.logger.info('Running inside OpenFin container — views will open as native windows');
+
+        // Only auto-restore from the MAIN window, not from child windows
+        // (child windows also detect as 'container' and would cause a loop)
+        if (this.isDefaultRoute) {
+          await this.autoRestoreLastLayout();
+        }
       } else if (env === 'web') {
         if (this.isDefaultRoute) {
           // Host page — connect to broker and initialize the layout engine
@@ -357,9 +366,14 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
    * - **Container** → close all child windows (back to bare main window)
    * - **Platform** → fetch original manifest and re-apply the default snapshot
    * - **Web** → reload the page to load the default snapshot
+   *
+   * Clears the last-used layout so the next launch starts with the default.
    */
   private async restoreDefaultLayout(): Promise<void> {
     if (!this.openfinService.isConnected) return;
+
+    // Clear the last-used layout so next app launch starts fresh
+    this.openfinService.clearLastLayout();
 
     const env = this.openfinService.environment;
     if (env === 'container') {
@@ -371,6 +385,67 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
     } else {
       this.logger.info('Restoring default layout (reloading page)...');
       window.location.reload();
+    }
+  }
+
+  /**
+   * Auto-restore the last-used layout on application startup.
+   *
+   * Checks if there's a recorded last-used layout for the current environment.
+   * If found and the layout still exists, restores it silently.
+   *
+   * Uses a timestamp guard to prevent infinite loops:
+   * - In **Platform mode**, `applySnapshot({ closeExistingWindows: true })`
+   *   destroys and recreates the window, which reloads the app and triggers
+   *   `initializeOpenFin()` again. The guard detects this and skips.
+   * - In **Container mode**, child windows must NOT call this (guarded by
+   *   `isDefaultRoute` in the caller).
+   *
+   * Web mode handles last-layout auto-restore directly in `connectToBroker()`.
+   */
+  private static readonly AUTO_RESTORE_GUARD_KEY = 'openfin-auto-restore-guard';
+  private static readonly AUTO_RESTORE_GUARD_WINDOW_MS = 30_000; // 30 seconds
+
+  private async autoRestoreLastLayout(): Promise<void> {
+    // ── Guard against infinite loops ──
+    // If we recently auto-restored (< 30s ago), the current startup is
+    // likely caused by that restore (e.g. Platform applySnapshot recreated
+    // the window). Clear the guard and skip.
+    const guardTimestamp = localStorage.getItem(App.AUTO_RESTORE_GUARD_KEY);
+    if (guardTimestamp) {
+      const elapsed = Date.now() - parseInt(guardTimestamp, 10);
+      if (elapsed < App.AUTO_RESTORE_GUARD_WINDOW_MS) {
+        localStorage.removeItem(App.AUTO_RESTORE_GUARD_KEY);
+        this.logger.info('Skipping auto-restore (recently restored, preventing loop)');
+        return;
+      }
+      // Guard is stale (> 30s) — remove it and proceed normally
+      localStorage.removeItem(App.AUTO_RESTORE_GUARD_KEY);
+    }
+
+    const lastLayoutName = this.openfinService.getLastLayoutName();
+    if (!lastLayoutName) return;
+
+    // Verify the layout still exists
+    const saved = this.openfinService.getSavedLayouts();
+    const entry = saved.find((l) => l.name === lastLayoutName);
+    if (!entry) {
+      // Layout was deleted — clear the stale reference
+      this.openfinService.clearLastLayout();
+      return;
+    }
+
+    // Set the guard BEFORE restoring — if the restore recreates the window,
+    // the next startup will see this guard and skip.
+    localStorage.setItem(App.AUTO_RESTORE_GUARD_KEY, Date.now().toString());
+
+    this.logger.info({ name: lastLayoutName }, 'Auto-restoring last-used layout on startup');
+    try {
+      await this.openfinService.restoreLayout(lastLayoutName);
+    } catch (error) {
+      // Clear the guard on failure so the next launch can try again
+      localStorage.removeItem(App.AUTO_RESTORE_GUARD_KEY);
+      this.logger.error(error as Error, 'Failed to auto-restore last layout');
     }
   }
 

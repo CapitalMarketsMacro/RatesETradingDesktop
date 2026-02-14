@@ -261,6 +261,7 @@ export class OpenFinService {
 
       // Check if there is a pending restore request (set by restoreLayout)
       let layoutSnapshot: WebLayoutSnapshot = EMPTY_LAYOUT_SNAPSHOT;
+      let restoredFromSaved = false;
       const pendingRestore = localStorage.getItem(OpenFinService.PENDING_RESTORE_KEY);
       if (pendingRestore) {
         // Clear the flag immediately so it doesn't loop on next reload
@@ -269,14 +270,43 @@ export class OpenFinService {
           const pending = JSON.parse(pendingRestore) as { name: string; snapshot: unknown };
           // Wrap the saved GoldenLayout config inside the WebLayoutSnapshot envelope
           layoutSnapshot = { layouts: { default: pending.snapshot } } as WebLayoutSnapshot;
+          restoredFromSaved = true;
           this.logger.info({ name: pending.name }, 'Restoring saved layout on startup');
         } catch {
           this.logger.warn('Failed to parse pending layout restore, falling back to default');
         }
       }
 
-      // If no pending restore, load the default layout from config
-      if (!pendingRestore && this.config.layoutUrl) {
+      // If no pending restore, check for a last-used layout to auto-restore
+      if (!restoredFromSaved) {
+        const lastLayoutName = this.getLastLayoutName();
+        if (lastLayoutName) {
+          const allLayouts = this.getSavedLayouts();
+          const lastEntry = allLayouts.find((l) => l.name === lastLayoutName);
+          if (lastEntry) {
+            try {
+              layoutSnapshot = { layouts: { default: lastEntry.snapshot } } as WebLayoutSnapshot;
+              restoredFromSaved = true;
+
+              // Restore bundled component states (column widths, filters, etc.)
+              const componentStates = (lastEntry as Record<string, unknown>)['componentStates'] as Record<string, unknown> | undefined;
+              if (componentStates && typeof componentStates === 'object') {
+                this.workspaceStorage.restoreAllStates(componentStates);
+              }
+
+              this.logger.info({ name: lastLayoutName }, 'Auto-restoring last-used layout on startup');
+            } catch {
+              this.logger.warn({ name: lastLayoutName }, 'Failed to parse last-used layout, falling back to default');
+            }
+          } else {
+            // The referenced layout was deleted — clear the stale reference
+            this.clearLastLayout();
+          }
+        }
+      }
+
+      // If no pending restore and no last-used layout, load the default layout from config
+      if (!restoredFromSaved && this.config.layoutUrl) {
         const fetched = await this.fetchLayoutSnapshot(
           this.resolveUrl(this.config.layoutUrl),
         );
@@ -628,6 +658,8 @@ export class OpenFinService {
    */
   private static readonly LAYOUT_STORAGE_KEY = 'openfin-saved-layouts';
   private static readonly PENDING_RESTORE_KEY = 'openfin-pending-restore';
+  /** Stores the last-used layout name per environment: `{ web: "My Layout", platform: "Trade View", container: "Default" }` */
+  private static readonly LAST_LAYOUT_KEY = 'openfin-last-layout';
 
   /**
    * Save the current layout under a user-provided name.
@@ -685,6 +717,10 @@ export class OpenFinService {
         OpenFinService.LAYOUT_STORAGE_KEY,
         JSON.stringify(all),
       );
+
+      // Record as the last-used layout for this environment
+      this.setLastLayout(name);
+
       this.logger.info({ name, env }, 'Layout saved');
     } catch (error) {
       this.logger.error(error as Error, 'Failed to save layout');
@@ -714,6 +750,9 @@ export class OpenFinService {
     }
 
     const env = this.environment;
+
+    // Record as the last-used layout for this environment
+    this.setLastLayout(name);
 
     if (env === 'container') {
       await this.restoreContainerSnapshot(
@@ -883,6 +922,7 @@ export class OpenFinService {
 
   /**
    * Delete a saved layout by name (scoped to the current environment).
+   * If the deleted layout was the last-used one, clear that reference too.
    */
   deleteLayout(name: string): void {
     const env = this.environment;
@@ -892,7 +932,74 @@ export class OpenFinService {
       OpenFinService.LAYOUT_STORAGE_KEY,
       JSON.stringify(filtered),
     );
+
+    // If the deleted layout was the last-used one, clear the reference
+    if (this.getLastLayoutName() === name) {
+      this.clearLastLayout();
+    }
+
     this.logger.info({ name }, 'Saved layout deleted');
+  }
+
+  // ────────────────────────────────────────────────────────
+  // Last-used layout tracking
+  // ────────────────────────────────────────────────────────
+
+  /**
+   * Record the name of the last-used layout for the current environment.
+   * Called automatically after save or restore.
+   */
+  setLastLayout(name: string): void {
+    try {
+      const env = this.environment;
+      const map = this.getLastLayoutMap();
+      map[env] = name;
+      localStorage.setItem(OpenFinService.LAST_LAYOUT_KEY, JSON.stringify(map));
+      this.logger.info({ name, env }, 'Last layout recorded');
+    } catch {
+      // localStorage may be full or unavailable
+    }
+  }
+
+  /**
+   * Get the name of the last-used layout for the current environment.
+   * Returns `null` if no last-used layout is recorded or it was cleared.
+   */
+  getLastLayoutName(): string | null {
+    try {
+      const env = this.environment;
+      const map = this.getLastLayoutMap();
+      return map[env] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Clear the last-used layout for the current environment
+   * (e.g. when "Restore Default Layout" is selected).
+   */
+  clearLastLayout(): void {
+    try {
+      const env = this.environment;
+      const map = this.getLastLayoutMap();
+      delete map[env];
+      localStorage.setItem(OpenFinService.LAST_LAYOUT_KEY, JSON.stringify(map));
+      this.logger.info({ env }, 'Last layout cleared');
+    } catch {
+      // ignore
+    }
+  }
+
+  /** Read the last-layout map from localStorage. */
+  private getLastLayoutMap(): Record<string, string> {
+    try {
+      const raw = localStorage.getItem(OpenFinService.LAST_LAYOUT_KEY);
+      if (!raw) return {};
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
   }
 
   /**
