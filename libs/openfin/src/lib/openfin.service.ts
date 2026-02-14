@@ -213,9 +213,40 @@ export class OpenFinService {
 
       this.connectionStatusSubject.next(OpenFinConnectionStatus.Connected);
       this.logger.info('Platform layout initialized in #layout-container');
+
+      // When the main platform window is closed, quit the entire platform
+      // so all child windows/views are also closed (matching Container behaviour).
+      this.registerPlatformCloseHandler(globalFin);
     } catch (error) {
       this.connectionStatusSubject.next(OpenFinConnectionStatus.Error);
       this.logger.error(error as Error, 'Failed to initialize platform layout');
+    }
+  }
+
+  /**
+   * Register a handler on the main platform window's `close-requested` event.
+   *
+   * When the user closes the main window, this calls `platform.quit()` which
+   * tears down the entire platform (all windows and views). Without this,
+   * child windows survive the main window closing.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private registerPlatformCloseHandler(globalFin: any): void {
+    try {
+      const win = globalFin.Window.getCurrentSync();
+      win.on('close-requested', async () => {
+        this.logger.info('Main platform window close requested — quitting platform');
+        try {
+          const platform = globalFin.Platform.getCurrentSync();
+          await platform.quit();
+        } catch {
+          // If platform.quit fails, force-close the window as a fallback
+          win.close(true);
+        }
+      });
+      this.logger.info('Platform close handler registered');
+    } catch (error) {
+      this.logger.warn({ err: error }, 'Failed to register platform close handler');
     }
   }
 
