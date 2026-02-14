@@ -42,6 +42,7 @@
     [closable]="true"
     [style]="{ width: '400px' }"
     [draggable]="false"
+    (onHide)="onSaveDialogHide()"
   >
     <div class="save-layout-form">
       <label for="layoutName">Layout Name</label>

@@ -301,6 +301,10 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   showSaveLayoutDialog(): void {
     this.saveLayoutName = '';
     this.showSaveDialog = true;
+    // Hide platform views so the dialog is visible
+    if (this.openfinService.isPlatform) {
+      this.openfinService.setPlatformViewsVisible(false);
+    }
   }
 
   /** Called when the user confirms the save dialog */
@@ -312,11 +316,23 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
     this.showSaveDialog = false;
     this.refreshPreferencesMenu();
     this.logger.info({ name }, 'Layout saved from menu');
+    // Restore view visibility
+    if (this.openfinService.isPlatform) {
+      this.openfinService.setPlatformViewsVisible(true);
+    }
   }
 
-  /** Restore a saved layout by name (triggers page reload) */
-  private restoreSavedLayout(name: string): void {
-    this.openfinService.restoreLayout(name);
+  /** Called when the save dialog is cancelled or closed */
+  onSaveDialogHide(): void {
+    if (this.openfinService.isPlatform) {
+      this.viewsHiddenForMenu = false;
+      this.openfinService.setPlatformViewsVisible(true);
+    }
+  }
+
+  /** Restore a saved layout by name */
+  private async restoreSavedLayout(name: string): Promise<void> {
+    await this.openfinService.restoreLayout(name);
   }
 
   /** Delete a saved layout by name and refresh the menu */
@@ -488,12 +504,17 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
 
   /**
    * Called when the mouse leaves the menubar area.
-   * Restores view visibility after a short delay.
+   * Restores view visibility after a short delay — but NOT if a dialog is open.
    */
   onMenubarLeave(): void {
     if (this.openfinService.isPlatform && this.viewsHiddenForMenu) {
+      // Don't restore views if a dialog is currently showing
+      if (this.showSaveDialog) return;
+
       // Small delay so the menu can close before views reappear
       setTimeout(() => {
+        // Re-check: dialog may have opened during the delay
+        if (this.showSaveDialog) return;
         this.viewsHiddenForMenu = false;
         this.openfinService.setPlatformViewsVisible(true);
       }, 150);

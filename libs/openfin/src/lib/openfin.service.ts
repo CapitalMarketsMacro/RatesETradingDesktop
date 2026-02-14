@@ -513,26 +513,35 @@ export class OpenFinService {
 
   /**
    * Save the current layout under a user-provided name.
-   * Overwrites any existing layout with the same name.
+   * Delegates to the correct API depending on environment:
+   *
+   *  - **Platform** → `fin.Platform.getCurrentSync().getSnapshot()`
+   *  - **Web (core-web)** → `layout.getConfig()`
    */
   async saveLayout(name: string): Promise<void> {
-    if (!this.finApi) {
-      this.logger.error('Cannot save layout: OpenFin not initialized');
-      return;
-    }
-
     try {
-      const layout = this.finApi.Platform.Layout.getCurrentSync();
-      const config = await (layout as unknown as { getConfig(): Promise<unknown> }).getConfig();
+      let snapshot: unknown;
+
+      if (this.isPlatform) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const globalFin = (window as any).fin;
+        const platform = globalFin.Platform.getCurrentSync();
+        snapshot = await platform.getSnapshot();
+      } else if (this.finApi) {
+        const layout = this.finApi.Platform.Layout.getCurrentSync();
+        snapshot = await (layout as unknown as { getConfig(): Promise<unknown> }).getConfig();
+      } else {
+        this.logger.error('Cannot save layout: OpenFin not initialized');
+        return;
+      }
 
       const entry = {
         name,
         timestamp: Date.now(),
-        snapshot: config,
+        snapshot,
       };
 
       const all = this.getSavedLayouts();
-      // Replace existing entry with same name, or append
       const idx = all.findIndex((l) => l.name === name);
       if (idx >= 0) {
         all[idx] = entry;
@@ -553,12 +562,10 @@ export class OpenFinService {
   /**
    * Restore a previously-saved layout by name.
    *
-   * Because `@openfin/core-web` does not implement `layout.replace()`,
-   * we store the target layout in localStorage and reload the page.
-   * `connectToBroker()` picks up the pending restore flag on startup and
-   * passes the saved snapshot to `connect()` instead of the default layout.
+   *  - **Platform** → `platform.applySnapshot()` (live, no reload needed)
+   *  - **Web (core-web)** → stash in localStorage + page reload
    */
-  restoreLayout(name: string): void {
+  async restoreLayout(name: string): Promise<void> {
     const all = this.getSavedLayouts();
     const entry = all.find((l) => l.name === name);
     if (!entry) {
@@ -566,13 +573,27 @@ export class OpenFinService {
       return;
     }
 
-    // Stash the layout to restore, then reload
-    localStorage.setItem(
-      OpenFinService.PENDING_RESTORE_KEY,
-      JSON.stringify({ name: entry.name, snapshot: entry.snapshot }),
-    );
-    this.logger.info({ name }, 'Pending layout restore set, reloading page...');
-    window.location.reload();
+    if (this.isPlatform) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const globalFin = (window as any).fin;
+        const platform = globalFin.Platform.getCurrentSync();
+        await platform.applySnapshot(entry.snapshot as never, {
+          closeExistingWindows: true,
+        });
+        this.logger.info({ name }, 'Platform snapshot restored');
+      } catch (error) {
+        this.logger.error(error as Error, 'Failed to restore platform snapshot');
+      }
+    } else {
+      // core-web: stash and reload
+      localStorage.setItem(
+        OpenFinService.PENDING_RESTORE_KEY,
+        JSON.stringify({ name: entry.name, snapshot: entry.snapshot }),
+      );
+      this.logger.info({ name }, 'Pending layout restore set, reloading page...');
+      window.location.reload();
+    }
   }
 
   /**
