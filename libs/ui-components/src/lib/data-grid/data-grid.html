@@ -1,4 +1,38 @@
 <div class="data-grid-container" [style.height]="height">
+  <!-- PrimeNG Accordion — collapsed by default, expandable tool panel -->
+  <p-accordion class="grid-accordion" [value]="toolbarOpen ? 'tools' : null"
+               (valueChange)="onAccordionToggle($event)">
+    <p-accordion-panel value="tools">
+      <p-accordion-header>
+        <span class="grid-accordion-label">
+          <i class="pi pi-search"></i>
+          Tools
+        </span>
+      </p-accordion-header>
+      <p-accordion-content>
+        <div class="grid-tools-row">
+          <div class="grid-quick-filter-group">
+            <i class="pi pi-filter filter-icon"></i>
+            <input
+              #quickFilterInput
+              type="text"
+              class="grid-quick-filter"
+              placeholder="Quick filter…"
+              [value]="quickFilterText"
+              (input)="onQuickFilterChange($event)" />
+            @if (quickFilterText) {
+              <button type="button" class="grid-filter-clear" (click)="clearQuickFilter()"
+                      title="Clear filter">
+                <i class="pi pi-times"></i>
+              </button>
+            }
+          </div>
+          <!-- Future tools can be added here -->
+        </div>
+      </p-accordion-content>
+    </p-accordion-panel>
+  </p-accordion>
+
   <ag-grid-angular
     #agGrid
     [columnDefs]="getColumns()"
@@ -15,6 +49,7 @@
     [getRowId]="mergedGridOptions.getRowId"
     [asyncTransactionWaitMillis]="mergedGridOptions.asyncTransactionWaitMillis"
     [statusBar]="mergedGridOptions.statusBar"
+    [cacheQuickFilter]="true"
     (gridReady)="onGridReady($event)"
   ></ag-grid-angular>
 </div>

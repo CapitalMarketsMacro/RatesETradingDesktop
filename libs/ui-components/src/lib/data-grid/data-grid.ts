@@ -4,6 +4,7 @@ import {
   OnInit,
   OnDestroy,
   ViewChild,
+  ElementRef,
   AfterViewInit,
   signal,
   effect,
@@ -29,6 +30,7 @@ import {
 } from 'ag-grid-community';
 import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import { Subject, Subscription } from 'rxjs';
+import { AccordionModule } from 'primeng/accordion';
 
 // Register ag-Grid modules
 ModuleRegistry.registerModules([AllCommunityModule, AllEnterpriseModule]);
@@ -51,7 +53,7 @@ export interface HighFrequencyUpdate<T = any> {
 @Component({
   selector: 'lib-data-grid',
   standalone: true,
-  imports: [CommonModule, AgGridModule],
+  imports: [CommonModule, AgGridModule, AccordionModule],
   templateUrl: './data-grid.html',
   styleUrl: './data-grid.css',
 })
@@ -118,6 +120,10 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
    * This is more reliable than querying gridApi.getRowNode() with async transactions.
    */
   private knownRowIds = new Set<string>();
+
+  // ── Toolbar / Quick Filter state ──
+  toolbarOpen = false;
+  quickFilterText = '';
 
   // Merged grid options exposed for template binding
   mergedGridOptions: GridOptions & { suppressPaginationPanel?: boolean } = {};
@@ -380,6 +386,44 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
       this.gridTheme = themeQuartz.withPart(colorSchemeDarkBlue);
     } else {
       this.gridTheme = themeQuartz;
+    }
+  }
+
+  @ViewChild('quickFilterInput') private quickFilterInputRef?: ElementRef<HTMLInputElement>;
+
+  // ── Quick Filter / Accordion ──
+
+  /** Handle PrimeNG Accordion value change */
+  onAccordionToggle(value: string | number | string[] | number[] | null | undefined): void {
+    const isOpen = value === 'tools' || (Array.isArray(value) && (value as (string | number)[]).includes('tools'));
+    this.toolbarOpen = isOpen;
+    if (isOpen) {
+      // Focus the input after Angular renders the content
+      setTimeout(() => this.quickFilterInputRef?.nativeElement.focus(), 50);
+    } else if (this.quickFilterText) {
+      // Clear filter when collapsing
+      this.clearQuickFilter();
+    }
+  }
+
+  /**
+   * Handle Quick Filter input changes.
+   * Uses AG Grid's setGridOption('quickFilterText', ...) as documented at
+   * https://www.ag-grid.com/angular-data-grid/filter-quick/
+   */
+  onQuickFilterChange(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.quickFilterText = value;
+    if (this.gridApi) {
+      this.gridApi.setGridOption('quickFilterText', value);
+    }
+  }
+
+  /** Clear the quick filter text and reset the grid filter */
+  clearQuickFilter(): void {
+    this.quickFilterText = '';
+    if (this.gridApi) {
+      this.gridApi.setGridOption('quickFilterText', '');
     }
   }
 
