@@ -1,0 +1,27 @@
+{
+  "devtools_port": 9090,
+  "runtime": {
+    "arguments": "--enable-crash-reporting --no-sandbox",
+    "version": "stable"
+  },
+  "startup_app": {
+    "uuid": "rates-etrading-desktop",
+    "name": "Rates E-Trading Desktop",
+    "url": "http://localhost:4200",
+    "autoShow": true,
+    "defaultWidth": 1600,
+    "defaultHeight": 1000,
+    "defaultCentered": true,
+    "frame": true,
+    "backgroundColor": "#0f172a",
+    "contextMenu": true,
+    "saveWindowState": true,
+    "icon": "http://localhost:4200/favicon.ico"
+  },
+  "shortcut": {
+    "company": "Rates E-Trading",
+    "description": "Rates E-Trading Desktop Application",
+    "icon": "http://localhost:4200/favicon.ico",
+    "name": "Rates E-Trading Desktop"
+  }
+}

@@ -14,6 +14,16 @@ export enum OpenFinConnectionStatus {
   Error = 'error',
 }
 
+/**
+ * Runtime environment the app is running in.
+ *
+ * - `platform`   – Native OpenFin Platform (window.fin exists, running as platform window)
+ * - `container`  – Native OpenFin container (window.fin exists at startup, startup_app mode)
+ * - `web`        – Browser with @openfin/core-web (SharedWorker broker)
+ * - `browser`    – Plain browser, no OpenFin at all
+ */
+export type OpenFinEnvironment = 'platform' | 'container' | 'web' | 'browser';
+
 /** Minimal empty layout snapshot (no pre-loaded views) */
 const EMPTY_LAYOUT_SNAPSHOT: WebLayoutSnapshot = {
   layouts: {
@@ -84,6 +94,115 @@ export class OpenFinService {
   /** Whether this page is running inside an OpenFin layout iframe */
   get isInsideLayout(): boolean {
     return window.self !== window.top;
+  }
+
+  /**
+   * Detect the runtime environment.
+   *
+   * - `platform`  : Running inside an OpenFin Platform manifest.
+   *                  The window URL includes `?mode=platform` (set by the
+   *                  platform manifest `app.platform.fin.json`).
+   * - `container` : Native OpenFin container (startup_app manifest).
+   * - `web`       : Running in a regular browser with `@openfin/core-web`.
+   * - `browser`   : No OpenFin at all (config disabled or not loaded).
+   */
+  get environment(): OpenFinEnvironment {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (globalFin?.Window?.create) {
+      // Native OpenFin — distinguish platform vs. startup_app
+      const isPlatform =
+        new URLSearchParams(window.location.search).get('mode') === 'platform';
+      return isPlatform ? 'platform' : 'container';
+    }
+    if (this.config.enabled) {
+      return 'web';
+    }
+    return 'browser';
+  }
+
+  /** Convenience check — true for both `platform` and `container` */
+  get isContainer(): boolean {
+    const env = this.environment;
+    return env === 'container' || env === 'platform';
+  }
+
+  /** True only when running in OpenFin Platform mode */
+  get isPlatform(): boolean {
+    return this.environment === 'platform';
+  }
+
+  /**
+   * Mark the service as connected when running inside the native OpenFin
+   * container. The container injects `window.fin` automatically — no
+   * broker connection or layout init is needed.
+   */
+  markContainerConnected(): void {
+    this.connectionStatusSubject.next(OpenFinConnectionStatus.Connected);
+  }
+
+  // ────────────────────────────────────────────────────────
+  // Platform view visibility (for menu overlay workaround)
+  // ────────────────────────────────────────────────────────
+
+  /**
+   * In native OpenFin Platform mode, views are separate BrowserViews
+   * composited ABOVE the window's DOM. DOM dropdown menus cannot appear
+   * on top of them via CSS z-index. The workaround is to temporarily
+   * hide all platform views while a menu is open, then show them again.
+   */
+  async setPlatformViewsVisible(visible: boolean): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Window?.getCurrentSync) return;
+
+    try {
+      const win = globalFin.Window.getCurrentSync();
+      const views = await win.getCurrentViews();
+      for (const view of views) {
+        if (visible) {
+          await view.show();
+        } else {
+          await view.hide();
+        }
+      }
+    } catch {
+      // Silently ignore — views may not be ready yet
+    }
+  }
+
+  /**
+   * Initialize the OpenFin Platform Layout inside the platform window.
+   *
+   * When a platform window uses a custom `url`, the page must call
+   * `fin.Platform.Layout.init()` to register the layout channel actions
+   * (add-view, remove-view, etc.) and bind GoldenLayout to a container
+   * element. The layout *content* comes from the manifest snapshot —
+   * we only need to tell the runtime WHERE to render it.
+   *
+   * Must be called after the `#layout-container` element is in the DOM.
+   */
+  async initPlatformLayout(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Platform?.Layout?.init) {
+      this.logger.error('Cannot init platform layout: fin.Platform.Layout.init not available');
+      return;
+    }
+
+    this.connectionStatusSubject.next(OpenFinConnectionStatus.Connecting);
+
+    try {
+      await globalFin.Platform.Layout.init({
+        containerId: 'layout-container',
+      });
+
+      this.connectionStatusSubject.next(OpenFinConnectionStatus.Connected);
+      this.logger.info('Platform layout initialized in #layout-container');
+    } catch (error) {
+      this.connectionStatusSubject.next(OpenFinConnectionStatus.Error);
+      this.logger.error(error as Error, 'Failed to initialize platform layout');
+    }
   }
 
   /**
@@ -276,6 +395,107 @@ export class OpenFinService {
       this.logger.info({ name, url }, 'View added to layout');
     } catch (error) {
       this.logger.error(error as Error, 'Failed to add view to layout');
+    }
+  }
+
+  // ────────────────────────────────────────────────────────
+  // Container window / view management (native OpenFin runtime)
+  // ────────────────────────────────────────────────────────
+
+  /**
+   * Add a view to the current OpenFin **Platform** window's layout.
+   *
+   * Uses `fin.Platform.getCurrentSync().createView()` so the view appears
+   * as a tab inside the existing platform window. Users can then pop it
+   * out, rearrange, or close it via the standard OpenFin tab UI.
+   *
+   * Only works when running in OpenFin Platform mode (environment === 'platform').
+   *
+   * @param name Unique view name.
+   * @param url  URL to load (can be relative).
+   */
+  async addPlatformView(name: string, url: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Platform) {
+      this.logger.error('Cannot add platform view: not running in OpenFin Platform');
+      return;
+    }
+
+    const resolvedUrl = this.resolveUrl(url);
+
+    try {
+      const platform = globalFin.Platform.getCurrentSync();
+
+      // Determine the target window identity so the view is added to THIS window
+      let windowIdentity: { uuid: string; name: string } | undefined;
+      if (globalFin.me.isWindow) {
+        windowIdentity = globalFin.me.identity;
+      } else if (globalFin.me.isView) {
+        const parentWin = await globalFin.me.getCurrentWindow();
+        windowIdentity = parentWin.identity;
+      }
+
+      await platform.createView(
+        { name, url: resolvedUrl },
+        windowIdentity,
+      );
+
+      this.logger.info({ name, url, windowIdentity }, 'View added to platform layout');
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to add platform view');
+    }
+  }
+
+  /**
+   * Create a new native OpenFin window (standalone, outside the layout).
+   *
+   * Only works when running inside the OpenFin container (`isContainer === true`).
+   * Uses the `fin.Window.create()` API as shown in the
+   * [container-starter create-window example](https://github.com/built-on-openfin/container-starter/tree/main/how-to/create-window).
+   *
+   * @param name   Unique window name.
+   * @param url    URL to load (can be relative).
+   * @param options Optional overrides (width, height, etc.).
+   */
+  async createWindow(
+    name: string,
+    url: string,
+    options?: {
+      width?: number;
+      height?: number;
+      frame?: boolean;
+      center?: boolean;
+    },
+  ): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Window?.create) {
+      this.logger.error('Cannot create window: not running in OpenFin container');
+      return;
+    }
+
+    const resolvedUrl = this.resolveUrl(url);
+
+    try {
+      const winOption = {
+        name,
+        url: resolvedUrl,
+        defaultWidth: options?.width ?? 1200,
+        defaultHeight: options?.height ?? 800,
+        defaultCentered: options?.center ?? true,
+        frame: options?.frame ?? true,
+        autoShow: true,
+        contextMenu: true,
+        backgroundColor: '#0f172a',
+        saveWindowState: true,
+        icon: this.resolveUrl('/favicon.ico'),
+      };
+
+      await globalFin.Window.create(winOption);
+      this.logger.info({ name, url }, 'Native OpenFin window created');
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to create OpenFin window');
     }
   }
 

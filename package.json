@@ -13,7 +13,12 @@
     "lint:all": "nx run-many --target=lint --all",
     "e2e": "nx e2e rates-desktop-e2e",
     "graph": "nx graph",
-    "reset": "nx reset"
+    "reset": "nx reset",
+    "openfin:launch": "openfin --launch --config http://localhost:4200/assets/openfin/app.fin.json",
+    "openfin:start": "nx serve rates-desktop & openfin --launch --config http://localhost:4200/assets/openfin/app.fin.json",
+    "openfin:launch:local": "openfin --launch --config apps/rates-desktop/public/assets/openfin/app.fin.json",
+    "openfin:launch:platform": "openfin --launch --config http://localhost:4200/assets/openfin/app.platform.fin.json",
+    "openfin:start:platform": "nx serve rates-desktop & openfin --launch --config http://localhost:4200/assets/openfin/app.platform.fin.json"
   },
   "keywords": [],
   "author": "",
@@ -53,6 +58,7 @@
     "eslint-plugin-playwright": "^1.6.2",
     "jsdom": "^27.1.0",
     "nx": "22.4.0",
+    "openfin-cli": "^4.0.0",
     "pino-pretty": "^13.0.0",
     "prettier": "~3.6.2",
     "tslib": "^2.3.0",

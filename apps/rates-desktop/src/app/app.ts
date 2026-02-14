@@ -190,13 +190,18 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Initialize OpenFin core-web if enabled in configuration.
+   * Initialize OpenFin based on the detected runtime environment.
    *
-   * - Host page: connects to broker, loads default layout from JSON, and
-   *   initializes the layout engine. Additional views can be added via
-   *   `openfinService.addView()`.
-   * - Iframe view: uses `connectAsView()` to inherit the broker session
-   *   without re-creating the layout (prevents infinite recursion).
+   * - **Platform** : Running inside an OpenFin Platform manifest.
+   *   The Angular app is the platform window URL — the platform runtime
+   *   auto-manages the layout in `#layout-container`. Menu clicks use
+   *   `platform.createView()` to add views as tabs.
+   * - **Container** : The native `fin` API is already available (startup_app).
+   *   Menu commands use `fin.Window.create()` to open separate windows.
+   * - **Web (core-web)** :
+   *   - Host page → `connectToBroker()` + layout engine
+   *   - Iframe view → `connectAsView()` (inherits broker)
+   * - **Browser** : No OpenFin at all — skipped.
    */
   private async initializeOpenFin(config: RatesAppConfiguration): Promise<void> {
     if (!config.openfin?.enabled) {
@@ -206,20 +211,42 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
 
     try {
       this.openfinService.initialize(config.openfin);
+      const env = this.openfinService.environment;
+      this.logger.info({ env }, 'Detected OpenFin environment');
 
-      if (this.isDefaultRoute) {
-        // Host page — connect to broker and initialize the layout engine
-        const container = this.layoutContainer?.nativeElement;
-        if (!container) {
-          this.logger.error('Layout container element not found, cannot init OpenFin layout');
-          return;
+      if (env === 'platform') {
+        // OpenFin Platform — we must call Layout.init() to register the
+        // layout channel actions (add-view, etc.) and bind GoldenLayout
+        // to the #layout-container element. The layout content comes from
+        // the manifest snapshot.
+        if (this.isDefaultRoute) {
+          await this.openfinService.initPlatformLayout();
+          this.logger.info('OpenFin Platform layout initialized — views will be added via platform.createView()');
+        } else {
+          // Sub-route loaded as a platform view — just mark connected
+          this.openfinService.markContainerConnected();
+          this.logger.info('Connected as platform view');
         }
-        await this.openfinService.connectToBroker(container);
-        this.logger.info('OpenFin Web Broker connected with layout');
-      } else {
-        // Sub-route (loaded in an OpenFin layout iframe) — inherit broker connection
-        await this.openfinService.connectAsView();
-        this.logger.info('Connected as OpenFin view (inherited broker)');
+      } else if (env === 'container') {
+        // Native container (startup_app) — fin is already on window.
+        // Each view opens in its own native window via fin.Window.create().
+        this.openfinService.markContainerConnected();
+        this.logger.info('Running inside OpenFin container — views will open as native windows');
+      } else if (env === 'web') {
+        if (this.isDefaultRoute) {
+          // Host page — connect to broker and initialize the layout engine
+          const container = this.layoutContainer?.nativeElement;
+          if (!container) {
+            this.logger.error('Layout container element not found, cannot init OpenFin layout');
+            return;
+          }
+          await this.openfinService.connectToBroker(container);
+          this.logger.info('OpenFin Web Broker connected with layout');
+        } else {
+          // Sub-route (loaded in an OpenFin layout iframe) — inherit broker connection
+          await this.openfinService.connectAsView();
+          this.logger.info('Connected as OpenFin view (inherited broker)');
+        }
       }
     } catch (error) {
       this.logger.error(error as Error, 'Failed to initialize OpenFin');
@@ -236,17 +263,32 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Called by PrimeNG menu commands — adds a view to the OpenFin layout.
-   * Appends a timestamp so each click opens a new tab even for the same route.
-   * Falls back to Angular router navigation when OpenFin is not connected.
+   * Called by PrimeNG menu commands — opens the view using the best
+   * available mechanism based on the runtime environment:
+   *
+   *  1. **OpenFin Platform** → `platform.createView()` (tab in platform window layout)
+   *  2. **OpenFin Container** → `fin.Window.create()` (new native window)
+   *  3. **OpenFin Web (core-web)** → `layout.addView()` (iframe tab in GoldenLayout)
+   *  4. **Plain browser** → Angular `router.navigate()` (SPA routing)
    */
   private async addViewFromMenu(baseName: string, url: string): Promise<void> {
-    if (this.openfinService.isConnected) {
-      const viewName = `${baseName}-${Date.now()}`;
-      this.logger.info({ viewName, url }, 'Adding view to layout from menu');
+    const env = this.openfinService.environment;
+    const viewName = `${baseName}-${Date.now()}`;
+
+    if (env === 'platform') {
+      // OpenFin Platform — add view as a tab in the platform window's layout
+      this.logger.info({ viewName, url, env }, 'Adding view to platform layout');
+      await this.openfinService.addPlatformView(viewName, url);
+    } else if (env === 'container') {
+      // Native OpenFin container (startup_app) — open each view in its own native window
+      this.logger.info({ viewName, url, env }, 'Opening view in new OpenFin window');
+      await this.openfinService.createWindow(viewName, url);
+    } else if (env === 'web' && this.openfinService.isConnected) {
+      // core-web mode — add as a tab in the GoldenLayout
+      this.logger.info({ viewName, url, env }, 'Adding view to layout');
       await this.addViewToLayout(viewName, url);
     } else {
-      // OpenFin not available — fall back to standard routing
+      // Plain browser fallback
       this.router.navigate([url]);
     }
   }
@@ -424,5 +466,37 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
 
   get themeIcon(): string {
     return this.isDarkTheme ? 'pi pi-sun' : 'pi pi-moon';
+  }
+
+  // ────────────────────────────────────────────────────────
+  // Platform menu workaround: hide views while menu is open
+  // ────────────────────────────────────────────────────────
+
+  /** Track whether views are currently hidden for menu interaction */
+  private viewsHiddenForMenu = false;
+
+  /**
+   * Called when the user clicks on a menubar root item.
+   * In platform mode, hides all views so the dropdown is visible.
+   */
+  onMenubarItemClick(): void {
+    if (this.openfinService.isPlatform && !this.viewsHiddenForMenu) {
+      this.viewsHiddenForMenu = true;
+      this.openfinService.setPlatformViewsVisible(false);
+    }
+  }
+
+  /**
+   * Called when the mouse leaves the menubar area.
+   * Restores view visibility after a short delay.
+   */
+  onMenubarLeave(): void {
+    if (this.openfinService.isPlatform && this.viewsHiddenForMenu) {
+      // Small delay so the menu can close before views reappear
+      setTimeout(() => {
+        this.viewsHiddenForMenu = false;
+        this.openfinService.setPlatformViewsVisible(true);
+      }, 150);
+    }
   }
 }

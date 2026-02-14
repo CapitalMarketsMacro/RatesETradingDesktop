@@ -1,5 +1,7 @@
 @if (isDefaultRoute) {
-  <p-menubar [model]="menuItems" class="app-menubar">
+  <p-menubar [model]="menuItems" class="app-menubar"
+    (click)="onMenubarItemClick()"
+    (mouseleave)="onMenubarLeave()">
     <ng-template pTemplate="start">
       <span class="app-title">{{ title }}</span>
     </ng-template>
@@ -13,8 +15,10 @@
           {{ connectionStatusLabel }}
         </span>
         @if (openfinStatus === 'connected') {
-          <span class="openfin-status status-connected" title="OpenFin Web Broker connected">
-            <i class="pi pi-th-large"></i> OpenFin
+          <span class="openfin-status status-connected"
+                [title]="openfinService.isPlatform ? 'Running in OpenFin Platform' : openfinService.isContainer ? 'Running in OpenFin Container' : 'OpenFin Web Broker connected'">
+            <i class="pi pi-th-large"></i>
+            {{ openfinService.isPlatform ? 'OpenFin Platform' : openfinService.isContainer ? 'OpenFin Container' : 'OpenFin Web' }}
           </span>
         }
         <button
@@ -28,7 +32,7 @@
     </ng-template>
   </p-menubar>
 
-  <main #layoutContainer id="layout_container" class="openfin-layout-container"></main>
+  <main #layoutContainer id="layout-container" class="openfin-layout-container"></main>
 
   <!-- Save Layout dialog -->
   <p-dialog

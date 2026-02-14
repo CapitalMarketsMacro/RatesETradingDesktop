@@ -1,0 +1,111 @@
+{
+  "devtools_port": 9090,
+  "runtime": {
+    "arguments": "--enable-crash-reporting --no-sandbox",
+    "version": "stable"
+  },
+  "platform": {
+    "uuid": "rates-etrading-platform",
+    "autoShow": false,
+    "icon": "http://localhost:4200/favicon.ico",
+    "providerUrl": "http://localhost:4200/assets/openfin/provider.html",
+    "defaultWindowOptions": {
+      "contextMenu": true,
+      "backgroundColor": "#0f172a",
+      "frame": true
+    }
+  },
+  "snapshot": {
+    "windows": [
+      {
+        "defaultWidth": 1600,
+        "defaultHeight": 1000,
+        "defaultCentered": true,
+        "autoShow": true,
+        "frame": true,
+        "url": "http://localhost:4200?mode=platform",
+        "layout": {
+          "settings": {
+            "hasHeaders": true,
+            "showPopoutIcon": true,
+            "showMaximiseIcon": true,
+            "showCloseIcon": true
+          },
+          "content": [
+            {
+              "type": "column",
+              "content": [
+                {
+                  "type": "row",
+                  "height": 100,
+                  "content": [
+                    {
+                      "type": "column",
+                      "width": 60,
+                      "content": [
+                        {
+                          "type": "stack",
+                          "height": 100,
+                          "content": [
+                            {
+                              "type": "component",
+                              "componentName": "view",
+                              "componentState": {
+                                "name": "top-of-book-default",
+                                "url": "http://localhost:4200/market-data/top-of-book"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "column",
+                      "width": 40,
+                      "content": [
+                        {
+                          "type": "stack",
+                          "height": 50,
+                          "content": [
+                            {
+                              "type": "component",
+                              "componentName": "view",
+                              "componentState": {
+                                "name": "executions-blotter-default",
+                                "url": "http://localhost:4200/executions"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "stack",
+                          "height": 50,
+                          "content": [
+                            {
+                              "type": "component",
+                              "componentName": "view",
+                              "componentState": {
+                                "name": "market-data-blotter-default",
+                                "url": "http://localhost:4200/market-data/blotter"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "shortcut": {
+    "company": "Rates E-Trading",
+    "description": "Rates E-Trading Desktop (Platform)",
+    "icon": "http://localhost:4200/favicon.ico",
+    "name": "Rates E-Trading Desktop (Platform)"
+  }
+}

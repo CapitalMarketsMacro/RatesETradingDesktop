@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rates E-Trading Platform Provider</title>
+</head>
+<body>
+  <script>
+    /**
+     * Platform Provider — the hidden window that coordinates all platform
+     * windows, views and layout management.
+     *
+     * `fin.Platform.init()` registers this window as the platform provider
+     * and must be called before any windows/views can be created.
+     */
+    async function initProvider() {
+      try {
+        await fin.Platform.init();
+        console.log('[Rates Platform] Provider initialized successfully');
+      } catch (err) {
+        console.error('[Rates Platform] Provider init failed:', err);
+      }
+    }
+    document.addEventListener('DOMContentLoaded', initProvider);
+  </script>
+</body>
+</html>
