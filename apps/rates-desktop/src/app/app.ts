@@ -248,6 +248,9 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
           this.logger.info('Connected as OpenFin view (inherited broker)');
         }
       }
+      // Now that the environment is known, rebuild Preferences menu
+      // so saved layouts are filtered to the correct mode.
+      this.refreshPreferencesMenu();
     } catch (error) {
       this.logger.error(error as Error, 'Failed to initialize OpenFin');
     }
@@ -343,14 +346,22 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Restore the default layout by simply reloading the page.
-   * When there is no pending-restore flag in localStorage, `connectToBroker()`
-   * loads the default layout from the server JSON automatically.
+   * Restore the default layout.
+   *
+   * - **Container** → close all child windows (back to bare main window)
+   * - **Web / Platform** → reload the page to load the default snapshot
    */
-  private restoreDefaultLayout(): void {
+  private async restoreDefaultLayout(): Promise<void> {
     if (!this.openfinService.isConnected) return;
-    this.logger.info('Restoring default layout (reloading page)...');
-    window.location.reload();
+
+    const env = this.openfinService.environment;
+    if (env === 'container') {
+      this.logger.info('Restoring default layout (closing all child windows)...');
+      await this.openfinService.closeAllChildWindows();
+    } else {
+      this.logger.info('Restoring default layout (reloading page)...');
+      window.location.reload();
+    }
   }
 
   /** Build PrimeNG MenuItem[] for the Restore Layout submenu from localStorage */

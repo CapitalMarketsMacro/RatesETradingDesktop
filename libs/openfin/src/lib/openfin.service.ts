@@ -24,6 +24,18 @@ export enum OpenFinConnectionStatus {
  */
 export type OpenFinEnvironment = 'platform' | 'container' | 'web' | 'browser';
 
+/**
+ * Describes a single child window in a container-mode (startup_app) snapshot.
+ */
+export interface ContainerWindowEntry {
+  name: string;
+  url: string;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
 /** Minimal empty layout snapshot (no pre-loaded views) */
 const EMPTY_LAYOUT_SNAPSHOT: WebLayoutSnapshot = {
   layouts: {
@@ -503,31 +515,37 @@ export class OpenFinService {
   // Layout persistence (localStorage)
   // ────────────────────────────────────────────────────────
 
+  /**
+   * Single static storage key — entries are tagged with `env` so each
+   * mode (container / platform / web) only sees its own saved layouts.
+   * Using a static key avoids timing issues where the environment getter
+   * returns the wrong value before config is loaded.
+   */
   private static readonly LAYOUT_STORAGE_KEY = 'openfin-saved-layouts';
   private static readonly PENDING_RESTORE_KEY = 'openfin-pending-restore';
-
-  /**
-   * Saved-layout entry stored in localStorage.
-   */
-  static readonly LAYOUT_ENTRY_KEYS = ['name', 'timestamp', 'snapshot'] as const;
 
   /**
    * Save the current layout under a user-provided name.
    * Delegates to the correct API depending on environment:
    *
-   *  - **Platform** → `fin.Platform.getCurrentSync().getSnapshot()`
+   *  - **Container** → enumerate child windows (bounds + URLs)
+   *  - **Platform**  → `fin.Platform.getCurrentSync().getSnapshot()`
    *  - **Web (core-web)** → `layout.getConfig()`
    */
   async saveLayout(name: string): Promise<void> {
     try {
       let snapshot: unknown;
+      const env = this.environment;
 
-      if (this.isPlatform) {
+      if (env === 'container') {
+        snapshot = await this.captureContainerSnapshot();
+      } else if (env === 'platform') {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalFin = (window as any).fin;
         const platform = globalFin.Platform.getCurrentSync();
         snapshot = await platform.getSnapshot();
       } else if (this.finApi) {
+        // core-web
         const layout = this.finApi.Platform.Layout.getCurrentSync();
         snapshot = await (layout as unknown as { getConfig(): Promise<unknown> }).getConfig();
       } else {
@@ -539,10 +557,13 @@ export class OpenFinService {
         name,
         timestamp: Date.now(),
         snapshot,
+        /** Tag the environment so restore uses the right strategy */
+        env,
       };
 
-      const all = this.getSavedLayouts();
-      const idx = all.findIndex((l) => l.name === name);
+      const all = this.getAllSavedLayouts();
+      // Replace existing entry with same name + env, or append
+      const idx = all.findIndex((l) => l.name === name && l.env === env);
       if (idx >= 0) {
         all[idx] = entry;
       } else {
@@ -553,7 +574,7 @@ export class OpenFinService {
         OpenFinService.LAYOUT_STORAGE_KEY,
         JSON.stringify(all),
       );
-      this.logger.info({ name }, 'Layout saved');
+      this.logger.info({ name, env }, 'Layout saved');
     } catch (error) {
       this.logger.error(error as Error, 'Failed to save layout');
     }
@@ -562,7 +583,8 @@ export class OpenFinService {
   /**
    * Restore a previously-saved layout by name.
    *
-   *  - **Platform** → `platform.applySnapshot()` (live, no reload needed)
+   *  - **Container** → close child windows, re-create from saved bounds/URLs
+   *  - **Platform**  → `platform.applySnapshot()` (live, no reload needed)
    *  - **Web (core-web)** → stash in localStorage + page reload
    */
   async restoreLayout(name: string): Promise<void> {
@@ -573,7 +595,14 @@ export class OpenFinService {
       return;
     }
 
-    if (this.isPlatform) {
+    const env = this.environment;
+
+    if (env === 'container') {
+      await this.restoreContainerSnapshot(
+        entry.snapshot as ContainerWindowEntry[],
+      );
+      this.logger.info({ name }, 'Container layout restored');
+    } else if (env === 'platform') {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalFin = (window as any).fin;
@@ -596,10 +625,135 @@ export class OpenFinService {
     }
   }
 
+  // ────────────────────────────────────────────────────────
+  // Container-mode snapshot helpers (startup_app)
+  // ────────────────────────────────────────────────────────
+
   /**
-   * Return the list of all saved layouts (name + timestamp).
+   * Capture the positions and URLs of all child windows.
    */
-  getSavedLayouts(): { name: string; timestamp: number; snapshot: unknown }[] {
+  private async captureContainerSnapshot(): Promise<ContainerWindowEntry[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    const app = globalFin.Application.getCurrentSync();
+    const childWindows = await app.getChildWindows();
+
+    const entries: ContainerWindowEntry[] = [];
+    for (const win of childWindows) {
+      try {
+        const options = await win.getOptions();
+        const bounds = await win.getBounds();
+        entries.push({
+          name: options.name ?? win.identity?.name,
+          url: options.url,
+          top: bounds.top,
+          left: bounds.left,
+          width: bounds.width,
+          height: bounds.height,
+        });
+      } catch {
+        // Window may have closed between enumeration and query
+      }
+    }
+
+    this.logger.info(
+      { windowCount: entries.length },
+      'Container snapshot captured',
+    );
+    return entries;
+  }
+
+  /**
+   * Close all existing child windows and recreate them from a saved snapshot.
+   */
+  private async restoreContainerSnapshot(
+    entries: ContainerWindowEntry[],
+  ): Promise<void> {
+    if (!Array.isArray(entries) || entries.length === 0) {
+      this.logger.warn('No windows in saved container snapshot');
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    const app = globalFin.Application.getCurrentSync();
+
+    // Close existing child windows first
+    const existingWindows = await app.getChildWindows();
+    for (const win of existingWindows) {
+      try {
+        await win.close(true);
+      } catch {
+        // Already closed
+      }
+    }
+
+    // Recreate windows from snapshot
+    for (const entry of entries) {
+      try {
+        await globalFin.Window.create({
+          name: `${entry.name}-${Date.now()}`,
+          url: entry.url,
+          defaultTop: entry.top,
+          defaultLeft: entry.left,
+          defaultWidth: entry.width,
+          defaultHeight: entry.height,
+          frame: true,
+          autoShow: true,
+          contextMenu: true,
+          backgroundColor: '#0f172a',
+          saveWindowState: false,
+          icon: this.resolveUrl('/favicon.ico'),
+        });
+      } catch (error) {
+        this.logger.error(error as Error, 'Failed to recreate window');
+      }
+    }
+
+    this.logger.info(
+      { windowCount: entries.length },
+      'Container windows restored',
+    );
+  }
+
+  /**
+   * Close all child windows (used by "Restore Default Layout" in container mode).
+   */
+  async closeAllChildWindows(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Application?.getCurrentSync) return;
+
+    try {
+      const app = globalFin.Application.getCurrentSync();
+      const childWindows = await app.getChildWindows();
+      for (const win of childWindows) {
+        try {
+          await win.close(true);
+        } catch {
+          // Already closed
+        }
+      }
+      this.logger.info('All child windows closed');
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to close child windows');
+    }
+  }
+
+  /**
+   * Return saved layouts for the **current** environment only.
+   * Used by the UI to build the Restore / Delete menus.
+   */
+  getSavedLayouts(): { name: string; timestamp: number; snapshot: unknown; env?: string }[] {
+    const env = this.environment;
+    return this.getAllSavedLayouts().filter((l) => l.env === env);
+  }
+
+  /**
+   * Return ALL saved layouts across every environment (unfiltered).
+   * Used internally for read-modify-write operations on localStorage.
+   */
+  private getAllSavedLayouts(): { name: string; timestamp: number; snapshot: unknown; env?: string }[] {
     try {
       const raw = localStorage.getItem(OpenFinService.LAYOUT_STORAGE_KEY);
       if (!raw) return [];
@@ -610,11 +764,12 @@ export class OpenFinService {
   }
 
   /**
-   * Delete a saved layout by name.
+   * Delete a saved layout by name (scoped to the current environment).
    */
   deleteLayout(name: string): void {
-    const all = this.getSavedLayouts();
-    const filtered = all.filter((l) => l.name !== name);
+    const env = this.environment;
+    const all = this.getAllSavedLayouts();
+    const filtered = all.filter((l) => !(l.name === name && l.env === env));
     localStorage.setItem(
       OpenFinService.LAYOUT_STORAGE_KEY,
       JSON.stringify(filtered),
