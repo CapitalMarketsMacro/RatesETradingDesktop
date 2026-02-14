@@ -11,7 +11,7 @@
           "content": [
             {
               "type": "stack",
-              "height": 8,
+              "height": 5,
               "content": [
                 {
                   "type": "component",
@@ -28,7 +28,7 @@
             },
             {
               "type": "row",
-              "height": 92,
+              "height": 97,
               "content": [
                 {
                   "type": "column",
