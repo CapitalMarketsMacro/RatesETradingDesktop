@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MarketDataGridRow } from '@rates-trading/data-access';
 import { DataGrid, ColDef } from '@rates-trading/ui-components';
 import { LoggerService } from '@rates-trading/logger';
-import { formatTreasury32nds, formatSpread32nds } from '@rates-trading/shared-utils';
+import { formatTreasury32nds, formatSpread32nds, WorkspaceComponent } from '@rates-trading/shared-utils';
 import { ValueFormatterParams } from 'ag-grid-community';
 import { Subscription } from 'rxjs';
 import { MarketDataService } from '../services/market-data.service';
@@ -15,6 +15,9 @@ import { MarketDataService } from '../services/market-data.service';
  * - ID, Market ID, Description
  * - Bid/Ask prices and quantities
  * - Spread, Last Trade, Depth levels, Time
+ *
+ * Extends WorkspaceComponent to persist grid state (column widths,
+ * column order, sort, filters) across layout save/restore.
  */
 @Component({
   selector: 'app-market-data-blotter',
@@ -23,12 +26,15 @@ import { MarketDataService } from '../services/market-data.service';
   templateUrl: './market-data-blotter.component.html',
   styleUrl: './market-data-blotter.component.css',
 })
-export class MarketDataBlotterComponent implements OnInit, OnDestroy {
+export class MarketDataBlotterComponent extends WorkspaceComponent implements OnInit, OnDestroy {
+  readonly stateKey = 'market-data/blotter';
+
   @ViewChild('marketDataGrid') marketDataGrid!: DataGrid<MarketDataGridRow>;
   
   private marketDataService = inject(MarketDataService);
   private logger = inject(LoggerService).child({ component: 'MarketDataBlotter' });
   private rowUpdateSub?: Subscription;
+  private pendingGridState: Record<string, unknown> | null = null;
 
   // Market data grid columns
   columns: ColDef[] = [
@@ -114,7 +120,29 @@ export class MarketDataBlotterComponent implements OnInit, OnDestroy {
     },
   ];
 
+  // ── WorkspaceComponent contract ──
+
+  getState(): Record<string, unknown> {
+    if (!this.marketDataGrid) return {};
+    return this.marketDataGrid.getGridState() ?? {};
+  }
+
+  setState(state: Record<string, unknown>): void {
+    // Grid may not be ready yet; stash state and apply when grid fires gridInitialized.
+    if (this.marketDataGrid?.getGridApi()) {
+      this.marketDataGrid.applyGridState(state);
+      this.logger.info('Restored grid state (column + filter) from saved layout');
+    } else {
+      this.pendingGridState = state;
+    }
+  }
+
+  // ── Lifecycle ──
+
   ngOnInit(): void {
+    // Load persisted state; may stash for deferred apply.
+    this.loadPersistedState();
+
     // Ensure the shared market data service is connected
     this.marketDataService.connect();
 
@@ -124,6 +152,26 @@ export class MarketDataBlotterComponent implements OnInit, OnDestroy {
         this.marketDataGrid.updateRow(row);
       }
     });
+  }
+
+  /**
+   * Called by lib-data-grid (gridInitialized) when the AG Grid API is ready.
+   * Apply any pending grid state that was loaded before the grid existed.
+   */
+  onDataGridReady(): void {
+    if (this.pendingGridState) {
+      this.marketDataGrid.applyGridState(this.pendingGridState);
+      this.logger.info('Applied deferred grid state after grid ready');
+      this.pendingGridState = null;
+    }
+  }
+
+  /**
+   * Called when the user changes column widths, sort, or filter.
+   * Persists the latest grid state via the WorkspaceStorageService.
+   */
+  onGridStateChanged(): void {
+    this.persistState();
   }
 
   ngOnDestroy(): void {

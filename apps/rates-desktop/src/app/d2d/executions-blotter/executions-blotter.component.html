@@ -9,5 +9,7 @@
     [rowIdField]="'ExecutionIdString'"
     [height]="'100%'"
     [gridOptions]="gridOptions"
+    (gridInitialized)="onDataGridReady()"
+    (stateChanged)="onGridStateChanged()"
   ></lib-data-grid>
 </div>

@@ -12,6 +12,8 @@
     [asyncTransactionWaitMillis]="50"
     [showStatusBar]="true"
     height="100%"
+    (gridInitialized)="onDataGridReady()"
+    (stateChanged)="onGridStateChanged()"
     [gridOptions]="{
       pagination: false,
       rowSelection: {

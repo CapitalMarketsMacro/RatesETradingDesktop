@@ -1,6 +1,8 @@
 import {
   Component,
   Input,
+  Output,
+  EventEmitter,
   OnInit,
   OnDestroy,
   ViewChild,
@@ -29,7 +31,7 @@ import {
   StatusPanelDef,
 } from 'ag-grid-community';
 import { AllEnterpriseModule } from 'ag-grid-enterprise';
-import { Subject, Subscription } from 'rxjs';
+import { Subject, Subscription, debounceTime } from 'rxjs';
 import { AccordionModule } from 'primeng/accordion';
 
 // Register ag-Grid modules
@@ -97,6 +99,19 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
    * If not provided and showStatusBar is true, uses default row count panel.
    */
   @Input() statusBar?: { statusPanels: StatusPanelDef[] };
+
+  /**
+   * Emitted when the AG Grid API is ready.
+   * Parent components can use this to apply saved grid state.
+   */
+  @Output() gridInitialized = new EventEmitter<void>();
+
+  /**
+   * Emitted when the user changes grid layout state — column resize,
+   * column move, sort change, or filter change.
+   * Parent components can call `persistState()` in response.
+   */
+  @Output() stateChanged = new EventEmitter<void>();
 
   // RxJS Subjects for row operations
   addRow$ = new Subject<T>();
@@ -248,12 +263,18 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.stateChangeSub?.unsubscribe();
+    this.stateChange$.complete();
     this.addRow$.complete();
     this.updateRow$.complete();
     this.deleteRow$.complete();
     this.highFrequencyUpdate$.complete();
     this.knownRowIds.clear();
   }
+
+  // Debounce rapid grid-state-change events (e.g. column resize dragging)
+  private stateChange$ = new Subject<void>();
+  private stateChangeSub?: Subscription;
 
   onGridReady(event: GridReadyEvent): void {
     this.gridApi = event.api;
@@ -263,6 +284,22 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
     if (this.rowData) {
       this.previousRowData = [...this.rowData];
     }
+
+    // Set up debounced state-change emitter (300ms debounce)
+    this.stateChangeSub = this.stateChange$
+      .pipe(debounceTime(300))
+      .subscribe(() => this.stateChanged.emit());
+
+    // Notify parent that the grid is ready (for applying saved state)
+    this.gridInitialized.emit();
+  }
+
+  /**
+   * Triggered by AG Grid column/sort/filter events on the template.
+   * Debounces via stateChange$ so we don't persist on every pixel of a resize drag.
+   */
+  onColumnOrSortChanged(_event: unknown): void {
+    this.stateChange$.next();
   }
 
   private computeMergedGridOptions(): GridOptions & { suppressPaginationPanel?: boolean } {
@@ -273,7 +310,7 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
       paginationPageSizeSelector: [10, 20, 50, 100],
       defaultColDef: {
         sortable: true,
-        filter: true,
+        filter: false,
         resizable: true,
         flex: 1,
         minWidth: 100,
@@ -556,21 +593,58 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
     return this.gridApi;
   }
 
-  // ── Column State (for WorkspaceComponent integration) ──
+  // ── Grid State (for WorkspaceComponent integration) ──
+  //
+  // Based on AG Grid's Grid State API:
+  //   - api.getColumnState()  → column widths, order, pinned, sort, hidden
+  //   - api.getFilterModel()  → active column filters
+  //   - api.applyColumnState() + api.setFilterModel() to restore
+  //
+  // See: https://www.ag-grid.com/angular-data-grid/grid-state/
+  //      https://www.ag-grid.com/angular-data-grid/column-state/
 
   /**
-   * Return the current AG Grid column state (widths, order, pinned, sort, etc.)
-   * Useful for persisting user customizations across layout save/restore.
+   * Capture the full grid state — column state + filter model.
+   * Returns a JSON-serialisable object suitable for WorkspaceComponent.getState().
    */
+  getGridState(): Record<string, unknown> | null {
+    if (!this.gridApi) return null;
+    return {
+      columnState: this.gridApi.getColumnState(),
+      filterModel: this.gridApi.getFilterModel(),
+    };
+  }
+
+  /**
+   * Apply a previously saved grid state (column state + filter model).
+   * Call this after the grid is ready.
+   */
+  applyGridState(state: Record<string, unknown>): void {
+    if (!this.gridApi || !state) return;
+
+    // Restore column state (widths, order, pinned, sort, hidden)
+    if (Array.isArray(state['columnState'])) {
+      this.gridApi.applyColumnState({
+        state: state['columnState'] as any,
+        applyOrder: true,
+      });
+    }
+
+    // Restore filter model
+    if (state['filterModel'] && typeof state['filterModel'] === 'object') {
+      this.gridApi.setFilterModel(state['filterModel'] as Record<string, any>);
+    }
+  }
+
+  // Convenience aliases for backward compatibility
+
+  /** Return column state only. */
   getColumnState(): unknown[] | null {
     if (!this.gridApi) return null;
     return this.gridApi.getColumnState();
   }
 
-  /**
-   * Apply a previously saved column state.
-   * Call this after the grid is ready (e.g. in a gridReady handler or after init).
-   */
+  /** Apply column state only. */
   setColumnState(state: unknown[]): void {
     if (!this.gridApi || !state) return;
     this.gridApi.applyColumnState({ state: state as any, applyOrder: true });

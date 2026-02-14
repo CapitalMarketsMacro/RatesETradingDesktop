@@ -51,5 +51,11 @@
     [statusBar]="mergedGridOptions.statusBar"
     [cacheQuickFilter]="true"
     (gridReady)="onGridReady($event)"
+    (columnResized)="onColumnOrSortChanged($event)"
+    (columnMoved)="onColumnOrSortChanged($event)"
+    (sortChanged)="onColumnOrSortChanged($event)"
+    (filterChanged)="onColumnOrSortChanged($event)"
+    (columnPinned)="onColumnOrSortChanged($event)"
+    (columnVisible)="onColumnOrSortChanged($event)"
   ></ag-grid-angular>
 </div>

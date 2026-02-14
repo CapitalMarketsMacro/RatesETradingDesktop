@@ -4,7 +4,7 @@ import { DataGrid, ColDef } from '@rates-trading/ui-components';
 import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
 import { ConfigurationService } from '@rates-trading/configuration';
 import { LoggerService } from '@rates-trading/logger';
-import { formatTreasury32nds } from '@rates-trading/shared-utils';
+import { formatTreasury32nds, WorkspaceComponent } from '@rates-trading/shared-utils';
 import { ValueFormatterParams, CellClassParams, GridOptions } from 'ag-grid-community';
 import { Subscription, filter, take } from 'rxjs';
 import { Execution, ExecutionGridRow, transformExecutionToGridRow } from '../models';
@@ -14,6 +14,9 @@ import { Execution, ExecutionGridRow, transformExecutionToGridRow } from '../mod
  * 
  * Displays trade executions/fills in an ag-Grid.
  * Data is received from the rates/executions AMPS topic.
+ *
+ * Extends WorkspaceComponent to persist grid state (column widths,
+ * column order, sort, filters) across layout save/restore.
  */
 @Component({
   selector: 'app-executions-blotter',
@@ -22,7 +25,9 @@ import { Execution, ExecutionGridRow, transformExecutionToGridRow } from '../mod
   templateUrl: './executions-blotter.component.html',
   styleUrl: './executions-blotter.component.css',
 })
-export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
+export class ExecutionsBlotterComponent extends WorkspaceComponent implements OnInit, OnDestroy {
+  readonly stateKey = 'executions/blotter';
+
   @ViewChild('executionsGrid') executionsGrid!: DataGrid<ExecutionGridRow>;
   
   private transport = inject(TRANSPORT_SERVICE);
@@ -30,6 +35,7 @@ export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
   private logger = inject(LoggerService).child({ component: 'ExecutionsBlotter' });
   private executionsSubscription?: TransportSubscription;
   private connectionSubscription?: Subscription;
+  private pendingGridState: Record<string, unknown> | null = null;
 
   // Grid options - disable row selection checkboxes
   gridOptions: GridOptions = {
@@ -136,7 +142,28 @@ export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
     },
   ];
 
+  // ── WorkspaceComponent contract ──
+
+  getState(): Record<string, unknown> {
+    if (!this.executionsGrid) return {};
+    return this.executionsGrid.getGridState() ?? {};
+  }
+
+  setState(state: Record<string, unknown>): void {
+    if (this.executionsGrid?.getGridApi()) {
+      this.executionsGrid.applyGridState(state);
+      this.logger.info('Restored grid state (column + filter) from saved layout');
+    } else {
+      this.pendingGridState = state;
+    }
+  }
+
+  // ── Lifecycle ──
+
   ngOnInit(): void {
+    // Load persisted state; may stash for deferred apply.
+    this.loadPersistedState();
+
     // Wait for transport to be connected before subscribing
     this.connectionSubscription = this.transport.connectionStatus$
       .pipe(
@@ -146,6 +173,26 @@ export class ExecutionsBlotterComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.subscribeToExecutions();
       });
+  }
+
+  /**
+   * Called by lib-data-grid (gridInitialized) when the AG Grid API is ready.
+   * Apply any pending grid state that was loaded before the grid existed.
+   */
+  onDataGridReady(): void {
+    if (this.pendingGridState) {
+      this.executionsGrid.applyGridState(this.pendingGridState);
+      this.logger.info('Applied deferred grid state after grid ready');
+      this.pendingGridState = null;
+    }
+  }
+
+  /**
+   * Called when the user changes column widths, sort, or filter.
+   * Persists the latest grid state via the WorkspaceStorageService.
+   */
+  onGridStateChanged(): void {
+    this.persistState();
   }
 
   ngOnDestroy(): void {
