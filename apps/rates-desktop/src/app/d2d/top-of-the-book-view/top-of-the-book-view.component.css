@@ -326,11 +326,92 @@
   border-color: #d32f2f;
 }
 
+/* --------------------------------------------------------
+   Toast — always dark, matches the TOB container
+   -------------------------------------------------------- */
+::ng-deep .tob-toast .p-toast-message {
+  background-color: #474747 !important;
+  border: 1px solid #4b5563 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  color: #e2e8f0 !important;
+}
+
+::ng-deep .tob-toast .p-toast-message-content {
+  color: #e2e8f0 !important;
+}
+
+::ng-deep .tob-toast .p-toast-message .p-toast-summary {
+  color: #ffffff !important;
+}
+
+::ng-deep .tob-toast .p-toast-message .p-toast-detail {
+  color: #cbd5e1 !important;
+}
+
+::ng-deep .tob-toast .p-toast-message .p-toast-icon-close {
+  color: #94a3b8 !important;
+}
+
+::ng-deep .tob-toast .p-toast-message .p-toast-icon-close:hover {
+  color: #ffffff !important;
+}
+
+::ng-deep .tob-toast .p-toast-message .p-toast-message-icon {
+  color: #94a3b8 !important;
+}
+
+/* Success toast (Buy) — subtle green left accent */
+::ng-deep .tob-toast .p-toast-message-success {
+  border-left: 4px solid #81c784 !important;
+}
+
+::ng-deep .tob-toast .p-toast-message-success .p-toast-message-icon {
+  color: #81c784 !important;
+}
+
+/* Info toast (Sell) — subtle red left accent */
+::ng-deep .tob-toast .p-toast-message-info {
+  border-left: 4px solid #ef5350 !important;
+}
+
+::ng-deep .tob-toast .p-toast-message-info .p-toast-message-icon {
+  color: #ef5350 !important;
+}
+
+/* --------------------------------------------------------
+   Trading Popover — always dark, matches the TOB container
+   ::ng-deep is required because the popover renders in the
+   overlay container outside this component's view encapsulation.
+   -------------------------------------------------------- */
+::ng-deep .p-popover {
+  background-color: #333333 !important;
+  border: 1px solid #4b5563 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+  color: #e2e8f0 !important;
+}
+
+::ng-deep .p-popover .p-popover-content {
+  background-color: #333333 !important;
+  color: #e2e8f0 !important;
+  padding: 0 !important;
+}
+
+::ng-deep .p-popover::before {
+  border-bottom-color: #4b5563 !important;
+}
+
+::ng-deep .p-popover::after {
+  border-bottom-color: #333333 !important;
+}
+
 /* Trading Popover Styles */
 .trading-popover {
   min-width: 280px;
   padding: 0.5rem;
   font-family: 'Noto Sans', sans-serif;
+  color: #e2e8f0;
 }
 
 .trading-popover-header {
@@ -338,7 +419,7 @@
   align-items: center;
   gap: 0.75rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #4b5563;
   margin-bottom: 0.75rem;
 }
 
@@ -351,19 +432,19 @@
 }
 
 .trading-side.sell {
-  background-color: #ffebee;
-  color: #d32f2f;
+  background-color: rgba(211, 47, 47, 0.2);
+  color: #ef5350;
 }
 
 .trading-side.buy {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: rgba(46, 125, 50, 0.2);
+  color: #81c784;
 }
 
 .trading-instrument {
   font-weight: 600;
   font-size: 1rem;
-  color: #1e293b;
+  color: #e2e8f0;
 }
 
 .trading-popover-details {
@@ -380,13 +461,13 @@
 }
 
 .trading-label {
-  color: #64748b;
+  color: #94a3b8;
   font-size: 0.85rem;
 }
 
 .trading-value {
   font-weight: 600;
-  color: #1e293b;
+  color: #e2e8f0;
 }
 
 .trading-price {
@@ -395,11 +476,23 @@
 }
 
 .trading-price.bid-price {
-  color: #2e7d32;
+  color: #81c784;
 }
 
 .trading-price.ask-price {
-  color: #d32f2f;
+  color: #ef5350;
+}
+
+.trading-price-group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.trading-size {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 400;
 }
 
 .trading-popover-actions {
@@ -412,41 +505,56 @@
   width: 100%;
 }
 
-/* Dark mode popover styles */
-:host-context(.app-dark) .trading-popover-header {
-  border-bottom-color: #334155;
+/* Quantity spinner */
+.qty-spinner {
+  display: flex;
+  align-items: center;
 }
 
-:host-context(.app-dark) .trading-instrument {
+.qty-input {
+  background-color: #474747;
+  border: 1px solid #4b5563;
+  color: #e2e8f0;
+  border-radius: 4px;
+}
+
+.qty-btn {
+  background-color: #474747;
+  border: 1px solid #4b5563;
   color: #e2e8f0;
 }
 
-:host-context(.app-dark) .trading-side.sell {
-  background-color: rgba(211, 47, 47, 0.2);
-  color: #ef5350;
+.qty-btn:hover {
+  background-color: #555555;
 }
 
-:host-context(.app-dark) .trading-side.buy {
-  background-color: rgba(46, 125, 50, 0.2);
-  color: #81c784;
+/* Book dropdown inside popover */
+::ng-deep .trading-book-dropdown .p-select {
+  background-color: #474747 !important;
+  border-color: #4b5563 !important;
+  color: #e2e8f0 !important;
 }
 
-:host-context(.app-dark) .trading-label {
-  color: #94a3b8;
+::ng-deep .trading-book-dropdown .p-select-label {
+  color: #e2e8f0 !important;
 }
 
-:host-context(.app-dark) .trading-value {
-  color: #e2e8f0;
+/* Book dropdown overlay panel */
+::ng-deep .p-select-overlay {
+  background-color: #333333 !important;
+  border: 1px solid #4b5563 !important;
 }
 
-:host-context(.app-dark) .trading-price.bid-price {
-  color: #81c784;
+::ng-deep .p-select-overlay .p-select-option {
+  color: #e2e8f0 !important;
 }
 
-:host-context(.app-dark) .trading-price.ask-price {
-  color: #ef5350;
+::ng-deep .p-select-overlay .p-select-option:hover,
+::ng-deep .p-select-overlay .p-select-option.p-highlight {
+  background-color: #474747 !important;
 }
 
+/* Interactive cell hover borders */
 :host-context(.app-dark) .tob-data-row .tob-cell-bid-size.tob-cell-interactive:hover::after {
   border-color: #81c784;
 }
