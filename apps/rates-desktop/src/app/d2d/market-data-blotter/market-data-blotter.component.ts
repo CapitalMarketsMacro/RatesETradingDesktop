@@ -1,13 +1,12 @@
 import { Component, inject, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MarketData, MarketDataGridRow, transformMarketDataToGridRow } from '@rates-trading/data-access';
+import { MarketDataGridRow } from '@rates-trading/data-access';
 import { DataGrid, ColDef } from '@rates-trading/ui-components';
-import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
-import { ConfigurationService } from '@rates-trading/configuration';
 import { LoggerService } from '@rates-trading/logger';
 import { formatTreasury32nds, formatSpread32nds } from '@rates-trading/shared-utils';
 import { ValueFormatterParams } from 'ag-grid-community';
-import { Subscription, filter, take } from 'rxjs';
+import { Subscription } from 'rxjs';
+import { MarketDataService } from '../services/market-data.service';
 
 /**
  * Market Data Blotter Component
@@ -27,11 +26,9 @@ import { Subscription, filter, take } from 'rxjs';
 export class MarketDataBlotterComponent implements OnInit, OnDestroy {
   @ViewChild('marketDataGrid') marketDataGrid!: DataGrid<MarketDataGridRow>;
   
-  private transport = inject(TRANSPORT_SERVICE);
-  private configService = inject(ConfigurationService);
+  private marketDataService = inject(MarketDataService);
   private logger = inject(LoggerService).child({ component: 'MarketDataBlotter' });
-  private marketDataSubscription?: TransportSubscription;
-  private connectionSubscription?: Subscription;
+  private rowUpdateSub?: Subscription;
 
   // Market data grid columns
   columns: ColDef[] = [
@@ -118,65 +115,18 @@ export class MarketDataBlotterComponent implements OnInit, OnDestroy {
   ];
 
   ngOnInit(): void {
-    // Wait for transport to be connected before subscribing
-    this.connectionSubscription = this.transport.connectionStatus$
-      .pipe(
-        filter(status => status === ConnectionStatus.Connected),
-        take(1)
-      )
-      .subscribe(() => {
-        this.subscribeToMarketData();
-      });
+    // Ensure the shared market data service is connected
+    this.marketDataService.connect();
+
+    // Subscribe to individual row updates for high-frequency ag-Grid patching
+    this.rowUpdateSub = this.marketDataService.rowUpdate$.subscribe((row) => {
+      if (this.marketDataGrid) {
+        this.marketDataGrid.updateRow(row);
+      }
+    });
   }
 
   ngOnDestroy(): void {
-    this.connectionSubscription?.unsubscribe();
-    this.unsubscribe();
-  }
-
-  /**
-   * Subscribe to market data topic
-   */
-  private async subscribeToMarketData(): Promise<void> {
-    const config = this.configService.getConfiguration();
-    const topic = config?.ampsTopics?.marketData || 'rates/marketData';
-    
-    try {
-      this.marketDataSubscription = await this.transport.subscribe<MarketData>(
-        topic,
-        (message) => {
-          this.handleMarketDataMessage(message.data);
-        }
-      );
-      this.logger.info({ topic }, 'Subscribed to market data topic');
-    } catch (error) {
-      this.logger.error(error as Error, `Failed to subscribe to ${topic}`);
-    }
-  }
-
-  /**
-   * Handle incoming market data messages
-   * Uses ag-Grid's applyTransactionAsync for high-frequency updates
-   */
-  private handleMarketDataMessage(data: MarketData): void {
-    if (!data.Id) {
-      return;
-    }
-    
-    const gridRow = transformMarketDataToGridRow(data);
-    
-    if (this.marketDataGrid) {
-      this.marketDataGrid.updateRow(gridRow);
-    }
-  }
-
-  /**
-   * Unsubscribe from market data
-   */
-  private async unsubscribe(): Promise<void> {
-    if (this.marketDataSubscription) {
-      await this.marketDataSubscription.unsubscribe();
-      this.marketDataSubscription = undefined;
-    }
+    this.rowUpdateSub?.unsubscribe();
   }
 }

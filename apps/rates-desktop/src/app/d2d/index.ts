@@ -9,3 +9,4 @@ export * from './market-data-blotter/market-data-blotter.component';
 export * from './executions-blotter/executions-blotter.component';
 export * from './status-bar/status-bar.component';
 export * from './models';
+export * from './services';
