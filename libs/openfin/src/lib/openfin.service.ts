@@ -437,25 +437,128 @@ export class OpenFinService {
     const resolvedUrl = this.resolveUrl(url);
 
     try {
-      const platform = globalFin.Platform.getCurrentSync();
+      const layout = globalFin.Platform.Layout.getCurrentSync();
+      const rootItem = await layout.getRootItem();
 
-      // Determine the target window identity so the view is added to THIS window
-      let windowIdentity: { uuid: string; name: string } | undefined;
-      if (globalFin.me.isWindow) {
-        windowIdentity = globalFin.me.identity;
-      } else if (globalFin.me.isView) {
-        const parentWin = await globalFin.me.getCurrentWindow();
-        windowIdentity = parentWin.identity;
+      // Find a non-status-bar stack to add the view to.
+      // If only the status bar stack remains, create a new stack below it.
+      const targetStack = await this.findNonStatusBarStack(rootItem);
+
+      if (targetStack) {
+        // Add the view as a new tab in the existing non-status-bar stack
+        await targetStack.addView({ name, url: resolvedUrl });
+        this.logger.info({ name, url }, 'View added to existing stack in platform layout');
+      } else {
+        // Only the status bar stack exists — create a new stack below it
+        const statusBarStack = await this.findStatusBarStack(rootItem);
+        if (statusBarStack) {
+          await statusBarStack.createAdjacentStack(
+            [{ name, url: resolvedUrl }],
+            { position: 'bottom' },
+          );
+          this.logger.info({ name, url }, 'New stack created below status bar in platform layout');
+        } else {
+          // Fallback: use platform.createView if layout traversal fails
+          const platform = globalFin.Platform.getCurrentSync();
+          let windowIdentity: { uuid: string; name: string } | undefined;
+          if (globalFin.me.isWindow) {
+            windowIdentity = globalFin.me.identity;
+          } else if (globalFin.me.isView) {
+            const parentWin = await globalFin.me.getCurrentWindow();
+            windowIdentity = parentWin.identity;
+          }
+          await platform.createView({ name, url: resolvedUrl }, windowIdentity);
+          this.logger.info({ name, url }, 'View added via platform.createView fallback');
+        }
       }
-
-      await platform.createView(
-        { name, url: resolvedUrl },
-        windowIdentity,
-      );
-
-      this.logger.info({ name, url, windowIdentity }, 'View added to platform layout');
     } catch (error) {
       this.logger.error(error as Error, 'Failed to add platform view');
+    }
+  }
+
+  /**
+   * Recursively search the layout tree for a non-status-bar TabStack.
+   * Returns the first TabStack that does NOT contain the status-bar view.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async findNonStatusBarStack(item: any): Promise<any | null> {
+    if (item.type === 'stack') {
+      const views = await item.getViews();
+      const isStatusBar = views.some(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (v: any) => v.name === 'status-bar' || (v.identity && v.identity.name === 'status-bar'),
+      );
+      return isStatusBar ? null : item;
+    }
+    // ColumnOrRow — recurse into children
+    if (typeof item.getContent === 'function') {
+      const children = await item.getContent();
+      for (const child of children) {
+        const found = await this.findNonStatusBarStack(child);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Recursively search the layout tree for the status-bar TabStack.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private async findStatusBarStack(item: any): Promise<any | null> {
+    if (item.type === 'stack') {
+      const views = await item.getViews();
+      const isStatusBar = views.some(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (v: any) => v.name === 'status-bar' || (v.identity && v.identity.name === 'status-bar'),
+      );
+      return isStatusBar ? item : null;
+    }
+    // ColumnOrRow — recurse into children
+    if (typeof item.getContent === 'function') {
+      const children = await item.getContent();
+      for (const child of children) {
+        const found = await this.findStatusBarStack(child);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Restore the default platform layout by fetching the original manifest
+   * and re-applying its snapshot. This properly re-creates all views
+   * (including the status bar) from scratch.
+   */
+  async restoreDefaultPlatformLayout(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Platform) {
+      this.logger.error('Cannot restore default platform layout: not in Platform mode');
+      return;
+    }
+
+    try {
+      const platform = globalFin.Platform.getCurrentSync();
+
+      // Fetch the platform manifest to get the original snapshot
+      const manifestUrl = `${window.location.origin}/assets/openfin/app.platform.fin.json`;
+      const response = await fetch(manifestUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch platform manifest: ${response.statusText}`);
+      }
+      const manifest = await response.json();
+
+      if (manifest?.snapshot) {
+        await platform.applySnapshot(manifest.snapshot, {
+          closeExistingWindows: true,
+        });
+        this.logger.info('Default platform layout restored from manifest snapshot');
+      } else {
+        this.logger.error('Platform manifest does not contain a snapshot');
+      }
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to restore default platform layout');
     }
   }
 

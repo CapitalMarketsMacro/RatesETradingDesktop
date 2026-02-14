@@ -350,7 +350,8 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
    * Restore the default layout.
    *
    * - **Container** → close all child windows (back to bare main window)
-   * - **Web / Platform** → reload the page to load the default snapshot
+   * - **Platform** → fetch original manifest and re-apply the default snapshot
+   * - **Web** → reload the page to load the default snapshot
    */
   private async restoreDefaultLayout(): Promise<void> {
     if (!this.openfinService.isConnected) return;
@@ -359,6 +360,9 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
     if (env === 'container') {
       this.logger.info('Restoring default layout (closing all child windows)...');
       await this.openfinService.closeAllChildWindows();
+    } else if (env === 'platform') {
+      this.logger.info('Restoring default platform layout from manifest...');
+      await this.openfinService.restoreDefaultPlatformLayout();
     } else {
       this.logger.info('Restoring default layout (reloading page)...');
       window.location.reload();
