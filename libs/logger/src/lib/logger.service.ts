@@ -57,39 +57,63 @@ export class LoggerService {
       base: this.config.base || {},
     };
 
-    // Browser-specific configuration
+    // Browser-specific configuration — spdlog-style formatted output
     if (typeof window !== 'undefined') {
       pinoOptions.browser = {
         asObject: true,
         write: (o: object) => {
           if (this.config.enableConsole) {
-            // Use appropriate console method based on level
             const logObj = o as Record<string, unknown>;
-            const level = (logObj['level'] as number) || 30; // Default to info
+            const level = (logObj['level'] as number) || 30;
             const message = (logObj['msg'] as string) || '';
-            const data: Record<string, unknown> = { ...logObj };
-            delete data['level'];
-            delete data['time'];
-            delete data['msg'];
 
-            if (level >= 60) {
-              // fatal
-              console.error(message, data);
-            } else if (level >= 50) {
-              // error
-              console.error(message, data);
-            } else if (level >= 40) {
-              // warn
-              console.warn(message, data);
-            } else if (level >= 30) {
-              // info
-              console.info(message, data);
-            } else if (level >= 20) {
-              // debug
-              console.debug(message, data);
+            // ── Build spdlog-style level tag ──
+            const levelTag = LoggerService.levelName(level);
+
+            // ── Build timestamp  YYYY-MM-DD HH:mm:ss.SSS ──
+            const now = new Date();
+            const ts =
+              now.getFullYear() + '-' +
+              String(now.getMonth() + 1).padStart(2, '0') + '-' +
+              String(now.getDate()).padStart(2, '0') + ' ' +
+              String(now.getHours()).padStart(2, '0') + ':' +
+              String(now.getMinutes()).padStart(2, '0') + ':' +
+              String(now.getSeconds()).padStart(2, '0') + '.' +
+              String(now.getMilliseconds()).padStart(3, '0');
+
+            // ── Extract logger name from bindings ──
+            const name =
+              (logObj['component'] as string) ||
+              (logObj['service'] as string) ||
+              (logObj['module'] as string) ||
+              'App';
+
+            // ── Collect remaining contextual data ──
+            const data: Record<string, unknown> = { ...logObj };
+            // Remove standard/internal keys so only user context remains
+            for (const k of ['level', 'time', 'msg', 'component', 'service', 'module']) {
+              delete data[k];
+            }
+
+            // ── Format: [timestamp] [name] [level] message  {extra} ──
+            const hasExtra = Object.keys(data).length > 0;
+            const prefix = `[${ts}] [${name}] [${levelTag}]`;
+            const formatted = hasExtra
+              ? `${prefix} ${message}`
+              : `${prefix} ${message}`;
+
+            // Use the correct console method for DevTools filtering
+            const consoleFn =
+              level >= 50 ? console.error :
+              level >= 40 ? console.warn :
+              level >= 30 ? console.info :
+              level >= 20 ? console.debug :
+              console.trace;
+
+            if (hasExtra) {
+              consoleFn(formatted, data);
             } else {
-              // trace
-              console.trace(message, data);
+              consoleFn(formatted);
             }
           }
 
@@ -208,6 +232,18 @@ export class LoggerService {
     } else {
       this.logger.fatal(objOrMsg, msg);
     }
+  }
+
+  /**
+   * Map numeric Pino level to spdlog-style tag
+   */
+  private static levelName(level: number): string {
+    if (level >= 60) return 'fatal';
+    if (level >= 50) return 'error';
+    if (level >= 40) return 'warn';
+    if (level >= 30) return 'info';
+    if (level >= 20) return 'debug';
+    return 'trace';
   }
 
   /**
