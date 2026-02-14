@@ -67,6 +67,7 @@
         /* Splitter between panels */
         --splitter-color: #0f172a;
         --splitter-hover-color: #3b82f6;
+        --splitter-width: 5px;
         /* Background behind views (only visible if a view fails to load) */
         --color-behind-views: #0f172a;
         /* GoldenLayout root background */
@@ -83,13 +84,11 @@
         width: 100% !important;
         padding: 0 !important;
       }
-      #layout-container {
+      /* OpenFin's internal layout-container (inside #of-frame-main) */
+      #of-frame-main #layout-container {
         height: 100% !important;
         width: 100% !important;
         padding: 0 !important;
-        /* Keep layout below PrimeNG menu overlays (menubar is z-index: 1100) */
-        position: relative;
-        z-index: 1;
       }
 
       /* ── Status Bar view tab header overrides ── */
