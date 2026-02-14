@@ -32,6 +32,10 @@
     </ng-template>
   </p-menubar>
 
+  @if (openfinService.isContainer) {
+    <app-status-bar></app-status-bar>
+  }
+
   <main #layoutContainer id="layout-container" class="openfin-layout-container"></main>
 
   <!-- Save Layout dialog -->

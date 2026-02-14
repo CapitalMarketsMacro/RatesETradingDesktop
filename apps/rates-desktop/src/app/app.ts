@@ -12,6 +12,7 @@ import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/conf
 import { TRANSPORT_SERVICE, ConnectionStatus } from '@rates-trading/transports';
 import { LoggerService } from '@rates-trading/logger';
 import { OpenFinService, OpenFinConnectionStatus } from '@rates-trading/openfin';
+import { StatusBarComponent } from './d2d/status-bar/status-bar.component';
 
 export interface TreasurySecurity {
   cusip: string;
@@ -31,7 +32,7 @@ export interface TreasurySecurity {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, MenubarModule, ButtonModule, DialogModule, InputTextModule],
+  imports: [CommonModule, FormsModule, RouterModule, MenubarModule, ButtonModule, DialogModule, InputTextModule, StatusBarComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
