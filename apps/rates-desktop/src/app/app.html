@@ -7,6 +7,17 @@
     </ng-template>
     <ng-template pTemplate="end">
       <div class="menubar-end">
+        @if (currentLayoutName) {
+          <span class="current-layout-badge" title="Active layout">
+            <i class="pi pi-objects-column"></i>
+            {{ currentLayoutName }}
+          </span>
+        } @else {
+          <span class="current-layout-badge default-layout" title="Default layout">
+            <i class="pi pi-objects-column"></i>
+            Default
+          </span>
+        }
         <span class="connection-status" [class]="connectionStatusClass">
           <i class="pi" [class.pi-check-circle]="connectionStatus === 'connected'" 
              [class.pi-spin]="connectionStatus === 'connecting' || connectionStatus === 'reconnecting'"

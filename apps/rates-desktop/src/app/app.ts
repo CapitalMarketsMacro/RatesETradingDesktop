@@ -65,6 +65,9 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   showSaveDialog = false;
   saveLayoutName = '';
 
+  /** Name of the currently active layout (shown in menubar) */
+  currentLayoutName: string | null = null;
+
   /**
    * True on the default route (host page with layout), false on sub-routes (iframe views).
    * Uses window.location.pathname directly — this is synchronous and immediately correct,
@@ -252,6 +255,13 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
           }
           await this.openfinService.connectToBroker(container);
           this.logger.info('OpenFin Web Broker connected with layout');
+
+          // If a last-used layout was auto-restored during connectToBroker,
+          // reflect its name in the menubar.
+          const webLastLayout = this.openfinService.getLastLayoutName();
+          if (webLastLayout) {
+            this.currentLayoutName = webLastLayout;
+          }
         } else {
           // Sub-route (loaded in an OpenFin layout iframe) — inherit broker connection
           await this.openfinService.connectAsView();
@@ -331,6 +341,7 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
     if (!name) return;
 
     await this.openfinService.saveLayout(name);
+    this.currentLayoutName = name;
     this.showSaveDialog = false;
     this.refreshPreferencesMenu();
     this.logger.info({ name }, 'Layout saved from menu');
@@ -351,6 +362,8 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   /** Restore a saved layout by name */
   private async restoreSavedLayout(name: string): Promise<void> {
     await this.openfinService.restoreLayout(name);
+    this.currentLayoutName = name;
+    this.cdr.detectChanges();
   }
 
   /** Delete a saved layout by name and refresh the menu */
@@ -374,6 +387,8 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
 
     // Clear the last-used layout so next app launch starts fresh
     this.openfinService.clearLastLayout();
+    this.currentLayoutName = null;
+    this.cdr.detectChanges();
 
     const env = this.openfinService.environment;
     if (env === 'container') {
@@ -417,6 +432,12 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
       if (elapsed < App.AUTO_RESTORE_GUARD_WINDOW_MS) {
         localStorage.removeItem(App.AUTO_RESTORE_GUARD_KEY);
         this.logger.info('Skipping auto-restore (recently restored, preventing loop)');
+        // Still show the layout name — we're running inside the restored layout
+        const lastName = this.openfinService.getLastLayoutName();
+        if (lastName) {
+          this.currentLayoutName = lastName;
+          this.cdr.detectChanges();
+        }
         return;
       }
       // Guard is stale (> 30s) — remove it and proceed normally
@@ -442,6 +463,8 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
     this.logger.info({ name: lastLayoutName }, 'Auto-restoring last-used layout on startup');
     try {
       await this.openfinService.restoreLayout(lastLayoutName);
+      this.currentLayoutName = lastLayoutName;
+      this.cdr.detectChanges();
     } catch (error) {
       // Clear the guard on failure so the next launch can try again
       localStorage.removeItem(App.AUTO_RESTORE_GUARD_KEY);

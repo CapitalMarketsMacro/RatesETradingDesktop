@@ -121,6 +121,38 @@ h2 {
   flex-wrap: wrap;
 }
 
+/* Current layout name badge in menubar */
+.current-layout-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background-color: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.current-layout-badge.default-layout {
+  background-color: rgba(100, 116, 139, 0.1);
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Dark theme overrides */
+:host-context(html.app-dark) .current-layout-badge {
+  background-color: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+}
+
+:host-context(html.app-dark) .current-layout-badge.default-layout {
+  background-color: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+}
+
 /* OpenFin status indicator in menubar */
 .openfin-status {
   display: flex;
