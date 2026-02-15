@@ -1,19 +1,19 @@
 import { Component, inject, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DataGrid, ColDef } from '@rates-trading/ui-components';
-import { TRANSPORT_SERVICE, Subscription as TransportSubscription, ConnectionStatus } from '@rates-trading/transports';
-import { ConfigurationService } from '@rates-trading/configuration';
 import { LoggerService } from '@rates-trading/logger';
 import { formatTreasury32nds, WorkspaceComponent } from '@rates-trading/shared-utils';
 import { ValueFormatterParams, CellClassParams, GridOptions } from 'ag-grid-community';
-import { Subscription, filter, take } from 'rxjs';
-import { Execution, ExecutionGridRow, transformExecutionToGridRow } from '../models';
+import { Subscription } from 'rxjs';
+import { ExecutionGridRow } from '../models';
+import { ExecutionService } from '../services';
 
 /**
  * Executions Blotter Component
  * 
  * Displays trade executions/fills in an ag-Grid.
- * Data is received from the rates/executions AMPS topic.
+ * Data is received via the centralised ExecutionService which subscribes
+ * to the AMPS rates/executions topic using SOW and Subscribe.
  *
  * Extends WorkspaceComponent to persist grid state (column widths,
  * column order, sort, filters) across layout save/restore.
@@ -30,11 +30,9 @@ export class ExecutionsBlotterComponent extends WorkspaceComponent implements On
 
   @ViewChild('executionsGrid') executionsGrid!: DataGrid<ExecutionGridRow>;
   
-  private transport = inject(TRANSPORT_SERVICE);
-  private configService = inject(ConfigurationService);
+  private executionService = inject(ExecutionService);
   private logger = inject(LoggerService).child({ component: 'ExecutionsBlotter' });
-  private executionsSubscription?: TransportSubscription;
-  private connectionSubscription?: Subscription;
+  private rowUpdateSub?: Subscription;
   private pendingGridState: Record<string, unknown> | null = null;
 
   // Grid options - disable row selection checkboxes
@@ -164,15 +162,15 @@ export class ExecutionsBlotterComponent extends WorkspaceComponent implements On
     // Load persisted state; may stash for deferred apply.
     this.loadPersistedState();
 
-    // Wait for transport to be connected before subscribing
-    this.connectionSubscription = this.transport.connectionStatus$
-      .pipe(
-        filter(status => status === ConnectionStatus.Connected),
-        take(1)
-      )
-      .subscribe(() => {
-        this.subscribeToExecutions();
-      });
+    // Ensure the shared execution service is connected
+    this.executionService.connect();
+
+    // Subscribe to individual row updates for high-frequency ag-Grid patching
+    this.rowUpdateSub = this.executionService.rowUpdate$.subscribe((row) => {
+      if (this.executionsGrid) {
+        this.executionsGrid.updateRow(row);
+      }
+    });
   }
 
   /**
@@ -196,67 +194,6 @@ export class ExecutionsBlotterComponent extends WorkspaceComponent implements On
   }
 
   ngOnDestroy(): void {
-    this.connectionSubscription?.unsubscribe();
-    this.unsubscribe();
-  }
-
-  /**
-   * Subscribe to executions topic using SOW and Subscribe when available.
-   * SOW delivers the full historical snapshot first, then streams live updates.
-   */
-  private async subscribeToExecutions(): Promise<void> {
-    const config = this.configService.getConfiguration();
-    const topic = config?.ampsTopics?.executions || 'rates/executions';
-    
-    try {
-      const callback = (message: { data: Execution }) => {
-        this.handleExecutionMessage(message.data);
-      };
-
-      // Prefer sowAndSubscribe (AMPS) — delivers all existing executions first,
-      // then streams live fills through the same callback.
-      if (this.transport.sowAndSubscribe) {
-        this.executionsSubscription = await this.transport.sowAndSubscribe<Execution>(
-          topic,
-          callback,
-        );
-        this.logger.info({ topic }, 'SOW and subscribed to executions');
-      } else {
-        // Fallback for transports that don't support SOW (NATS, Solace, etc.)
-        this.executionsSubscription = await this.transport.subscribe<Execution>(
-          topic,
-          callback,
-        );
-        this.logger.info({ topic }, 'Subscribed to executions (no SOW)');
-      }
-    } catch (error) {
-      this.logger.error(error as Error, `Failed to subscribe to ${topic}`);
-    }
-  }
-
-  /**
-   * Handle incoming execution messages
-   * Uses ag-Grid's applyTransactionAsync for high-frequency updates
-   */
-  private handleExecutionMessage(data: Execution): void {
-    if (!data.ExecutionIdString) {
-      return;
-    }
-    
-    const gridRow = transformExecutionToGridRow(data);
-    
-    if (this.executionsGrid) {
-      this.executionsGrid.updateRow(gridRow);
-    }
-  }
-
-  /**
-   * Unsubscribe from executions
-   */
-  private async unsubscribe(): Promise<void> {
-    if (this.executionsSubscription) {
-      await this.executionsSubscription.unsubscribe();
-      this.executionsSubscription = undefined;
-    }
+    this.rowUpdateSub?.unsubscribe();
   }
 }
