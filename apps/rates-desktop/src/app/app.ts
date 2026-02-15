@@ -138,6 +138,17 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
           },
         ],
       },
+      {
+        label: 'Support',
+        icon: 'pi pi-question-circle',
+        items: [
+          {
+            label: 'View Real Time Logs',
+            icon: 'pi pi-list',
+            command: () => this.addViewFromMenu('remote-log-viewer', '/support/logs'),
+          },
+        ],
+      },
     ];
 
     // Load configuration

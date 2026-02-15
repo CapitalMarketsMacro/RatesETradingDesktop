@@ -115,6 +115,16 @@ export class RemoteLoggerService implements OnDestroy {
     return this.connected;
   }
 
+  /** The NATS URL the remote logger is connected to (null if not initialized). */
+  get natsUrl(): string | null {
+    return this.config?.natsUrl ?? null;
+  }
+
+  /** The NATS topic logs are published to (null if not initialized). */
+  get topic(): string | null {
+    return this.config?.topic ?? null;
+  }
+
   /** Total number of log entries published to NATS. */
   get totalPublished(): number {
     return this.publishedCount;

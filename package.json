@@ -84,6 +84,7 @@
     "ag-grid-angular": "^35.0.0",
     "ag-grid-enterprise": "^35.0.0",
     "amps": "5.3.4-0.378635.60b2fcc",
+    "angular-slickgrid": "^9.13.0",
     "pino": "^9.5.0",
     "primeicons": "^7.0.0",
     "primeng": "^21.0.3",

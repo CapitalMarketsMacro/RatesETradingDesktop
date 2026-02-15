@@ -1,5 +1,11 @@
 import { Route } from '@angular/router';
-import { TopOfTheBookViewComponent, MarketDataBlotterComponent, ExecutionsBlotterComponent, StatusBarComponent } from './d2d';
+import {
+  TopOfTheBookViewComponent,
+  MarketDataBlotterComponent,
+  ExecutionsBlotterComponent,
+  StatusBarComponent,
+  RemoteLoggerViewerComponent,
+} from './d2d';
 
 export const appRoutes: Route[] = [
   // Status bar (thin row at top of layout)
@@ -11,4 +17,7 @@ export const appRoutes: Route[] = [
   
   // D2D Executions
   { path: 'executions', title: 'Executions Blotter', component: ExecutionsBlotterComponent },
+
+  // Support / Diagnostics
+  { path: 'support/logs', title: 'Real Time Logs', component: RemoteLoggerViewerComponent },
 ];

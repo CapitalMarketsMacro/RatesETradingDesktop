@@ -1,0 +1,52 @@
+<div class="log-viewer-container">
+  <!-- Toolbar -->
+  <div class="log-viewer-toolbar">
+    <div class="toolbar-left">
+      <span class="status-indicator" [class.status-connected]="connected" [class.status-disconnected]="!connected && !connecting" [class.status-connecting]="connecting">
+        <i class="pi" [ngClass]="{'pi-circle-fill': connected, 'pi-spin pi-spinner': connecting, 'pi-circle': !connected && !connecting}"></i>
+        {{ connected ? 'Live' : connecting ? 'Connecting…' : 'Disconnected' }}
+      </span>
+
+      <span class="stats-badge" pTooltip="Total received / displayed">
+        <i class="pi pi-inbox"></i> {{ totalReceived | number }} / {{ displayedCount | number }}
+      </span>
+    </div>
+
+    <div class="toolbar-right">
+      <p-button
+        [icon]="paused ? 'pi pi-play' : 'pi pi-pause'"
+        [severity]="paused ? 'success' : 'secondary'"
+        [rounded]="true"
+        [text]="true"
+        pTooltip="{{ paused ? 'Resume (' + pauseBuffer.length + ' buffered)' : 'Pause ingestion' }}"
+        (click)="togglePause()" />
+
+      <p-button
+        icon="pi pi-trash"
+        severity="danger"
+        [rounded]="true"
+        [text]="true"
+        pTooltip="Clear all logs"
+        (click)="clearLogs()" />
+    </div>
+  </div>
+
+  <!-- Error banner -->
+  @if (errorMessage) {
+    <div class="error-banner">
+      <i class="pi pi-exclamation-triangle"></i>
+      {{ errorMessage }}
+    </div>
+  }
+
+  <!-- SlickGrid container -->
+  <div id="log-viewer-grid-container" class="grid-wrapper" #gridWrapper>
+    <angular-slickgrid
+      gridId="logViewerGrid"
+      [columns]="columnDefinitions"
+      [options]="gridOptions"
+      [dataset]="dataset"
+      (onAngularGridCreated)="angularGridReady($event)">
+    </angular-slickgrid>
+  </div>
+</div>

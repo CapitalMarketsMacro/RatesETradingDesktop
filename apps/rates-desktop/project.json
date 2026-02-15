@@ -43,6 +43,7 @@
         "allowedCommonJsDependencies": ["events", "buffer"],
         "styles": [
           "node_modules/primeicons/primeicons.css",
+          "node_modules/@slickgrid-universal/common/dist/styles/css/slickgrid-theme-material.lite.css",
           "apps/rates-desktop/src/styles.css"
         ]
       },

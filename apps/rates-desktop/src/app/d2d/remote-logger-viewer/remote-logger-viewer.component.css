@@ -1,0 +1,211 @@
+/* ── Host — fill parent flex container (App router-outlet) */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Log Viewer Container ─────────────────────────────── */
+.log-viewer-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  min-height: 0;
+  background: #0f172a;
+  font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  overflow: hidden;
+}
+
+/* ── Toolbar ──────────────────────────────────────────── */
+.log-viewer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  flex-shrink: 0;
+  gap: 8px;
+  min-height: 36px;
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.status-connected {
+  color: #4ade80;
+}
+
+.status-connecting {
+  color: #facc15;
+}
+
+.status-disconnected {
+  color: #f87171;
+}
+
+.stats-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 2px 8px;
+  background: #0f172a;
+  border-radius: 4px;
+}
+
+/* ── Error ────────────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #7f1d1d;
+  color: #fca5a5;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ── Grid Wrapper ─────────────────────────────────────── */
+.grid-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+/* ── SlickGrid Dark Theme Overrides ───────────────────── */
+:host ::ng-deep .slickgrid-container {
+  font-family: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+  font-size: 11px;
+}
+
+:host ::ng-deep .slick-header-columns {
+  background: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+:host ::ng-deep .slick-header-column {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-right: 1px solid #334155 !important;
+}
+
+:host ::ng-deep .slick-header-column:hover {
+  background: #334155 !important;
+}
+
+:host ::ng-deep .slick-header-column.slick-header-column-sorted {
+  color: #7dd3fc !important;
+}
+
+:host ::ng-deep .slick-row {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+:host ::ng-deep .slick-row:hover {
+  background: #1e293b !important;
+}
+
+:host ::ng-deep .slick-row.odd {
+  background: #131c2e !important;
+}
+
+:host ::ng-deep .slick-cell {
+  border-right: 1px solid #1e293b !important;
+  border-bottom: 1px solid #1e293b !important;
+  padding: 2px 6px !important;
+  line-height: 22px !important;
+  font-size: 11px;
+}
+
+:host ::ng-deep .log-data-cell {
+  color: #64748b;
+  font-size: 10px;
+}
+
+/* filter header row */
+:host ::ng-deep .slick-headerrow {
+  background: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+:host ::ng-deep .slick-headerrow-column {
+  background: #1e293b !important;
+  border-right: 1px solid #334155 !important;
+}
+
+:host ::ng-deep .slick-headerrow-column input,
+:host ::ng-deep .slick-headerrow-column select {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #334155 !important;
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 1px 4px;
+  width: 100%;
+  height: 22px;
+}
+
+:host ::ng-deep .slick-headerrow-column input:focus,
+:host ::ng-deep .slick-headerrow-column select:focus {
+  border-color: #3b82f6 !important;
+  outline: none;
+}
+
+/* Scrollbar styling */
+:host ::ng-deep .slick-viewport {
+  background: #0f172a !important;
+}
+
+:host ::ng-deep .slick-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:host ::ng-deep .slick-viewport::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+:host ::ng-deep .slick-viewport::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+/* Sort indicator */
+:host ::ng-deep .slick-sort-indicator {
+  color: #7dd3fc !important;
+}
+
+/* Selected row highlight — newest entry */
+:host ::ng-deep .slick-row.selected {
+  background: #1e3a5f !important;
+}
+
+:host ::ng-deep .slick-cell.selected {
+  background: #1e3a5f !important;
+}

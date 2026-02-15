@@ -1,10 +1,12 @@
-import { ApplicationConfig, APP_INITIALIZER, inject } from '@angular/core';
+import { ApplicationConfig, APP_INITIALIZER, inject, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient } from '@angular/common/http';
 import { providePrimeNG } from 'primeng/config';
 import { definePreset } from '@primeuix/themes';
 import Nora from '@primeuix/themes/nora';
+import { AngularSlickgridModule } from 'angular-slickgrid';
+import { TranslateModule } from '@ngx-translate/core';
 import { appRoutes } from './app.routes';
 import { provideTransport } from '@rates-trading/transports';
 import { ConfigurationService } from '@rates-trading/configuration';
@@ -52,6 +54,10 @@ export const appConfig: ApplicationConfig = {
       useFactory: initializeApp,
       multi: true,
     },
+    // ngx-translate required by angular-slickgrid (used only for grid internals)
+    importProvidersFrom(TranslateModule.forRoot()),
+    // SlickGrid for high-performance grids (log viewer, etc.)
+    importProvidersFrom(AngularSlickgridModule.forRoot()),
     // Transport will use the already-loaded configuration
     provideTransport(),
     providePrimeNG({
