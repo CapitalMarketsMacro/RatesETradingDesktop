@@ -54,7 +54,14 @@
   "logging": {
     "level": "info",
     "enableConsole": true,
-    "enableRemote": true
+    "enableRemote": true,
+    "remote": {
+      "natsUrl": "wss://staging-nats.rates-trading.com:8224",
+      "topic": "logs.rates-desktop.staging",
+      "minLevel": "info",
+      "bufferSize": 50,
+      "flushIntervalMs": 5000
+    }
   },
   "ui": {
     "theme": "auto",

@@ -68,7 +68,14 @@
   "logging": {
     "level": "debug",
     "enableConsole": true,
-    "enableRemote": false
+    "enableRemote": true,
+    "remote": {
+      "natsUrl": "ws://MontuNobleNumbat2404:8224",
+      "topic": "logs.rates-desktop",
+      "minLevel": "info",
+      "bufferSize": 10,
+      "flushIntervalMs": 1000
+    }
   },
   "ui": {
     "theme": "light",

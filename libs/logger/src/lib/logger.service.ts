@@ -1,6 +1,7 @@
-import { Injectable, Optional, Inject } from '@angular/core';
+import { Injectable, Optional, Inject, inject } from '@angular/core';
 import pino from 'pino';
 import type { Logger as PinoLogger, LoggerOptions } from 'pino';
+import { RemoteLoggerService } from './remote-logger.service';
 
 /**
  * Log levels supported by the logger
@@ -41,8 +42,15 @@ export interface LoggerConfig {
 export class LoggerService {
   private readonly logger: PinoLogger;
   private readonly config: LoggerConfig;
+  private remoteLogger: RemoteLoggerService | null = null;
 
   constructor(@Optional() @Inject('LOGGER_CONFIG') config?: LoggerConfig) {
+    // Try to inject RemoteLoggerService — may be null in test environments
+    try {
+      this.remoteLogger = inject(RemoteLoggerService);
+    } catch {
+      this.remoteLogger = null;
+    }
     this.config = {
       level: 'info',
       enableConsole: true,
@@ -117,9 +125,11 @@ export class LoggerService {
             }
           }
 
-          // Remote logging can be implemented here
-          if (this.config.enableRemote) {
-            // TODO: Implement remote logging
+          // Push to remote logger (NATS) if initialized
+          // The RemoteLoggerService.initialized flag is the sole gate —
+          // it is only true after explicit initialization with config.
+          if (this.remoteLogger?.initialized) {
+            this.remoteLogger.push(o as Record<string, unknown>);
           }
         },
       };
@@ -150,6 +160,8 @@ export class LoggerService {
     const childService = new LoggerService(this.config);
     // Replace the internal logger with the child logger
     (childService as any).logger = childLogger;
+    // Share the remote logger reference with the child
+    (childService as any).remoteLogger = this.remoteLogger;
     return childService;
   }
 

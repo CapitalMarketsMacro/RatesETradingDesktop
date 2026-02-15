@@ -54,7 +54,14 @@
   "logging": {
     "level": "warn",
     "enableConsole": false,
-    "enableRemote": true
+    "enableRemote": true,
+    "remote": {
+      "natsUrl": "wss://nats.rates-trading.com:8224",
+      "topic": "logs.rates-desktop.prod",
+      "minLevel": "warn",
+      "bufferSize": 100,
+      "flushIntervalMs": 3000
+    }
   },
   "ui": {
     "theme": "auto",

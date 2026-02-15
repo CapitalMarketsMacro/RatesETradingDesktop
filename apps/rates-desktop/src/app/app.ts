@@ -10,7 +10,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { RatesData } from '@rates-trading/data-access';
 import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
 import { TRANSPORT_SERVICE, ConnectionStatus } from '@rates-trading/transports';
-import { LoggerService } from '@rates-trading/logger';
+import { LoggerService, RemoteLoggerService } from '@rates-trading/logger';
 import { OpenFinService, OpenFinConnectionStatus } from '@rates-trading/openfin';
 import { StatusBarComponent } from './d2d/status-bar/status-bar.component';
 
@@ -41,6 +41,7 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   private configService = inject(ConfigurationService);
   private transport = inject(TRANSPORT_SERVICE);
   readonly openfinService = inject(OpenFinService);
+  private remoteLoggerService = inject(RemoteLoggerService);
   private logger = inject(LoggerService).child({ component: 'App' });
   private ngZone = inject(NgZone);
   private cdr = inject(ChangeDetectorRef);
@@ -145,6 +146,9 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
       // Set title from configuration
       this.title = config.app.name;
 
+      // Initialize remote logger if configured
+      this.initializeRemoteLogger(config);
+
       // Connect to AMPS and subscribe to market data
       this.connectToTransport();
 
@@ -189,6 +193,8 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     // Cleanup subscriptions
     this.disconnectFromTransport();
+    // Shutdown remote logger
+    this.remoteLoggerService.shutdown();
     // Disconnect OpenFin
     this.openfinService.disconnect();
   }
@@ -510,6 +516,46 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
     // PrimeNG Menubar needs a new array reference to detect changes
     this.menuItems = [...this.menuItems];
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Initialize the remote logger (NATS-based) from configuration.
+   * Logs will be published to a NATS topic for centralised collection.
+   */
+  private initializeRemoteLogger(config: RatesAppConfiguration): void {
+    const logging = config.logging;
+    if (!logging?.enableRemote || !logging.remote) {
+      return;
+    }
+
+    const remote = logging.remote;
+    const levelMap: Record<string, number> = {
+      trace: 10, debug: 20, info: 30, warn: 40, error: 50, fatal: 60,
+    };
+
+    this.remoteLoggerService.initialize({
+      enabled: true,
+      natsUrl: remote.natsUrl,
+      topic: remote.topic,
+      clientName: config.app.name || 'rates-desktop',
+      minLevel: levelMap[remote.minLevel ?? 'info'] ?? 30,
+      bufferSize: remote.bufferSize,
+      flushIntervalMs: remote.flushIntervalMs,
+      token: remote.token,
+      user: remote.user,
+      password: remote.password,
+      metadata: {
+        app: config.app.name,
+        version: config.app.version,
+        env: config.app.environment,
+        hostname: window.location.hostname,
+      },
+    });
+
+    this.logger.info(
+      { topic: remote.topic, natsUrl: remote.natsUrl },
+      'Remote logger initialized — logs will be published to NATS',
+    );
   }
 
   /**

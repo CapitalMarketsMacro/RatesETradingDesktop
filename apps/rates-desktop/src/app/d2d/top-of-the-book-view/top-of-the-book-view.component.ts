@@ -169,6 +169,30 @@ export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnI
     this.snapshotSub?.unsubscribe();
   }
 
+  // Track selected row for highlighting
+  selectedRowId: string | null = null;
+
+  /**
+   * Handle row selection (click on description cell)
+   */
+  onRowSelected(row: MarketDataGridRow): void {
+    this.selectedRowId = row.Id;
+    this.logger.info({
+      action: 'row_selected',
+      instrument: row.Id,
+      desc: row.Desc,
+      marketId: row.MarketId,
+      bidPrice: row.BestBidPrice,
+      bidQty: row.BestBidQty,
+      askPrice: row.BestAskPrice,
+      askQty: row.BestAskQty,
+      spread: row.Spread,
+      bidLevels: row.BidLevels,
+      askLevels: row.AskLevels,
+      lastTradePrice: row.LastTradePrice,
+    }, `Row selected — ${row.Desc} (${row.Id}) | Bid: ${this.formatPrice(row.BestBidPrice)} / Ask: ${this.formatPrice(row.BestAskPrice)}`);
+  }
+
   /**
    * Format quantity with commas
    */
@@ -190,6 +214,19 @@ export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnI
    * Show trading popover on cell click
    */
   showTradingPopover(event: Event, row: MarketDataGridRow, side: 'buy' | 'sell'): void {
+    // Log the click-to-trade action with full instrument details
+    this.logger.info({
+      action: side === 'buy' ? 'click_ask_size' : 'click_bid_size',
+      side,
+      instrument: row.Id,
+      desc: row.Desc,
+      bidPrice: row.BestBidPrice,
+      bidQty: row.BestBidQty,
+      askPrice: row.BestAskPrice,
+      askQty: row.BestAskQty,
+      spread: row.Spread,
+    }, `Trade ticket opened — ${side.toUpperCase()} ${row.Desc}`);
+
     // Hide any existing popover first
     if (this.tradingPopover) {
       this.tradingPopover.hide();
@@ -216,6 +253,13 @@ export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnI
    * Hide trading popover
    */
   hideTradingPopover(): void {
+    if (this.tradingData) {
+      this.logger.info({
+        action: 'ticket_dismissed',
+        instrument: this.tradingData.instrumentId,
+        side: this.tradingData.side,
+      }, 'Trade ticket dismissed');
+    }
     if (this.tradingPopover) {
       this.tradingPopover.hide();
     }
@@ -237,6 +281,23 @@ export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnI
     const formattedPrice = this.formatPrice(price);
     const formattedQty = quantity.toLocaleString();
     const formattedSize = size ? size.toLocaleString() : '-';
+
+    // Log the trade execution with full details
+    this.logger.info({
+      action: 'execute_trade',
+      side,
+      instrument: row.Id,
+      desc: row.Desc,
+      price,
+      priceFormatted: formattedPrice,
+      quantity,
+      availableSize: size,
+      book: book.code,
+      bookName: book.name,
+      bidPrice: row.BestBidPrice,
+      askPrice: row.BestAskPrice,
+      spread: row.Spread,
+    }, `Order submitted — ${side.toUpperCase()} ${formattedQty} × ${row.Desc} @ ${formattedPrice} [${book.code}]`);
     
     // Show toast notification - using key to target the component's toast
     this.messageService.add({
@@ -256,7 +317,15 @@ export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnI
    */
   incrementQuantity(): void {
     if (this.tradingData) {
+      const prev = this.tradingData.quantity;
       this.tradingData.quantity++;
+      this.logger.info({
+        action: 'qty_increment',
+        instrument: this.tradingData.instrumentId,
+        side: this.tradingData.side,
+        prevQty: prev,
+        newQty: this.tradingData.quantity,
+      }, `Quantity incremented ${prev} → ${this.tradingData.quantity}`);
     }
   }
 
@@ -265,7 +334,15 @@ export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnI
    */
   decrementQuantity(): void {
     if (this.tradingData && this.tradingData.quantity > 1) {
+      const prev = this.tradingData.quantity;
       this.tradingData.quantity--;
+      this.logger.info({
+        action: 'qty_decrement',
+        instrument: this.tradingData.instrumentId,
+        side: this.tradingData.side,
+        prevQty: prev,
+        newQty: this.tradingData.quantity,
+      }, `Quantity decremented ${prev} → ${this.tradingData.quantity}`);
     }
   }
 
@@ -274,7 +351,27 @@ export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnI
    */
   validateQuantity(): void {
     if (this.tradingData && this.tradingData.quantity < 1) {
+      this.logger.info({
+        action: 'qty_corrected',
+        instrument: this.tradingData.instrumentId,
+        invalidQty: this.tradingData.quantity,
+      }, 'Quantity corrected to minimum (1)');
       this.tradingData.quantity = 1;
+    }
+  }
+
+  /**
+   * Handle book selection change
+   */
+  onBookChanged(): void {
+    if (this.tradingData) {
+      this.logger.info({
+        action: 'book_changed',
+        instrument: this.tradingData.instrumentId,
+        side: this.tradingData.side,
+        book: this.tradingData.book.code,
+        bookName: this.tradingData.book.name,
+      }, `Book changed to ${this.tradingData.book.code} (${this.tradingData.book.name})`);
     }
   }
 

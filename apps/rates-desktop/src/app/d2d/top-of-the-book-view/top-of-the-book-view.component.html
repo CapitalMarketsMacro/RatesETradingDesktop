@@ -26,8 +26,8 @@
       </div>
     } @else {
       @for (row of marketDataRows; track trackByRow($index, row)) {
-        <div class="tob-row tob-data-row" [style.grid-template-columns]="gridTemplateColumns">
-          <div class="tob-cell tob-cell-desc">{{ row.Desc }}</div>
+        <div class="tob-row tob-data-row" [class.tob-row-selected]="selectedRowId === row.Id" [style.grid-template-columns]="gridTemplateColumns">
+          <div class="tob-cell tob-cell-desc tob-cell-selectable" tabindex="0" role="button" (click)="onRowSelected(row)" (keydown.enter)="onRowSelected(row)">{{ row.Desc }}</div>
           <div 
             class="tob-cell tob-cell-bid-size tob-cell-interactive"
             (click)="showTradingPopover($event, row, 'sell')">
@@ -104,7 +104,8 @@
           optionLabel="code"
           placeholder="Book"
           [style]="{ width: '80px' }"
-          styleClass="trading-book-dropdown">
+          styleClass="trading-book-dropdown"
+          (onChange)="onBookChanged()">
         </p-select>
       </div>
         <div>

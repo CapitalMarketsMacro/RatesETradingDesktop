@@ -123,6 +123,25 @@ export interface RatesAppConfiguration {
     level: 'debug' | 'info' | 'warn' | 'error';
     enableConsole?: boolean;
     enableRemote?: boolean;
+    /** Remote logger settings (publishes logs to a NATS topic) */
+    remote?: {
+      /** NATS server URL (WebSocket), e.g. "ws://localhost:8224" */
+      natsUrl: string;
+      /** NATS subject to publish log entries to */
+      topic: string;
+      /** Minimum log level to send remotely: trace|debug|info|warn|error|fatal */
+      minLevel?: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+      /** Buffer size before auto-flush (default: 50) */
+      bufferSize?: number;
+      /** Flush interval in ms (default: 5000) */
+      flushIntervalMs?: number;
+      /** NATS authentication token */
+      token?: string;
+      /** NATS user */
+      user?: string;
+      /** NATS password */
+      password?: string;
+    };
   };
 
   /** UI configuration */
