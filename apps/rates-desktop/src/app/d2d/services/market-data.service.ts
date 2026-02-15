@@ -98,11 +98,22 @@ export class MarketDataService implements OnDestroy {
     const topic = config?.ampsTopics?.marketData || 'rates/marketData';
 
     try {
-      this.marketDataSub = await this.transport.subscribe<MarketData>(
-        topic,
-        (message) => this.handleMessage(message.data),
-      );
-      this.logger.info({ topic }, 'Subscribed to market data via AMPS');
+      // Prefer sowAndSubscribe (AMPS) — delivers the full SOW snapshot first,
+      // then streams live updates through the same callback.
+      if (this.transport.sowAndSubscribe) {
+        this.marketDataSub = await this.transport.sowAndSubscribe<MarketData>(
+          topic,
+          (message) => this.handleMessage(message.data),
+        );
+        this.logger.info({ topic }, 'SOW and subscribed to market data');
+      } else {
+        // Fallback for transports that don't support SOW (NATS, Solace, etc.)
+        this.marketDataSub = await this.transport.subscribe<MarketData>(
+          topic,
+          (message) => this.handleMessage(message.data),
+        );
+        this.logger.info({ topic }, 'Subscribed to market data (no SOW)');
+      }
     } catch (error) {
       this.logger.error(error as Error, `Failed to subscribe to ${topic}`);
     }

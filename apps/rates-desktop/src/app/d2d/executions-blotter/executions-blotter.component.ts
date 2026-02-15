@@ -201,20 +201,34 @@ export class ExecutionsBlotterComponent extends WorkspaceComponent implements On
   }
 
   /**
-   * Subscribe to executions topic
+   * Subscribe to executions topic using SOW and Subscribe when available.
+   * SOW delivers the full historical snapshot first, then streams live updates.
    */
   private async subscribeToExecutions(): Promise<void> {
     const config = this.configService.getConfiguration();
     const topic = config?.ampsTopics?.executions || 'rates/executions';
     
     try {
-      this.executionsSubscription = await this.transport.subscribe<Execution>(
-        topic,
-        (message) => {
-          this.handleExecutionMessage(message.data);
-        }
-      );
-      this.logger.info({ topic }, 'Subscribed to executions topic');
+      const callback = (message: { data: Execution }) => {
+        this.handleExecutionMessage(message.data);
+      };
+
+      // Prefer sowAndSubscribe (AMPS) — delivers all existing executions first,
+      // then streams live fills through the same callback.
+      if (this.transport.sowAndSubscribe) {
+        this.executionsSubscription = await this.transport.sowAndSubscribe<Execution>(
+          topic,
+          callback,
+        );
+        this.logger.info({ topic }, 'SOW and subscribed to executions');
+      } else {
+        // Fallback for transports that don't support SOW (NATS, Solace, etc.)
+        this.executionsSubscription = await this.transport.subscribe<Execution>(
+          topic,
+          callback,
+        );
+        this.logger.info({ topic }, 'Subscribed to executions (no SOW)');
+      }
     } catch (error) {
       this.logger.error(error as Error, `Failed to subscribe to ${topic}`);
     }
