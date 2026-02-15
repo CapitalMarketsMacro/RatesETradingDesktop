@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { connect, WebLayoutSnapshot } from '@openfin/core-web';
 import { OpenFinConfig, DEFAULT_OPENFIN_CONFIG } from './openfin-config.interface';
-import { LoggerService } from '@rates-trading/logger';
+import { LoggerService, RemoteLoggerService } from '@rates-trading/logger';
 import { WorkspaceStorageService } from '@rates-trading/shared-utils';
 
 /**
@@ -66,6 +66,7 @@ const EMPTY_LAYOUT_SNAPSHOT: WebLayoutSnapshot = {
 @Injectable({ providedIn: 'root' })
 export class OpenFinService {
   private logger = inject(LoggerService).child({ service: 'OpenFin' });
+  private remoteLogger = inject(RemoteLoggerService);
   private workspaceStorage = inject(WorkspaceStorageService);
 
   /** The OpenFin `fin` API object, available after successful connection */
@@ -124,9 +125,14 @@ export class OpenFinService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const globalFin = (window as any).fin;
     if (globalFin?.Window?.create) {
-      // Native OpenFin — distinguish platform vs. startup_app
+      // Native OpenFin — distinguish platform vs. startup_app (container)
+      //
+      // Platform main window:  URL contains ?mode=platform
+      // Platform child views:  fin.me.isView === true (Views are Platform-only)
+      // Container windows:     neither of the above
       const isPlatform =
-        new URLSearchParams(window.location.search).get('mode') === 'platform';
+        new URLSearchParams(window.location.search).get('mode') === 'platform' ||
+        globalFin.me?.isView === true;
       return isPlatform ? 'platform' : 'container';
     }
     if (this.config.enabled) {
@@ -235,7 +241,9 @@ export class OpenFinService {
     try {
       const win = globalFin.Window.getCurrentSync();
       win.on('close-requested', async () => {
-        this.logger.info('Main platform window close requested — quitting platform');
+        this.logger.info({ action: 'platform_quit' }, 'Main platform window close requested — quitting platform');
+        // Flush remote logger before the process tears down
+        await this.flushRemoteLoggerBeforeExit();
         try {
           const platform = globalFin.Platform.getCurrentSync();
           await platform.quit();
@@ -247,6 +255,133 @@ export class OpenFinService {
       this.logger.info('Platform close handler registered');
     } catch (error) {
       this.logger.warn({ err: error }, 'Failed to register platform close handler');
+    }
+  }
+
+  /**
+   * Register lifecycle event listeners to log when views, windows,
+   * or the platform/container are closed. Logs are emitted at `info`
+   * level so they flow through the remote logger to NATS.
+   *
+   * Must be called once after connecting to OpenFin.
+   */
+  registerLifecycleListeners(): void {
+    const env = this.environment;
+
+    if (env === 'platform') {
+      this.registerPlatformLifecycleListeners();
+    } else if (env === 'container') {
+      this.registerContainerLifecycleListeners();
+    }
+
+    // All environments: log when the browser tab/window is about to unload
+    window.addEventListener('beforeunload', () => {
+      this.logger.info({ mode: env }, 'Window unloading (beforeunload)');
+    });
+  }
+
+  /**
+   * Platform-mode lifecycle listeners:
+   *  - view-created / view-destroyed on the platform
+   *  - window-closing on all windows
+   *  - platform shutdown
+   */
+  private registerPlatformLifecycleListeners(): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Platform) return;
+
+    try {
+      const platform = globalFin.Platform.getCurrentSync();
+
+      // View created
+      platform.on('view-created', (event: { view: { identity: { name: string } }; target: unknown }) => {
+        const viewName = event?.view?.identity?.name ?? 'unknown';
+        this.logger.info({ action: 'view_created', view: viewName }, `Platform view created — ${viewName}`);
+      });
+
+      // View destroyed (closed)
+      platform.on('view-destroyed', (event: { view: { identity: { name: string } }; target: unknown }) => {
+        const viewName = event?.view?.identity?.name ?? 'unknown';
+        this.logger.info({ action: 'view_closed', view: viewName }, `Platform view closed — ${viewName}`);
+      });
+
+      // Window closing
+      platform.on('window-closing', (event: { name: string; uuid: string }) => {
+        const winName = event?.name ?? 'unknown';
+        this.logger.info({ action: 'window_closing', window: winName }, `Platform window closing — ${winName}`);
+      });
+
+      // Window closed
+      platform.on('window-closed', (event: { name: string; uuid: string }) => {
+        const winName = event?.name ?? 'unknown';
+        this.logger.info({ action: 'window_closed', window: winName }, `Platform window closed — ${winName}`);
+      });
+
+      // Platform is shutting down
+      platform.on('platform-api-ready', () => {
+        this.logger.info({ action: 'platform_ready' }, 'Platform API ready');
+      });
+
+      this.logger.info('Platform lifecycle listeners registered');
+    } catch (error) {
+      this.logger.warn({ err: error }, 'Failed to register platform lifecycle listeners');
+    }
+  }
+
+  /**
+   * Container-mode lifecycle listeners:
+   *  - child window closed
+   *  - main window close-requested
+   */
+  private registerContainerLifecycleListeners(): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Application) return;
+
+    try {
+      const app = globalFin.Application.getCurrentSync();
+
+      // Child window created
+      app.on('window-created', (event: { name: string; uuid: string }) => {
+        const winName = event?.name ?? 'unknown';
+        this.logger.info({ action: 'child_window_created', window: winName }, `Container child window created — ${winName}`);
+      });
+
+      // Child window closed
+      app.on('window-closed', (event: { name: string; uuid: string }) => {
+        const winName = event?.name ?? 'unknown';
+        this.logger.info({ action: 'child_window_closed', window: winName }, `Container child window closed — ${winName}`);
+      });
+
+      // Main window close-requested
+      const win = globalFin.Window.getCurrentSync();
+      win.on('close-requested', async () => {
+        this.logger.info({ action: 'container_close_requested' }, 'Container main window close requested — closing');
+        // Flush remote logger before the process tears down
+        await this.flushRemoteLoggerBeforeExit();
+        win.close(true);
+      });
+
+      this.logger.info('Container lifecycle listeners registered');
+    } catch (error) {
+      this.logger.warn({ err: error }, 'Failed to register container lifecycle listeners');
+    }
+  }
+
+  /**
+   * Flush the remote logger buffer and wait briefly for the NATS socket
+   * to actually transmit the data before the process tears down.
+   * NATS `publish()` enqueues data into the socket write buffer; we need
+   * a short delay to allow the OS to send it before the window closes.
+   */
+  private async flushRemoteLoggerBeforeExit(): Promise<void> {
+    try {
+      this.remoteLogger.flush();
+      // Give the socket ~300ms to transmit the buffered data
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    } catch {
+      // Best-effort — never block the close/quit
     }
   }
 

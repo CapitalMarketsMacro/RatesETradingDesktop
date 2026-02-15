@@ -274,6 +274,9 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
           this.logger.info('Connected as OpenFin view (inherited broker)');
         }
       }
+      // Register lifecycle listeners for view/window/platform close events
+      this.openfinService.registerLifecycleListeners();
+
       // Now that the environment is known, rebuild Preferences menu
       // so saved layouts are filtered to the correct mode.
       this.refreshPreferencesMenu();
@@ -548,6 +551,7 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
         app: config.app.name,
         version: config.app.version,
         env: config.app.environment,
+        mode: this.openfinService.environment,
         hostname: window.location.hostname,
       },
     });
