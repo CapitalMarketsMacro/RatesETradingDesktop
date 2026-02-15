@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__nx-mcp__nx_docs",
+      "mcp__nx-mcp__nx_visualize_graph"
+    ]
+  }
+}
