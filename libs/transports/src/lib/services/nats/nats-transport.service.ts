@@ -7,9 +7,9 @@ import {
   PublishOptions,
   MessageCallback,
   TransportMessage,
-} from '../interfaces/transport.interface';
-import { NatsConfig } from '../interfaces/transport-config.interface';
-import { BaseTransportService } from './base-transport.service';
+} from '../../interfaces/transport.interface';
+import { NatsConfig } from '../../interfaces/transport-config.interface';
+import { BaseTransportService } from '../base-transport.service';
 import { LoggerService } from '@rates-trading/logger';
 
 // Import NATS client - using WebSocket transport for browser/Angular

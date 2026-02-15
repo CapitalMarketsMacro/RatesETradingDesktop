@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NatsTransportService } from './nats-transport.service';
-import { ConnectionStatus } from '../interfaces/transport.interface';
-import { NatsConfig } from '../interfaces/transport-config.interface';
+import { ConnectionStatus } from '../../interfaces/transport.interface';
+import { NatsConfig } from '../../interfaces/transport-config.interface';
 
 // Mock NATS client
 vi.mock('nats', () => ({

@@ -1,6 +1,6 @@
 import { SolaceTransportService } from './solace-transport.service';
-import { ConnectionStatus } from '../interfaces/transport.interface';
-import { SolaceConfig } from '../interfaces/transport-config.interface';
+import { ConnectionStatus } from '../../interfaces/transport.interface';
+import { SolaceConfig } from '../../interfaces/transport-config.interface';
 
 describe('SolaceTransportService', () => {
   let service: SolaceTransportService;

@@ -7,9 +7,9 @@ import {
   PublishOptions,
   MessageCallback,
   TransportMessage,
-} from '../interfaces/transport.interface';
-import { SolaceConfig } from '../interfaces/transport-config.interface';
-import { BaseTransportService } from './base-transport.service';
+} from '../../interfaces/transport.interface';
+import { SolaceConfig } from '../../interfaces/transport-config.interface';
+import { BaseTransportService } from '../base-transport.service';
 import { LoggerService } from '@rates-trading/logger';
 
 // Solace JavaScript API - package.json "browser" field resolves to lib-browser for Angular

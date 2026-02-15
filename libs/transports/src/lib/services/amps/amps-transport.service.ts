@@ -7,9 +7,9 @@ import {
   PublishOptions,
   MessageCallback,
   TransportMessage,
-} from '../interfaces/transport.interface';
-import { AmpsConfig } from '../interfaces/transport-config.interface';
-import { BaseTransportService } from './base-transport.service';
+} from '../../interfaces/transport.interface';
+import { AmpsConfig } from '../../interfaces/transport-config.interface';
+import { BaseTransportService } from '../base-transport.service';
 import { LoggerService } from '@rates-trading/logger';
 
 // Import AMPS client

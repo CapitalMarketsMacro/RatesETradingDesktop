@@ -2,9 +2,9 @@ import { Provider, EnvironmentProviders, makeEnvironmentProviders, inject } from
 import { ConfigurationService } from '@rates-trading/configuration';
 import { ITransportService } from './interfaces/transport.interface';
 import { TransportConfig } from './interfaces/transport-config.interface';
-import { AmpsTransportService } from './services/amps-transport.service';
-import { SolaceTransportService } from './services/solace-transport.service';
-import { NatsTransportService } from './services/nats-transport.service';
+import { AmpsTransportService } from './services/amps';
+import { SolaceTransportService } from './services/solace';
+import { NatsTransportService } from './services/nats';
 import { TRANSPORT_SERVICE, TRANSPORT_CONFIG } from './transport.tokens';
 
 /**

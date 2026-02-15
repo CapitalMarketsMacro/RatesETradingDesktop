@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { provideTransport, provideTransportWithConfig } from './transport.factory';
 import { TRANSPORT_SERVICE } from './transport.tokens';
 import { ITransportService } from './interfaces/transport.interface';
-import { AmpsTransportService } from './services/amps-transport.service';
-import { SolaceTransportService } from './services/solace-transport.service';
+import { AmpsTransportService } from './services/amps';
+import { SolaceTransportService } from './services/solace';
 
 describe('Transport Factory', () => {
   describe('provideTransportWithConfig', () => {

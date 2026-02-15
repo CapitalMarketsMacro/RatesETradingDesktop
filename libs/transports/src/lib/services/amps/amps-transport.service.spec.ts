@@ -1,6 +1,6 @@
 import { AmpsTransportService } from './amps-transport.service';
-import { ConnectionStatus } from '../interfaces/transport.interface';
-import { AmpsConfig } from '../interfaces/transport-config.interface';
+import { ConnectionStatus } from '../../interfaces/transport.interface';
+import { AmpsConfig } from '../../interfaces/transport-config.interface';
 
 describe('AmpsTransportService', () => {
   let service: AmpsTransportService;
