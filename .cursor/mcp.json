@@ -30,6 +30,10 @@
       "env": {
         "NATS_URL": "nats://localhost:4222"
       }
+    },
+    "rates-desktop-mcp": {
+      "command": "node",
+      "args": ["dist/apps/rates-desktop-mcp/main.js"]
     }
   }
 }

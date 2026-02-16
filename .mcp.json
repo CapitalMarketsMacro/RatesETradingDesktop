@@ -29,6 +29,11 @@
       "type": "stdio",
       "command": "node",
       "args": ["E:/MacroDesktopMFE/macro/dist/apps/macro-mcp/main.js"]
+    },
+    "rates-desktop-mcp": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/apps/rates-desktop-mcp/main.js"]
     }
   }
 }

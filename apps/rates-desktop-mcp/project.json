@@ -1,0 +1,28 @@
+{
+  "name": "rates-desktop-mcp",
+  "projectType": "application",
+  "sourceRoot": "apps/rates-desktop-mcp/src",
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/rates-desktop-mcp",
+        "main": "apps/rates-desktop-mcp/src/main.ts",
+        "tsConfig": "apps/rates-desktop-mcp/tsconfig.app.json",
+        "platform": "node",
+        "format": ["cjs"],
+        "bundle": true,
+        "thirdParty": true,
+        "esbuildOptions": {
+          "outExtension": {
+            ".js": ".js"
+          }
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

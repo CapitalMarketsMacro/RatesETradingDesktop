@@ -18,7 +18,8 @@
     "openfin:start": "nx serve rates-desktop & openfin --launch --config http://localhost:4200/assets/openfin/app.fin.json",
     "openfin:launch:local": "openfin --launch --config apps/rates-desktop/public/assets/openfin/app.fin.json",
     "openfin:launch:platform": "openfin --launch --config http://localhost:4200/assets/openfin/app.platform.fin.json",
-    "openfin:start:platform": "nx serve rates-desktop & openfin --launch --config http://localhost:4200/assets/openfin/app.platform.fin.json"
+    "openfin:start:platform": "nx serve rates-desktop & openfin --launch --config http://localhost:4200/assets/openfin/app.platform.fin.json",
+    "build:mcp": "nx build rates-desktop-mcp"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +36,7 @@
     "@eslint/js": "^9.8.0",
     "@nx/angular": "22.4.0",
     "@nx/devkit": "22.4.0",
+    "@nx/esbuild": "^22.5.1",
     "@nx/eslint": "22.4.0",
     "@nx/eslint-plugin": "22.4.0",
     "@nx/js": "22.4.0",
@@ -53,6 +55,7 @@
     "@vitest/coverage-v8": "^4.0.0",
     "@vitest/ui": "^4.0.8",
     "angular-eslint": "^21.0.1",
+    "esbuild": "^0.27.3",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-playwright": "^1.6.2",
@@ -76,6 +79,7 @@
     "@angular/forms": "21.1.1",
     "@angular/platform-browser": "21.1.1",
     "@angular/router": "21.1.1",
+    "@modelcontextprotocol/sdk": "^1.26.0",
     "@nats-io/nats-core": "^3.3.0",
     "@openfin/core-web": "^0.42.103",
     "@primeuix/themes": "^2.0.2",
@@ -89,6 +93,7 @@
     "primeicons": "^7.0.0",
     "primeng": "^21.0.3",
     "rxjs": "~7.8.0",
-    "solclientjs": "10.18.2"
+    "solclientjs": "10.18.2",
+    "zod": "^4.3.6"
   }
 }
