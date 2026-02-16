@@ -19,10 +19,5 @@
       "path": "./tsconfig.spec.json"
     }
   ],
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "paths": {
-      "@rates-trading/logger": ["./libs/logger/src/index.ts"]
-    }
-  }
+  "extends": "../../tsconfig.base.json"
 }
