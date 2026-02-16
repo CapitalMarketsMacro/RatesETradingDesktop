@@ -1,8 +1,24 @@
 {
   "permissions": {
     "allow": [
-      "mcp__nx-mcp__nx_docs",
-      "mcp__nx-mcp__nx_visualize_graph"
+      "Bash(npx nx run-many -t test --all)",
+      "Bash(npx vitest:*)",
+      "Bash(npx nx test:*)",
+      "Bash(npx nx run-many:*)",
+      "Bash(for lib in shared-utils data-access logger configuration transports openfin ui-components)",
+      "Bash(do echo \"=== $lib ===\")",
+      "Bash(done)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx sonar-scanner:*)",
+      "WebSearch",
+      "WebFetch(domain:www.ag-grid.com)",
+      "WebFetch(domain:primeng.org)",
+      "WebFetch(domain:angular.love)",
+      "WebFetch(domain:github.com)",
+      "Bash(npx:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
