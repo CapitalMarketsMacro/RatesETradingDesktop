@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(test:*)",
+      "Bash(npx ag-mcp:*)",
+      "Bash(npx:*)",
+      "Bash(timeout 5 node:*)",
+      "Bash(echo:*)",
+      "Bash(timeout 10 node:*)",
+      "Bash(where:*)"
+    ]
+  }
+}

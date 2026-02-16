@@ -1,10 +1,12 @@
 {
   "mcpServers": {
     "ag-mcp": {
+      "type": "stdio",
       "command": "npx",
-      "args": ["ag-mcp"]
+      "args": ["-y", "ag-mcp"]
     },
     "primeng": {
+      "type": "stdio",
       "command": "npx",
       "args": ["-y", "@primeng/mcp"]
     },
@@ -14,14 +16,17 @@
       "args": ["-y", "nx-mcp@latest", "."]
     },
     "angular-cli": {
+      "type": "stdio",
       "command": "npx",
       "args": ["-y", "@angular/cli", "mcp"]
     },
     "tailwindcss": {
+      "type": "stdio",
       "command": "npx",
       "args": ["-y", "tailwindcss-mcp-server"]
     },
     "macro-mcp": {
+      "type": "stdio",
       "command": "node",
       "args": ["E:/MacroDesktopMFE/macro/dist/apps/macro-mcp/main.js"]
     }
