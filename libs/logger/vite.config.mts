@@ -12,5 +12,10 @@ export default defineConfig({
     },
     environment: 'node',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    coverage: {
+      reportsDirectory: '../../coverage/libs/logger',
+      provider: 'v8' as const,
+      reporter: ['text', 'lcov', 'clover'],
+    },
   },
 });

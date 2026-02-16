@@ -19,6 +19,7 @@ export default defineConfig(() => ({
     coverage: {
       reportsDirectory: '../../coverage/libs/openfin',
       provider: 'v8' as const,
+      reporter: ['text', 'lcov', 'clover'],
     },
   },
 }));
