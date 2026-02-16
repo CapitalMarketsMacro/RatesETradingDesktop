@@ -7,7 +7,15 @@
       "Bash(timeout 5 node:*)",
       "Bash(echo:*)",
       "Bash(timeout 10 node:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "mcp__angular-cli__list_projects",
+      "mcp__nx-mcp__nx_docs",
+      "mcp__ag-mcp__detect_version",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(node:*)"
     ]
   }
 }

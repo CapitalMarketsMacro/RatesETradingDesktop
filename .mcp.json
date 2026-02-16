@@ -33,7 +33,7 @@
     "rates-desktop-mcp": {
       "type": "stdio",
       "command": "node",
-      "args": ["dist/apps/rates-desktop-mcp/main.js"]
+      "args": ["E:/RatesETradingDesktoip/RatesETradingDesktop/dist/apps/rates-desktop-mcp/main.js"]
     }
   }
 }
