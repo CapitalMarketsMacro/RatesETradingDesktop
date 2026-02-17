@@ -15,7 +15,12 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "mcp__angular-cli__search_documentation",
+      "WebFetch(domain:angular.dev)",
+      "Bash(git status:*)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)"
     ]
   }
 }
