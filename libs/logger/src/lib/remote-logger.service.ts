@@ -243,8 +243,9 @@ export class RemoteLoggerService implements OnDestroy {
 
     if (this.useWorker && this.worker) {
       const entries = this.buffer.splice(0);
-      const msg: MainToWorkerMessage = { type: 'flush', entries };
-      this.worker.postMessage(msg);
+      const buffer = this.encoder.encode(JSON.stringify(entries)).buffer;
+      const msg: MainToWorkerMessage = { type: 'flush', buffer };
+      this.worker.postMessage(msg, [buffer]);
       return;
     }
 

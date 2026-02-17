@@ -42,7 +42,8 @@ export interface InitMessage {
 
 export interface FlushMessage {
   type: 'flush';
-  entries: LogEntry[];
+  /** JSON-encoded LogEntry[] as an ArrayBuffer (transferred, not cloned). */
+  buffer: ArrayBuffer;
 }
 
 export interface ShutdownMessage {

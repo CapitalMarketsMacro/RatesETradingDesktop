@@ -11,6 +11,7 @@ import {
 let connection: NatsConnection | null = null;
 let config: WorkerNatsConfig | null = null;
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 let publishedCount = 0;
 let droppedCount = 0;
 
@@ -51,7 +52,9 @@ async function handleInit(cfg: WorkerNatsConfig): Promise<void> {
   }
 }
 
-function handleFlush(entries: LogEntry[]): void {
+function handleFlush(buffer: ArrayBuffer): void {
+  const entries: LogEntry[] = JSON.parse(decoder.decode(buffer));
+
   if (!connection || !config) {
     droppedCount += entries.length;
     post({ type: 'stats', publishedCount, droppedCount });
@@ -133,7 +136,7 @@ addEventListener('message', (event: MessageEvent<MainToWorkerMessage>) => {
       handleInit(msg.config);
       break;
     case 'flush':
-      handleFlush(msg.entries);
+      handleFlush(msg.buffer);
       break;
     case 'shutdown':
       handleShutdown();

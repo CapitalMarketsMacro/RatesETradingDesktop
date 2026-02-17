@@ -1354,13 +1354,19 @@ describe('RemoteLoggerService', () => {
       testService.push({ level: 30, msg: 'worker test' });
       testService.flush();
 
-      // postMessage should be called with init + flush
+      // postMessage should be called with init + flush (buffer transferred)
       const flushCall = mockWorker.postMessage.mock.calls.find(
         (call: any[]) => call[0].type === 'flush',
       );
       expect(flushCall).toBeDefined();
-      expect(flushCall![0].entries).toHaveLength(1);
-      expect(flushCall![0].entries[0].msg).toBe('worker test');
+      // First arg is the message with an ArrayBuffer, second arg is the transfer list
+      expect(flushCall![0].buffer).toBeInstanceOf(ArrayBuffer);
+      expect(flushCall![1]).toEqual([flushCall![0].buffer]);
+
+      // Decode the transferred buffer to verify contents
+      const entries = JSON.parse(new TextDecoder().decode(flushCall![0].buffer));
+      expect(entries).toHaveLength(1);
+      expect(entries[0].msg).toBe('worker test');
 
       // Buffer should be empty after flush
       expect(testService.pendingCount).toBe(0);
