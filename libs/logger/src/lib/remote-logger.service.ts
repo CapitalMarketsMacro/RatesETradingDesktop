@@ -1,5 +1,10 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { wsconnect, NatsConnection, ConnectionOptions } from '@nats-io/nats-core';
+import type {
+  LogEntry,
+  MainToWorkerMessage,
+  WorkerToMainMessage,
+} from './remote-logger-worker-protocol';
 
 /**
  * Remote logger configuration
@@ -30,26 +35,6 @@ export interface RemoteLoggerConfig {
 }
 
 /**
- * A single buffered log entry ready to be published.
- */
-interface LogEntry {
-  /** ISO-8601 timestamp */
-  ts: string;
-  /** Numeric Pino log level */
-  level: number;
-  /** Human-readable level tag */
-  levelName: string;
-  /** Log message */
-  msg: string;
-  /** Logger name / component */
-  logger: string;
-  /** Extra structured data */
-  data: Record<string, unknown>;
-  /** Application metadata (app name, version, env, hostname, etc.) */
-  meta: Record<string, unknown>;
-}
-
-/**
  * RemoteLoggerService
  *
  * Publishes application log entries to a NATS topic for centralised
@@ -59,6 +44,12 @@ interface LogEntry {
  * batches over a lightweight NATS WebSocket connection.
  *
  * ## Key design decisions
+ *
+ * - **Web Worker offloading** — NATS connection management, JSON
+ *   serialization, and publishing are offloaded to a dedicated Web
+ *   Worker, keeping the main thread free from any blocking I/O.
+ *   If `Worker` is unavailable, the service falls back to managing
+ *   the NATS connection directly on the main thread.
  *
  * - **Own NATS connection** — The remote logger maintains its own
  *   dedicated NATS connection rather than sharing the application's
@@ -94,16 +85,22 @@ interface LogEntry {
  */
 @Injectable({ providedIn: 'root' })
 export class RemoteLoggerService implements OnDestroy {
-  private connection: NatsConnection | null = null;
   private config: RemoteLoggerConfig | null = null;
   private buffer: LogEntry[] = [];
   private flushTimer: ReturnType<typeof setInterval> | null = null;
-  private encoder = new TextEncoder();
-  private connecting = false;
   private _initialized = false;
   private connected = false;
   private publishedCount = 0;
   private droppedCount = 0;
+
+  // Worker mode
+  private worker: Worker | null = null;
+  private useWorker = false;
+
+  // Fallback (direct NATS on main thread)
+  private connection: NatsConnection | null = null;
+  private encoder = new TextEncoder();
+  private connecting = false;
 
   /** Whether the service has been initialized and is ready to accept logs. */
   get initialized(): boolean {
@@ -159,8 +156,41 @@ export class RemoteLoggerService implements OnDestroy {
       `minLevel=${this.config.minLevel}, bufferSize=${this.config.bufferSize}, flushMs=${this.config.flushIntervalMs}`,
     );
 
-    // Connect in the background — don't block app startup
-    this.connectInBackground();
+    // Try to use a Web Worker for NATS, fall back to main thread
+    const worker = this.createWorker();
+    if (worker) {
+      this.worker = worker;
+      this.worker.onmessage = (event: MessageEvent<WorkerToMainMessage>) =>
+        this.onWorkerMessage(event.data);
+      this.worker.onerror = (err) => {
+        // eslint-disable-next-line no-console
+        console.warn('[RemoteLogger] Worker error, falling back to main thread', err);
+        this.worker?.terminate();
+        this.worker = null;
+        this.useWorker = false;
+        this.fallbackConnect();
+      };
+
+      this.useWorker = true;
+
+      const initMsg: MainToWorkerMessage = {
+        type: 'init',
+        config: {
+          natsUrl: this.config.natsUrl,
+          topic: this.config.topic,
+          clientName: this.config.clientName,
+          token: this.config.token,
+          user: this.config.user,
+          password: this.config.password,
+        },
+      };
+      this.worker.postMessage(initMsg);
+
+      // eslint-disable-next-line no-console
+      console.info('[RemoteLogger] Using Web Worker for NATS publishing');
+    } else {
+      this.fallbackConnect();
+    }
 
     // Start periodic flush
     this.flushTimer = setInterval(
@@ -205,34 +235,21 @@ export class RemoteLoggerService implements OnDestroy {
 
   /**
    * Flush buffered log entries to NATS.
-   * If not connected, attempts a reconnect so buffered entries
-   * aren't stuck indefinitely.
+   * In worker mode, sends entries to the worker via postMessage.
+   * In fallback mode, publishes directly on the main thread.
    */
   flush(): void {
     if (this.buffer.length === 0 || !this.config) return;
 
-    // If not connected, try to reconnect in background
-    if (!this.connection || !this.connected) {
-      this.connectInBackground();
-      return; // entries stay buffered until connection succeeds
+    if (this.useWorker && this.worker) {
+      const entries = this.buffer.splice(0);
+      const msg: MainToWorkerMessage = { type: 'flush', entries };
+      this.worker.postMessage(msg);
+      return;
     }
 
-    const entries = this.buffer.splice(0);
-    const topic = this.config.topic;
-
-    try {
-      for (const entry of entries) {
-        const payload = this.encoder.encode(JSON.stringify(entry));
-        this.connection.publish(topic, payload);
-        this.publishedCount++;
-      }
-    } catch {
-      // Publishing failed — connection likely dropped
-      this.droppedCount += entries.length;
-      this.connected = false;
-      // eslint-disable-next-line no-console
-      console.warn(`[RemoteLogger] Publish failed, dropped ${entries.length} entries (total dropped: ${this.droppedCount})`);
-    }
+    // Fallback: direct NATS on main thread
+    this.fallbackFlush();
   }
 
   /**
@@ -249,6 +266,106 @@ export class RemoteLoggerService implements OnDestroy {
     // Final flush
     this.flush();
 
+    if (this.useWorker && this.worker) {
+      await this.shutdownWorker();
+    } else {
+      await this.fallbackShutdown();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.shutdown();
+  }
+
+  // ── Worker message handling ────────────────────────────
+
+  private onWorkerMessage(msg: WorkerToMainMessage): void {
+    switch (msg.type) {
+      case 'status':
+        this.connected = msg.connected;
+        break;
+      case 'stats':
+        this.publishedCount = msg.publishedCount;
+        this.droppedCount = msg.droppedCount;
+        break;
+      case 'error':
+        // eslint-disable-next-line no-console
+        console.warn(`[RemoteLogger] Worker error: ${msg.error}`);
+        break;
+      case 'shutdown-complete':
+        // Handled by the shutdown promise
+        break;
+    }
+  }
+
+  private shutdownWorker(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (!this.worker) {
+        resolve();
+        return;
+      }
+
+      const timeout = setTimeout(() => {
+        // eslint-disable-next-line no-console
+        console.warn('[RemoteLogger] Worker shutdown timed out, terminating');
+        this.worker?.terminate();
+        this.worker = null;
+        this.useWorker = false;
+        this.connected = false;
+        resolve();
+      }, 2000);
+
+      const originalHandler = this.worker.onmessage;
+      this.worker.onmessage = (event: MessageEvent<WorkerToMainMessage>) => {
+        const msg = event.data;
+        if (msg.type === 'shutdown-complete') {
+          clearTimeout(timeout);
+          this.worker?.terminate();
+          this.worker = null;
+          this.useWorker = false;
+          this.connected = false;
+          resolve();
+        } else if (originalHandler) {
+          originalHandler.call(this.worker!, event);
+        }
+      };
+
+      const shutdownMsg: MainToWorkerMessage = { type: 'shutdown' };
+      this.worker.postMessage(shutdownMsg);
+    });
+  }
+
+  // ── Fallback: direct NATS on main thread ───────────────
+
+  private fallbackConnect(): void {
+    this.connectInBackground();
+  }
+
+  private fallbackFlush(): void {
+    if (!this.connection || !this.connected) {
+      this.connectInBackground();
+      return; // entries stay buffered until connection succeeds
+    }
+
+    const entries = this.buffer.splice(0);
+    const topic = this.config!.topic;
+
+    try {
+      for (const entry of entries) {
+        const payload = this.encoder.encode(JSON.stringify(entry));
+        this.connection.publish(topic, payload);
+        this.publishedCount++;
+      }
+    } catch {
+      // Publishing failed — connection likely dropped
+      this.droppedCount += entries.length;
+      this.connected = false;
+      // eslint-disable-next-line no-console
+      console.warn(`[RemoteLogger] Publish failed, dropped ${entries.length} entries (total dropped: ${this.droppedCount})`);
+    }
+  }
+
+  private async fallbackShutdown(): Promise<void> {
     if (this.connection) {
       try {
         await this.connection.drain();
@@ -259,12 +376,6 @@ export class RemoteLoggerService implements OnDestroy {
       this.connected = false;
     }
   }
-
-  ngOnDestroy(): void {
-    this.shutdown();
-  }
-
-  // ── Private helpers ──────────────────────────────────────
 
   private async connectInBackground(): Promise<void> {
     if (this.connecting || !this.config || this.connected) return;
@@ -318,9 +429,6 @@ export class RemoteLoggerService implements OnDestroy {
     }
   }
 
-  /**
-   * Monitor NATS connection lifecycle events (disconnect, reconnect, close)
-   */
   private async monitorConnection(): Promise<void> {
     if (!this.connection) return;
 
@@ -366,9 +474,24 @@ export class RemoteLoggerService implements OnDestroy {
   }
 
   /**
-   * Extract user context data from a Pino log object,
-   * stripping standard/internal keys.
+   * Attempt to create a Web Worker for NATS publishing.
+   * Returns null if Worker is unavailable or creation fails.
+   * Protected to allow test overrides.
    */
+  protected createWorker(): Worker | null {
+    if (typeof Worker === 'undefined') return null;
+    try {
+      return new Worker(
+        new URL('./remote-logger.worker', import.meta.url),
+        { type: 'module' },
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  // ── Shared helpers ─────────────────────────────────────
+
   private extractData(logObj: Record<string, unknown>): Record<string, unknown> {
     const data: Record<string, unknown> = { ...logObj };
     for (const k of ['level', 'time', 'msg', 'component', 'service', 'module']) {

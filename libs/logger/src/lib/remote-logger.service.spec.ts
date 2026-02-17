@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { RemoteLoggerService, RemoteLoggerConfig } from './remote-logger.service';
+import type { WorkerToMainMessage } from './remote-logger-worker-protocol';
 
 // Mock @nats-io/nats-core
 vi.mock('@nats-io/nats-core', () => ({
@@ -1229,6 +1230,310 @@ describe('RemoteLoggerService', () => {
       expect(levelName(10)).toBe('trace');
       expect(levelName(0)).toBe('trace');
       expect(levelName(19)).toBe('trace');
+    });
+  });
+
+  describe('worker mode', () => {
+    let mockWorker: {
+      postMessage: ReturnType<typeof vi.fn>;
+      terminate: ReturnType<typeof vi.fn>;
+      onmessage: ((event: MessageEvent<WorkerToMainMessage>) => void) | null;
+      onerror: ((event: ErrorEvent) => void) | null;
+    };
+
+    /** Subclass that overrides createWorker() to return a mock */
+    class TestableRemoteLoggerService extends RemoteLoggerService {
+      createWorkerFn: (() => Worker | null) | null = null;
+
+      protected override createWorker(): Worker | null {
+        if (this.createWorkerFn) return this.createWorkerFn();
+        return super.createWorker();
+      }
+    }
+
+    function createMockWorker() {
+      mockWorker = {
+        postMessage: vi.fn(),
+        terminate: vi.fn(),
+        onmessage: null,
+        onerror: null,
+      };
+      return mockWorker as unknown as Worker;
+    }
+
+    function simulateWorkerMessage(msg: WorkerToMainMessage) {
+      mockWorker.onmessage?.({ data: msg } as MessageEvent<WorkerToMainMessage>);
+    }
+
+    let testService: TestableRemoteLoggerService;
+
+    beforeEach(() => {
+      testService = new TestableRemoteLoggerService();
+      testService.createWorkerFn = () => createMockWorker();
+      service = testService; // so afterEach can shut it down
+    });
+
+    afterEach(() => {
+      // Ensure the worker responds to shutdown quickly so afterEach doesn't wait 2s
+      if (mockWorker?.onmessage && testService.initialized) {
+        mockWorker.onmessage({ data: { type: 'shutdown-complete' } } as MessageEvent<WorkerToMainMessage>);
+      }
+    });
+
+    it('should use worker when createWorker returns a Worker', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      // Should have sent init message
+      expect(mockWorker.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'init',
+          config: expect.objectContaining({
+            natsUrl: 'ws://localhost:8224',
+            topic: 'test-logs',
+          }),
+        }),
+      );
+
+      vi.useRealTimers();
+    });
+
+    it('should update connected state from worker status messages', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      expect(testService.isConnected).toBe(false);
+
+      simulateWorkerMessage({ type: 'status', connected: true, status: 'connected' });
+      expect(testService.isConnected).toBe(true);
+
+      simulateWorkerMessage({ type: 'status', connected: false, status: 'disconnected' });
+      expect(testService.isConnected).toBe(false);
+
+      vi.useRealTimers();
+    });
+
+    it('should update publishedCount from worker stats messages', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      simulateWorkerMessage({ type: 'stats', publishedCount: 5, droppedCount: 1 });
+      expect(testService.totalPublished).toBe(5);
+
+      vi.useRealTimers();
+    });
+
+    it('should send flush messages to worker with entries', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      testService.push({ level: 30, msg: 'worker test' });
+      testService.flush();
+
+      // postMessage should be called with init + flush
+      const flushCall = mockWorker.postMessage.mock.calls.find(
+        (call: any[]) => call[0].type === 'flush',
+      );
+      expect(flushCall).toBeDefined();
+      expect(flushCall![0].entries).toHaveLength(1);
+      expect(flushCall![0].entries[0].msg).toBe('worker test');
+
+      // Buffer should be empty after flush
+      expect(testService.pendingCount).toBe(0);
+
+      vi.useRealTimers();
+    });
+
+    it('should send shutdown message to worker and wait for shutdown-complete', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      // Start shutdown
+      const shutdownPromise = testService.shutdown();
+
+      // Worker should have received shutdown message
+      const shutdownCall = mockWorker.postMessage.mock.calls.find(
+        (call: any[]) => call[0].type === 'shutdown',
+      );
+      expect(shutdownCall).toBeDefined();
+
+      // Simulate worker confirming shutdown
+      // The shutdown replaces onmessage handler, so we need to call the current one
+      mockWorker.onmessage?.({ data: { type: 'shutdown-complete' } } as MessageEvent<WorkerToMainMessage>);
+
+      await shutdownPromise;
+
+      expect(mockWorker.terminate).toHaveBeenCalled();
+      expect(testService.isConnected).toBe(false);
+
+      vi.useRealTimers();
+    });
+
+    it('should terminate worker after timeout if shutdown-complete not received', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      const shutdownPromise = testService.shutdown();
+
+      // Don't send shutdown-complete, let timeout fire
+      await vi.advanceTimersByTimeAsync(2000);
+      await shutdownPromise;
+
+      expect(mockWorker.terminate).toHaveBeenCalled();
+      expect(testService.isConnected).toBe(false);
+
+      vi.useRealTimers();
+    });
+
+    it('should fall back to main thread when createWorker returns null', async () => {
+      vi.useFakeTimers();
+      testService.createWorkerFn = () => null;
+
+      const { wsconnect } = await import('@nats-io/nats-core');
+      vi.mocked(wsconnect).mockRejectedValue(new Error('refused'));
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      await vi.advanceTimersByTimeAsync(100);
+
+      // Should have fallen back to main-thread NATS
+      expect(wsconnect).toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it('should fall back to main thread when worker emits error', async () => {
+      vi.useFakeTimers();
+
+      const { wsconnect } = await import('@nats-io/nats-core');
+      vi.mocked(wsconnect).mockRejectedValue(new Error('refused'));
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      // Simulate worker error
+      mockWorker.onerror?.({ message: 'Script load failed' } as ErrorEvent);
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(mockWorker.terminate).toHaveBeenCalled();
+      // Should have fallen back to direct NATS
+      expect(wsconnect).toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it('should log worker error messages', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        bufferSize: 100,
+      });
+
+      simulateWorkerMessage({ type: 'error', error: 'NATS publish failed' });
+
+      expect(console.warn).toHaveBeenCalledWith(
+        expect.stringContaining('NATS publish failed'),
+      );
+
+      vi.useRealTimers();
+    });
+
+    it('should send config with auth when token is provided', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        token: 'my-token',
+        clientName: 'test-client',
+        bufferSize: 100,
+      });
+
+      expect(mockWorker.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'init',
+          config: expect.objectContaining({
+            token: 'my-token',
+            clientName: 'test-client',
+          }),
+        }),
+      );
+
+      vi.useRealTimers();
+    });
+
+    it('should send config with user/password auth', async () => {
+      vi.useFakeTimers();
+
+      await testService.initialize({
+        enabled: true,
+        natsUrl: 'ws://localhost:8224',
+        topic: 'test-logs',
+        user: 'admin',
+        password: 'secret',
+        bufferSize: 100,
+      });
+
+      expect(mockWorker.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'init',
+          config: expect.objectContaining({
+            user: 'admin',
+            password: 'secret',
+          }),
+        }),
+      );
+
+      vi.useRealTimers();
     });
   });
 });
