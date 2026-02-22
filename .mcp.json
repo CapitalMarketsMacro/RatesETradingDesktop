@@ -10,11 +10,6 @@
       "command": "npx",
       "args": ["-y", "@primeng/mcp"]
     },
-    "nx-mcp": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "nx-mcp@latest", "."]
-    },
     "angular-cli": {
       "type": "stdio",
       "command": "npx",
@@ -33,7 +28,9 @@
     "rates-desktop-mcp": {
       "type": "stdio",
       "command": "node",
-      "args": ["E:/RatesETradingDesktoip/RatesETradingDesktop/dist/apps/rates-desktop-mcp/main.js"]
+      "args": [
+        "E:/RatesETradingDesktoip/RatesETradingDesktop/dist/apps/rates-desktop-mcp/main.js"
+      ]
     }
   }
 }

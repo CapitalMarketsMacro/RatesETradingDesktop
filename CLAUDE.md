@@ -6,20 +6,20 @@ NX 22.4 monorepo for a **real-time Rates E-Trading desktop application**. Built 
 
 ## Quick Reference
 
-| Command | Description |
-|---------|-------------|
-| `npm start` | Serve rates-desktop on http://localhost:4200 |
-| `npm run build` | Build rates-desktop |
-| `npm test` | Unit tests (Vitest) for rates-desktop |
-| `npm run lint` | Lint rates-desktop |
-| `npm run e2e` | Playwright E2E tests |
-| `npm run openfin:launch` | Launch in OpenFin container (dev server must be running) |
-| `npm run openfin:launch:platform` | Launch in OpenFin platform mode |
-| `npm run openfin:start` | Serve + launch in OpenFin container |
-| `npm run openfin:start:platform` | Serve + launch in OpenFin platform mode |
-| `npm run test:all` | Test all projects |
-| `npm run lint:all` | Lint all projects |
-| `npm run build:all` | Build all projects |
+| Command                           | Description                                              |
+| --------------------------------- | -------------------------------------------------------- |
+| `npm start`                       | Serve rates-desktop on http://localhost:4200             |
+| `npm run build`                   | Build rates-desktop                                      |
+| `npm test`                        | Unit tests (Vitest) for rates-desktop                    |
+| `npm run lint`                    | Lint rates-desktop                                       |
+| `npm run e2e`                     | Playwright E2E tests                                     |
+| `npm run openfin:launch`          | Launch in OpenFin container (dev server must be running) |
+| `npm run openfin:launch:platform` | Launch in OpenFin platform mode                          |
+| `npm run openfin:start`           | Serve + launch in OpenFin container                      |
+| `npm run openfin:start:platform`  | Serve + launch in OpenFin platform mode                  |
+| `npm run test:all`                | Test all projects                                        |
+| `npm run lint:all`                | Lint all projects                                        |
+| `npm run build:all`               | Build all projects                                       |
 
 ## Repository Structure
 
@@ -77,12 +77,26 @@ RatesETradingDesktop/
 All shared libraries are imported via `@rates-trading/*` (defined in `tsconfig.base.json`):
 
 ```typescript
-import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
-import { RatesData, MarketData, MarketDataGridRow } from '@rates-trading/data-access';
+import {
+  ConfigurationService,
+  RatesAppConfiguration,
+} from '@rates-trading/configuration';
+import {
+  RatesData,
+  MarketData,
+  MarketDataGridRow,
+} from '@rates-trading/data-access';
 import { LoggerService, RemoteLoggerService } from '@rates-trading/logger';
-import { ITransportService, TRANSPORT_SERVICE } from '@rates-trading/transports';
+import {
+  ITransportService,
+  TRANSPORT_SERVICE,
+} from '@rates-trading/transports';
 import { OpenFinService } from '@rates-trading/openfin';
-import { PriceFormatters, WorkspaceComponent, WorkspaceStorageService } from '@rates-trading/shared-utils';
+import {
+  PriceFormatters,
+  WorkspaceComponent,
+  WorkspaceStorageService,
+} from '@rates-trading/shared-utils';
 import { DataGrid, RateCard, ColDef } from '@rates-trading/ui-components';
 ```
 
@@ -102,12 +116,12 @@ import { DataGrid, RateCard, ColDef } from '@rates-trading/ui-components';
 
 The app supports 4 runtime environments, detected automatically by `OpenFinService`:
 
-| Mode | Description | View Mechanism |
-|------|-------------|----------------|
-| **Platform** | OpenFin Platform manifest | `platform.createView()` (GoldenLayout tabs) |
-| **Container** | OpenFin `startup_app` | `fin.Window.create()` (native windows) |
-| **Web** | `@openfin/core-web` in browser | GoldenLayout iframes via broker |
-| **Browser** | Plain browser, no OpenFin | Angular `router.navigate()` fallback |
+| Mode          | Description                    | View Mechanism                              |
+| ------------- | ------------------------------ | ------------------------------------------- |
+| **Platform**  | OpenFin Platform manifest      | `platform.createView()` (GoldenLayout tabs) |
+| **Container** | OpenFin `startup_app`          | `fin.Window.create()` (native windows)      |
+| **Web**       | `@openfin/core-web` in browser | GoldenLayout iframes via broker             |
+| **Browser**   | Plain browser, no OpenFin      | Angular `router.navigate()` fallback        |
 
 Manifests live in `apps/rates-desktop/public/assets/openfin/`.
 
@@ -115,11 +129,11 @@ Manifests live in `apps/rates-desktop/public/assets/openfin/`.
 
 The transport is **pluggable** -- set `transport.type` in config to switch:
 
-| Transport | Config Key | Topic Format | Special Features |
-|-----------|-----------|-------------|-----------------|
-| **AMPS** | `"amps"` | `rates/marketData` | SOW queries, delta subscribe |
-| **Solace** | `"solace"` | `rates/marketData/treasury` | Direct/persistent delivery |
-| **NATS** | `"nats"` | `rates.marketData` | Queue groups, request/reply |
+| Transport  | Config Key | Topic Format                | Special Features             |
+| ---------- | ---------- | --------------------------- | ---------------------------- |
+| **AMPS**   | `"amps"`   | `rates/marketData`          | SOW queries, delta subscribe |
+| **Solace** | `"solace"` | `rates/marketData/treasury` | Direct/persistent delivery   |
+| **NATS**   | `"nats"`   | `rates.marketData`          | Queue groups, request/reply  |
 
 All transports implement `ITransportService` and are injected via `TRANSPORT_SERVICE` token. The factory `provideTransport()` selects the implementation at runtime based on config.
 
@@ -146,12 +160,12 @@ Environment configs in `apps/rates-desktop/public/assets/config-{env}.json`. Env
 
 Key sections: `app`, `api`, `transport`, `marketData`, `trading`, `features`, `logging`, `ui`, `openfin`, `ampsTopics`, `natsTopics`, `solaceTopics`.
 
-| Setting | Dev | Staging | Prod |
-|---------|-----|---------|------|
-| Transport | AMPS | Solace | Solace |
-| Update Interval | 1000ms | 500ms | 250ms |
-| Log Level | debug | info | warn |
-| Console Logging | Yes | Yes | No |
+| Setting         | Dev    | Staging | Prod   |
+| --------------- | ------ | ------- | ------ |
+| Transport       | AMPS   | Solace  | Solace |
+| Update Interval | 1000ms | 500ms   | 250ms  |
+| Log Level       | debug  | info    | warn   |
+| Console Logging | Yes    | Yes     | No     |
 
 ### State Persistence
 
@@ -160,8 +174,12 @@ Components extend `WorkspaceComponent` (from `@rates-trading/shared-utils`) for 
 ```typescript
 export class MyView extends WorkspaceComponent {
   readonly stateKey = 'my-view';
-  getState() { return { columnWidths: this.widths }; }
-  setState(state) { this.widths = state['columnWidths']; }
+  getState() {
+    return { columnWidths: this.widths };
+  }
+  setState(state) {
+    this.widths = state['columnWidths'];
+  }
 }
 ```
 
@@ -170,6 +188,7 @@ States are stored in localStorage via `WorkspaceStorageService` and bundled with
 ### Treasury Price Formatting
 
 Use `PriceFormatters` from `@rates-trading/shared-utils`:
+
 - `formatTreasury32nds(99.515625)` → `"99-164"` (handle-32nds notation)
 - `formatSpread32nds(0.0625)` → `"2.0/32"`
 - `formatChange32nds(0.0625)` → `"+0-02"`
@@ -177,27 +196,27 @@ Use `PriceFormatters` from `@rates-trading/shared-utils`:
 
 ## Routes
 
-| Route | Component | Purpose |
-|-------|-----------|---------|
-| `/status-bar` | StatusBarComponent | Connection status (thin bar) |
-| `/market-data/top-of-book` | TopOfTheBookViewComponent | CSS Grid bid/ask view |
-| `/market-data/blotter` | MarketDataBlotterComponent | Full AG Grid market data |
-| `/executions` | ExecutionsBlotterComponent | Trade executions/fills |
-| `/support/logs` | RemoteLoggerViewerComponent | Real-time NATS log viewer |
+| Route                      | Component                   | Purpose                      |
+| -------------------------- | --------------------------- | ---------------------------- |
+| `/status-bar`              | StatusBarComponent          | Connection status (thin bar) |
+| `/market-data/top-of-book` | TopOfTheBookViewComponent   | CSS Grid bid/ask view        |
+| `/market-data/blotter`     | MarketDataBlotterComponent  | Full AG Grid market data     |
+| `/executions`              | ExecutionsBlotterComponent  | Trade executions/fills       |
+| `/support/logs`            | RemoteLoggerViewerComponent | Real-time NATS log viewer    |
 
 In OpenFin mode, each route loads as a separate window/tab. In browser mode, standard Angular routing is used.
 
 ## Shared Libraries
 
-| Library | Key Exports | Purpose |
-|---------|------------|---------|
-| `@rates-trading/configuration` | `ConfigurationService`, `RatesAppConfiguration` | JSON config loading per environment |
-| `@rates-trading/data-access` | `MarketData`, `MarketDataGridRow`, `transformMarketDataToGridRow` | Market data models & transforms |
-| `@rates-trading/logger` | `LoggerService`, `RemoteLoggerService` | Pino logging + NATS remote publishing (Web Worker) |
-| `@rates-trading/transports` | `ITransportService`, `TRANSPORT_SERVICE`, `provideTransport()` | Pluggable AMPS/Solace/NATS messaging |
-| `@rates-trading/openfin` | `OpenFinService`, `OpenFinConnectionStatus` | Multi-mode desktop integration |
-| `@rates-trading/shared-utils` | `PriceFormatters`, `WorkspaceComponent`, `WorkspaceStorageService` | Formatters & state persistence |
-| `@rates-trading/ui-components` | `DataGrid<T>`, `RateCard`, `ColDef` | AG Grid wrapper & rate card |
+| Library                        | Key Exports                                                        | Purpose                                            |
+| ------------------------------ | ------------------------------------------------------------------ | -------------------------------------------------- |
+| `@rates-trading/configuration` | `ConfigurationService`, `RatesAppConfiguration`                    | JSON config loading per environment                |
+| `@rates-trading/data-access`   | `MarketData`, `MarketDataGridRow`, `transformMarketDataToGridRow`  | Market data models & transforms                    |
+| `@rates-trading/logger`        | `LoggerService`, `RemoteLoggerService`                             | Pino logging + NATS remote publishing (Web Worker) |
+| `@rates-trading/transports`    | `ITransportService`, `TRANSPORT_SERVICE`, `provideTransport()`     | Pluggable AMPS/Solace/NATS messaging               |
+| `@rates-trading/openfin`       | `OpenFinService`, `OpenFinConnectionStatus`                        | Multi-mode desktop integration                     |
+| `@rates-trading/shared-utils`  | `PriceFormatters`, `WorkspaceComponent`, `WorkspaceStorageService` | Formatters & state persistence                     |
+| `@rates-trading/ui-components` | `DataGrid<T>`, `RateCard`, `ColDef`                                | AG Grid wrapper & rate card                        |
 
 ## Code Style & Formatting
 
@@ -244,6 +263,7 @@ Default base branch is `master`.
 ## MCP Servers Available
 
 Configured in `.mcp.json`:
+
 - **ag-mcp**: AG Grid documentation
 - **primeng**: PrimeNG component documentation
 - **nx-mcp**: NX workspace tools
@@ -254,20 +274,20 @@ Configured in `.mcp.json`:
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `tsconfig.base.json` | All `@rates-trading/*` path aliases |
-| `nx.json` | Build targets, caching, plugins, generators |
-| `apps/rates-desktop/src/app/app.config.ts` | Angular providers (PrimeNG Nora, transport, config init) |
-| `apps/rates-desktop/src/app/app.routes.ts` | All route definitions |
-| `apps/rates-desktop/public/assets/config-dev.json` | Dev configuration (AMPS endpoints, topics, features) |
-| `apps/rates-desktop/public/assets/openfin/app.fin.json` | OpenFin container manifest |
-| `apps/rates-desktop/public/assets/openfin/app.platform.fin.json` | OpenFin platform manifest |
-| `libs/transports/src/lib/interfaces/transport.interface.ts` | `ITransportService` interface |
-| `libs/transports/src/lib/transport.factory.ts` | `provideTransport()` factory |
-| `libs/shared-utils/src/lib/price-formatters.ts` | Treasury 32nds formatting |
-| `libs/shared-utils/src/lib/workspace-component.ts` | `WorkspaceComponent` base class |
-| `sonar-project.properties` | SonarQube analysis configuration |
+| File                                                             | Purpose                                                  |
+| ---------------------------------------------------------------- | -------------------------------------------------------- |
+| `tsconfig.base.json`                                             | All `@rates-trading/*` path aliases                      |
+| `nx.json`                                                        | Build targets, caching, plugins, generators              |
+| `apps/rates-desktop/src/app/app.config.ts`                       | Angular providers (PrimeNG Nora, transport, config init) |
+| `apps/rates-desktop/src/app/app.routes.ts`                       | All route definitions                                    |
+| `apps/rates-desktop/public/assets/config-dev.json`               | Dev configuration (AMPS endpoints, topics, features)     |
+| `apps/rates-desktop/public/assets/openfin/app.fin.json`          | OpenFin container manifest                               |
+| `apps/rates-desktop/public/assets/openfin/app.platform.fin.json` | OpenFin platform manifest                                |
+| `libs/transports/src/lib/interfaces/transport.interface.ts`      | `ITransportService` interface                            |
+| `libs/transports/src/lib/transport.factory.ts`                   | `provideTransport()` factory                             |
+| `libs/shared-utils/src/lib/price-formatters.ts`                  | Treasury 32nds formatting                                |
+| `libs/shared-utils/src/lib/workspace-component.ts`               | `WorkspaceComponent` base class                          |
+| `sonar-project.properties`                                       | SonarQube analysis configuration                         |
 
 ## Common Pitfalls
 
@@ -297,8 +317,33 @@ nx g @nx/angular:library my-lib --directory=libs/my-lib
 ```
 
 Add path alias to `tsconfig.base.json`:
+
 ```json
 "@rates-trading/my-lib": ["libs/my-lib/src/index.ts"]
 ```
 
 Unit test runner defaults to `vitest-analog` for Angular libraries.
+
+<!-- nx configuration start-->
+<!-- Leave the start & end comments to automatically receive updates. -->
+
+## General Guidelines for working with Nx
+
+- For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
+- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
+- You have access to the Nx MCP server and its tools, use them to help the user
+- For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
+- NEVER guess CLI flags - always check nx_docs or `--help` first when unsure
+
+## Scaffolding & Generators
+
+- For scaffolding tasks (creating apps, libs, project structure, setup), ALWAYS invoke the `nx-generate` skill FIRST before exploring or calling MCP tools
+
+## When to use nx_docs
+
+- USE for: advanced config options, unfamiliar flags, migration guides, plugin configuration, edge cases
+- DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
+- The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
+
+<!-- nx configuration end-->
