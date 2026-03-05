@@ -153,8 +153,8 @@ h2 {
   color: #94a3b8;
 }
 
-/* OpenFin status indicator in menubar */
-.openfin-status {
+/* Combined system status badge in menubar */
+.system-status {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -162,9 +162,59 @@ h2 {
   border-radius: 16px;
   font-size: 0.85rem;
   font-weight: 500;
-  background-color: rgba(25, 118, 210, 0.1);
-  color: #1976d2;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s;
 }
+
+.system-status:hover {
+  filter: brightness(1.15);
+}
+
+.system-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.system-status-dot.status-connected {
+  background-color: #2e7d32;
+  box-shadow: 0 0 4px rgba(46, 125, 50, 0.5);
+}
+
+.system-status-dot.status-connecting {
+  background-color: #f57c00;
+  box-shadow: 0 0 4px rgba(245, 124, 0, 0.5);
+  animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+.system-status-dot.status-disconnected {
+  background-color: #d32f2f;
+  box-shadow: 0 0 4px rgba(211, 47, 47, 0.5);
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Dark mode dots */
+:host-context(html.app-dark) .system-status-dot.status-connected {
+  background-color: #4ade80;
+  box-shadow: 0 0 4px rgba(74, 222, 128, 0.5);
+}
+
+:host-context(html.app-dark) .system-status-dot.status-connecting {
+  background-color: #fbbf24;
+  box-shadow: 0 0 4px rgba(251, 191, 36, 0.5);
+}
+
+:host-context(html.app-dark) .system-status-dot.status-disconnected {
+  background-color: #f87171;
+  box-shadow: 0 0 4px rgba(248, 113, 113, 0.5);
+}
+
 
 /* Save-layout dialog form */
 .save-layout-form {

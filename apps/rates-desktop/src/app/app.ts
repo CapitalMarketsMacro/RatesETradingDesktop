@@ -7,12 +7,12 @@ import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { PopoverModule } from 'primeng/popover';
 import { RatesData } from '@rates-trading/data-access';
 import { ConfigurationService, RatesAppConfiguration } from '@rates-trading/configuration';
 import { TRANSPORT_SERVICE, ConnectionStatus } from '@rates-trading/transports';
 import { LoggerService, RemoteLoggerService } from '@rates-trading/logger';
 import { OpenFinService, OpenFinConnectionStatus } from '@rates-trading/openfin';
-import { StatusBarComponent } from './d2d/status-bar/status-bar.component';
 
 export interface TreasurySecurity {
   cusip: string;
@@ -32,7 +32,7 @@ export interface TreasurySecurity {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, MenubarModule, ButtonModule, DialogModule, InputTextModule, StatusBarComponent],
+  imports: [CommonModule, FormsModule, RouterModule, MenubarModule, ButtonModule, DialogModule, InputTextModule, PopoverModule],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
@@ -61,6 +61,9 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   // OpenFin state
   openfinStatus: OpenFinConnectionStatus = OpenFinConnectionStatus.Disconnected;
   private pendingOpenFinConfig?: RatesAppConfiguration;
+
+  // Combined status
+  transportType = '';
 
   // Save-layout dialog
   showSaveDialog = false;
@@ -156,6 +159,7 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
       this.config = config;
       // Set title from configuration
       this.title = config.app.name;
+      this.transportType = (config.transport?.type || 'amps').toUpperCase();
 
       // Initialize remote logger if configured
       this.initializeRemoteLogger(config);
@@ -642,6 +646,56 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
       default:
         return '';
     }
+  }
+
+  get overallStatusClass(): string {
+    const transportOk = this.connectionStatus === ConnectionStatus.Connected;
+    const openfinOk = this.openfinStatus === OpenFinConnectionStatus.Connected;
+    if (transportOk && openfinOk) return 'status-connected';
+    const transportWarn = this.connectionStatus === ConnectionStatus.Connecting || this.connectionStatus === ConnectionStatus.Reconnecting;
+    const openfinWarn = this.openfinStatus === OpenFinConnectionStatus.Connecting;
+    if (transportWarn || openfinWarn) return 'status-connecting';
+    return 'status-disconnected';
+  }
+
+  get overallStatusLabel(): string {
+    const transportOk = this.connectionStatus === ConnectionStatus.Connected;
+    const openfinOk = this.openfinStatus === OpenFinConnectionStatus.Connected;
+    if (transportOk && openfinOk) return 'All Systems Online';
+    if (this.connectionStatus === ConnectionStatus.Connecting ||
+        this.connectionStatus === ConnectionStatus.Reconnecting ||
+        this.openfinStatus === OpenFinConnectionStatus.Connecting) return 'Connecting…';
+    return 'Degraded';
+  }
+
+  get openfinStatusLabel(): string {
+    switch (this.openfinStatus) {
+      case OpenFinConnectionStatus.Connected:
+        return this.openfinService.isPlatform ? 'Platform' : this.openfinService.isContainer ? 'Container' : 'Web';
+      case OpenFinConnectionStatus.Connecting:
+        return 'Connecting…';
+      case OpenFinConnectionStatus.Disconnected:
+        return 'Disconnected';
+      case OpenFinConnectionStatus.Error:
+        return 'Error';
+      default:
+        return 'N/A';
+    }
+  }
+
+  get openfinStatusClass(): string {
+    switch (this.openfinStatus) {
+      case OpenFinConnectionStatus.Connected:
+        return 'status-connected';
+      case OpenFinConnectionStatus.Connecting:
+        return 'status-connecting';
+      default:
+        return 'status-disconnected';
+    }
+  }
+
+  get statusTooltipText(): string {
+    return `${this.transportType}: ${this.connectionStatusLabel}\nOpenFin: ${this.openfinStatusLabel}`;
   }
 
   toggleTheme(): void {

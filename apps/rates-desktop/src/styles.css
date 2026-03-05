@@ -343,3 +343,62 @@ html.app-dark .trading-size,
 .tob-toast .p-toast-message {
   margin-bottom: 0.5rem;
 }
+
+/* Status dropdown popover */
+.status-popover {
+  min-width: 220px;
+}
+
+.status-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.status-dropdown-header {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.status-dropdown-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.status-dropdown-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #334155;
+  flex: 1;
+}
+
+.status-dropdown-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-dropdown-value.status-connected { color: #2e7d32; }
+.status-dropdown-value.status-connecting { color: #f57c00; }
+.status-dropdown-value.status-disconnected { color: #d32f2f; }
+
+/* Dark mode */
+html.app-dark .status-dropdown-header {
+  color: #94a3b8;
+  border-bottom-color: #475569;
+}
+
+html.app-dark .status-dropdown-label {
+  color: #e2e8f0;
+}
+
+html.app-dark .status-dropdown-value.status-connected { color: #4ade80; }
+html.app-dark .status-dropdown-value.status-connecting { color: #fbbf24; }
+html.app-dark .status-dropdown-value.status-disconnected { color: #f87171; }

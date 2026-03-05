@@ -5,14 +5,21 @@
 
   <span class="divider">|</span>
 
-  <span class="status-dot" [class]="transportStatusClass"></span>
-  <span class="status-label">{{ transportType }}:</span>
-  <span class="status-value" [class]="transportStatusClass">{{ transportStatusLabel }}</span>
+  <span class="status-indicator" [title]="statusTooltip" (click)="toggleDetail()">
+    <span class="status-dot" [class]="overallStatusClass"></span>
+    <span class="status-value" [class]="overallStatusClass">{{ overallStatusLabel }}</span>
+  </span>
 
-  <span class="divider">|</span>
+  @if (showDetail) {
+    <span class="divider">|</span>
+    <span class="status-dot small" [class]="transportStatusClass"></span>
+    <span class="detail-label">{{ transportType }}:</span>
+    <span class="detail-value" [class]="transportStatusClass">{{ transportStatusLabel }}</span>
 
-  <span class="status-dot" [class]="openfinStatusClass"></span>
-  <span class="status-label">OpenFin:</span>
-  <span class="status-value" [class]="openfinStatusClass">{{ openfinStatusLabel }}</span>
+    <span class="divider">|</span>
+    <span class="status-dot small" [class]="openfinStatusClass"></span>
+    <span class="detail-label">OpenFin:</span>
+    <span class="detail-value" [class]="openfinStatusClass">{{ openfinStatusLabel }}</span>
+  }
 
 </div>

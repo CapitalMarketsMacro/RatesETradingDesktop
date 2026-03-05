@@ -10,23 +10,6 @@
           "type": "column",
           "content": [
             {
-              "type": "stack",
-              "height": 5,
-              "content": [
-                {
-                  "type": "component",
-                  "componentName": "view",
-                  "title": "Status",
-                  "isClosable": false,
-                  "reorderEnabled": false,
-                  "componentState": {
-                    "url": "/status-bar",
-                    "name": "status-bar"
-                  }
-                }
-              ]
-            },
-            {
               "type": "row",
               "height": 97,
               "content": [

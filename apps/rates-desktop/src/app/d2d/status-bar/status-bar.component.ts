@@ -95,6 +95,44 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     });
   }
 
+  showDetail = false;
+
+  toggleDetail(): void {
+    this.showDetail = !this.showDetail;
+  }
+
+  get statusTooltip(): string {
+    return `${this.transportType}: ${this.transportStatusLabel}\nOpenFin: ${this.openfinStatusLabel}`;
+  }
+
+  get overallStatusClass(): string {
+    const transportOk = this.transportStatus === ConnectionStatus.Connected;
+    const openfinOk = this.openfinStatus === OpenFinConnectionStatus.Connected;
+
+    if (transportOk && openfinOk) return 'status-ok';
+
+    const transportWarn =
+      this.transportStatus === ConnectionStatus.Connecting ||
+      this.transportStatus === ConnectionStatus.Reconnecting;
+    const openfinWarn = this.openfinStatus === OpenFinConnectionStatus.Connecting;
+
+    if (transportWarn || openfinWarn) return 'status-warn';
+    return 'status-error';
+  }
+
+  get overallStatusLabel(): string {
+    const transportOk = this.transportStatus === ConnectionStatus.Connected;
+    const openfinOk = this.openfinStatus === OpenFinConnectionStatus.Connected;
+    if (transportOk && openfinOk) return 'All Systems Online';
+    if (
+      this.transportStatus === ConnectionStatus.Connecting ||
+      this.transportStatus === ConnectionStatus.Reconnecting ||
+      this.openfinStatus === OpenFinConnectionStatus.Connecting
+    )
+      return 'Connecting…';
+    return 'Degraded';
+  }
+
   get transportStatusLabel(): string {
     switch (this.transportStatus) {
       case ConnectionStatus.Connected:
