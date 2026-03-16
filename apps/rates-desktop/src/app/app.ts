@@ -248,6 +248,9 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
           await this.openfinService.initPlatformLayout();
           this.logger.info('OpenFin Platform layout initialized — views will be added via platform.createView()');
 
+          // Start Snap before restoring layout so auto-registration catches restored windows
+          await this.openfinService.startSnapServer();
+
           // Auto-restore the last-used layout (if any)
           await this.autoRestoreLastLayout();
         } else {
@@ -261,9 +264,12 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
         this.openfinService.markContainerConnected();
         this.logger.info('Running inside OpenFin container — views will open as native windows');
 
-        // Only auto-restore from the MAIN window, not from child windows
-        // (child windows also detect as 'container' and would cause a loop)
         if (this.isDefaultRoute) {
+          // Start Snap before restoring layout so auto-registration catches restored windows
+          await this.openfinService.startSnapServer();
+
+          // Only auto-restore from the MAIN window, not from child windows
+          // (child windows also detect as 'container' and would cause a loop)
           await this.autoRestoreLastLayout();
         }
       } else if (env === 'web') {

@@ -82,6 +82,7 @@
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@nats-io/nats-core": "^3.3.0",
     "@openfin/core-web": "^0.42.103",
+    "@openfin/snap-sdk": "^1.5.0",
     "@primeuix/themes": "^2.0.2",
     "ag-charts-angular": "^13.0.0",
     "ag-charts-community": "^13.0.0",

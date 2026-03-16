@@ -16,7 +16,13 @@
     "backgroundColor": "#0f172a",
     "contextMenu": true,
     "saveWindowState": true,
-    "icon": "http://localhost:4200/favicon.ico"
+    "icon": "http://localhost:4200/favicon.ico",
+    "permissions": {
+      "System": {
+        "launchExternalProcess": true,
+        "downloadAsset": true
+      }
+    }
   },
   "shortcut": {
     "company": "Rates E-Trading",

@@ -75,6 +75,10 @@ export class OpenFinService {
   /** Runtime configuration */
   private config: OpenFinConfig = DEFAULT_OPENFIN_CONFIG;
 
+  /** Snap SDK server instance — only active in container/platform modes */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private snapServer: any = null;
+
   /** Layout container element — kept so we can re-init the layout after all views are closed */
   private layoutContainerEl: HTMLElement | null = null;
 
@@ -826,6 +830,8 @@ export class OpenFinService {
   private static readonly PENDING_RESTORE_KEY = 'openfin-pending-restore';
   /** Stores the last-used layout name per environment: `{ web: "My Layout", platform: "Trade View", container: "Default" }` */
   private static readonly LAST_LAYOUT_KEY = 'openfin-last-layout';
+  /** Stashed snap layout to restore after platform reload */
+  private static readonly PENDING_SNAP_LAYOUT_KEY = 'openfin-pending-snap-layout';
 
   /**
    * Save the current layout under a user-provided name.
@@ -860,6 +866,10 @@ export class OpenFinService {
       // with the layout snapshot and can be restored later.
       const componentStates = this.workspaceStorage.collectAllStates();
 
+      // Capture snap docking layout (window grouping) if snap is active
+      const snapLayout = await this.getSnapLayout();
+      console.log('[SNAP] saveLayout - captured snapLayout:', snapLayout ? JSON.stringify(snapLayout).substring(0, 200) : 'null');
+
       const entry = {
         name,
         timestamp: Date.now(),
@@ -868,6 +878,8 @@ export class OpenFinService {
         env,
         /** Bundled component states (column widths, filters, etc.) */
         componentStates,
+        /** Snap SDK window grouping layout (if snap is active) */
+        snapLayout,
       };
 
       const all = this.getAllSavedLayouts();
@@ -920,16 +932,39 @@ export class OpenFinService {
     // Record as the last-used layout for this environment
     this.setLastLayout(name);
 
+    // Snap layout to restore after windows are created
+    const savedSnapLayout = (entry as Record<string, unknown>)['snapLayout'];
+    console.log('[SNAP] restoreLayout - savedSnapLayout:', savedSnapLayout ? JSON.stringify(savedSnapLayout).substring(0, 200) : 'null/undefined');
+
     if (env === 'container') {
       await this.restoreContainerSnapshot(
         entry.snapshot as ContainerWindowEntry[],
       );
       this.logger.info({ name }, 'Container layout restored');
+      // Restore snap grouping after windows are created (small delay for window init)
+      if (savedSnapLayout) {
+        console.log('[SNAP] Will restore snap layout in 3s...');
+        setTimeout(async () => {
+          console.log('[SNAP] Restoring snap layout now...');
+          await this.setSnapLayout(savedSnapLayout);
+          console.log('[SNAP] Snap layout restore complete');
+        }, 3000);
+      } else {
+        console.log('[SNAP] No snap layout to restore (layout was saved before snap was enabled, re-save it with snap active)');
+      }
     } else if (env === 'platform') {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalFin = (window as any).fin;
         const platform = globalFin.Platform.getCurrentSync();
+
+        // Platform applySnapshot will reload the page — stash snap layout
+        // in localStorage so we can re-attach after the reload.
+        if (savedSnapLayout) {
+          localStorage.setItem(OpenFinService.PENDING_SNAP_LAYOUT_KEY, JSON.stringify(savedSnapLayout));
+          console.log('[SNAP] Platform: stashed snap layout for post-reload restore');
+        }
+
         await platform.applySnapshot(entry.snapshot as never, {
           closeExistingWindows: true,
         });
@@ -1011,11 +1046,12 @@ export class OpenFinService {
       }
     }
 
-    // Recreate windows from snapshot
+    // Recreate windows from snapshot — preserve original names so snap
+    // layout restore can match window IDs to saved connections.
     for (const entry of entries) {
       try {
         await globalFin.Window.create({
-          name: `${entry.name}-${Date.now()}`,
+          name: entry.name,
           url: entry.url,
           defaultTop: entry.top,
           defaultLeft: entry.left,
@@ -1168,10 +1204,252 @@ export class OpenFinService {
     }
   }
 
+  // ────────────────────────────────────────────────────────
+  // Snap SDK (window docking/snapping)
+  // ────────────────────────────────────────────────────────
+
+  /**
+   * Start the Snap SDK server for window snapping/docking.
+   * Only meaningful in container and platform modes where native
+   * OpenFin windows exist. No-ops gracefully in web/browser modes.
+   *
+   * Uses dynamic import so the @openfin/snap-sdk module is never
+   * loaded in browser/web contexts where it would fail.
+   */
+  async startSnapServer(): Promise<void> {
+    const snapConfig = this.config.snap;
+    console.log('[SNAP] startSnapServer called, snapConfig:', JSON.stringify(snapConfig));
+    if (!snapConfig?.enabled) {
+      console.log('[SNAP] Not enabled in configuration');
+      return;
+    }
+
+    const env = this.environment;
+    console.log('[SNAP] Environment:', env);
+    if (env !== 'container' && env !== 'platform') {
+      console.log('[SNAP] Wrong env, skipping');
+      return;
+    }
+
+    if (this.snapServer) {
+      console.log('[SNAP] Already running');
+      return;
+    }
+
+    try {
+      console.log('[SNAP] Importing @openfin/snap-sdk...');
+      const snapModule = await import('@openfin/snap-sdk');
+      console.log('[SNAP] Import successful, module keys:', Object.keys(snapModule));
+      const { SnapServer } = snapModule;
+      const serverId = snapConfig.serverId || `${this.config.providerId}-snap`;
+      console.log('[SNAP] Creating SnapServer with id:', serverId);
+      this.snapServer = new SnapServer(serverId);
+
+      // Build ServerOptions from config
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const serverOptions: Record<string, any> = {};
+      if (snapConfig.showDebug !== undefined) serverOptions['showDebug'] = snapConfig.showDebug;
+      if (snapConfig.keyToStick !== undefined) serverOptions['keyToStick'] = snapConfig.keyToStick;
+      if (snapConfig.disableBlurDropPreview !== undefined) serverOptions['disableBlurDropPreview'] = snapConfig.disableBlurDropPreview;
+      if (snapConfig.disableGPUAcceleratedDragging !== undefined) serverOptions['disableGPUAcceleratedDragging'] = snapConfig.disableGPUAcceleratedDragging;
+      if (snapConfig.disableUserUnstick !== undefined) serverOptions['disableUserUnstick'] = snapConfig.disableUserUnstick;
+      if (snapConfig.taskbarIcon !== undefined) serverOptions['taskbarIcon'] = snapConfig.taskbarIcon;
+      if (snapConfig.taskbarIconGroup !== undefined) serverOptions['taskbarIconGroup'] = snapConfig.taskbarIconGroup;
+
+      console.log('[SNAP] Starting server with options:', JSON.stringify(serverOptions));
+      await this.snapServer.start(Object.keys(serverOptions).length > 0 ? serverOptions : undefined);
+      console.log('[SNAP] Server started, enabling auto-registration...');
+      await this.snapServer.enableAutoWindowRegistration();
+      console.log('[SNAP] Auto-registration enabled successfully');
+
+      // Log snap events for debugging
+      this.snapServer.addEventListener('client-registered', (...args: unknown[]) => {
+        console.log('[SNAP] Window registered:', JSON.stringify(args));
+      });
+      this.snapServer.addEventListener('client-unregistered', (...args: unknown[]) => {
+        console.log('[SNAP] Window unregistered:', JSON.stringify(args));
+      });
+      this.snapServer.addEventListener('clients-attached', (...args: unknown[]) => {
+        console.log('[SNAP] Windows attached (snapped):', JSON.stringify(args));
+      });
+      this.snapServer.addEventListener('client-detached', (...args: unknown[]) => {
+        console.log('[SNAP] Window detached:', JSON.stringify(args));
+      });
+
+      this.logger.info({ serverId, env }, 'Snap SDK server started with auto-registration');
+
+      // In platform mode, windows may already exist (from snapshot restore).
+      // Auto-registration only catches NEW windows, so register existing ones manually.
+      if (env === 'platform') {
+        await this.registerExistingPlatformWindows();
+      }
+
+      // Check for a pending snap layout from a platform reload
+      this.restorePendingSnapLayout();
+    } catch (error) {
+      console.error('[SNAP] Failed to start:', error);
+      this.logger.error(error as Error, 'Failed to start Snap SDK server');
+      this.snapServer = null;
+    }
+  }
+
+  /**
+   * Register existing platform windows with the snap server.
+   * In platform mode, windows from a restored snapshot already exist
+   * before enableAutoWindowRegistration() is called, so they're missed.
+   * We enumerate them and register each one manually using its native handle.
+   */
+  private async registerExistingPlatformWindows(): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin || !this.snapServer) return;
+
+    try {
+      const app = globalFin.Application.getCurrentSync();
+      const mainWindow = globalFin.Window.getCurrentSync();
+
+      // Register the main window
+      try {
+        const mainNativeId = await mainWindow.getNativeId();
+        const mainName = mainWindow.identity?.name || 'main';
+        console.log(`[SNAP] Registering main window: ${mainName} (native: ${mainNativeId})`);
+        await this.snapServer.registerWindow(mainName, mainNativeId);
+      } catch (err) {
+        console.error('[SNAP] Failed to register main window:', err);
+      }
+
+      // Register all child windows
+      const childWindows = await app.getChildWindows();
+      console.log(`[SNAP] Found ${childWindows.length} child windows to register`);
+      for (const win of childWindows) {
+        try {
+          const nativeId = await win.getNativeId();
+          const name = win.identity?.name || `child-${nativeId}`;
+          console.log(`[SNAP] Registering child window: ${name} (native: ${nativeId})`);
+          await this.snapServer.registerWindow(name, nativeId);
+        } catch (err) {
+          console.error('[SNAP] Failed to register child window:', err);
+        }
+      }
+
+      console.log('[SNAP] Existing platform windows registered');
+    } catch (err) {
+      console.error('[SNAP] Failed to enumerate platform windows:', err);
+    }
+  }
+
+  /**
+   * After a platform applySnapshot reload, restore snap grouping.
+   *
+   * Platform mode gives windows new native handles and IDs on every reload,
+   * so we can't replay old IDs. Instead we read the currently registered
+   * snap clients and chain-attach them using the saved connection sides.
+   */
+  private async restorePendingSnapLayout(): Promise<void> {
+    const raw = localStorage.getItem(OpenFinService.PENDING_SNAP_LAYOUT_KEY);
+    if (!raw) return;
+    localStorage.removeItem(OpenFinService.PENDING_SNAP_LAYOUT_KEY);
+
+    console.log('[SNAP] Found pending snap layout from platform reload');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let savedLayout: any;
+    try {
+      savedLayout = JSON.parse(raw);
+    } catch {
+      console.error('[SNAP] Failed to parse pending snap layout');
+      return;
+    }
+
+    if (!this.snapServer) return;
+
+    // Get the side from the first saved connection (default to 'right')
+    const savedConnections = savedLayout?.connections as Array<{
+      targetSide: string;
+    }> | undefined;
+    const side = savedConnections?.[0]?.targetSide || 'right';
+
+    // Windows were just registered in registerExistingPlatformWindows().
+    // Small delay to let snap server process the registrations.
+    setTimeout(async () => {
+      if (!this.snapServer) return;
+      try {
+        const currentLayout = await this.snapServer.getLayout();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const clients = (currentLayout as any)?.clients as Array<{ id: string }> | undefined;
+        console.log('[SNAP] Platform restore: registered clients:', clients?.map(c => c.id));
+
+        if (!clients || clients.length < 2) {
+          console.log('[SNAP] Platform: not enough clients to attach');
+          return;
+        }
+
+        // Chain-attach: attach each window to the previous one
+        for (let i = 1; i < clients.length; i++) {
+          try {
+            console.log(`[SNAP] Platform: attaching "${clients[i].id}" to "${clients[i - 1].id}" on "${side}"`);
+            await this.snapServer.attachWindows(clients[i].id, clients[i - 1].id, side);
+          } catch (err) {
+            console.error(`[SNAP] Platform: attachWindows failed for ${clients[i].id}:`, err);
+          }
+        }
+        console.log('[SNAP] Platform: snap groups re-established');
+      } catch (err) {
+        console.error('[SNAP] Platform: failed to restore snap layout:', err);
+      }
+    }, 2000);
+  }
+
+  /**
+   * Stop the Snap SDK server and release resources.
+   */
+  async stopSnapServer(): Promise<void> {
+    if (!this.snapServer) return;
+    try {
+      await this.snapServer.stop();
+      this.logger.info('Snap SDK server stopped');
+    } catch (error) {
+      this.logger.error(error as Error, 'Error stopping Snap SDK server');
+    } finally {
+      this.snapServer = null;
+    }
+  }
+
+  /**
+   * Get the current snap layout (window grouping/docking state).
+   * Returns null if snap is not active.
+   */
+  async getSnapLayout(): Promise<unknown | null> {
+    if (!this.snapServer) return null;
+    try {
+      return await this.snapServer.getLayout();
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to get snap layout');
+      return null;
+    }
+  }
+
+  /**
+   * Restore a previously saved snap layout (window grouping/docking state).
+   */
+  async setSnapLayout(layout: unknown): Promise<void> {
+    console.log('[SNAP] setSnapLayout called, hasServer:', !!this.snapServer, 'hasLayout:', !!layout);
+    if (!this.snapServer || !layout) return;
+    try {
+      console.log('[SNAP] Calling snapServer.setLayout with:', JSON.stringify(layout).substring(0, 500));
+      await this.snapServer.setLayout(layout);
+      console.log('[SNAP] setLayout succeeded');
+      this.logger.info('Snap layout restored');
+    } catch (error) {
+      console.error('[SNAP] setLayout failed:', error);
+      this.logger.error(error as Error, 'Failed to restore snap layout');
+    }
+  }
+
   /**
    * Disconnect from the OpenFin Web Broker and clean up.
    */
   async disconnect(): Promise<void> {
+    await this.stopSnapServer();
     if (this.finApi) {
       this.finApi = null;
     }

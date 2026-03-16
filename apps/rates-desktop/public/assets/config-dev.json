@@ -101,6 +101,11 @@
     "layoutUrl": "/assets/openfin/default.layout.fin.json",
     "providerId": "rates-desktop-dev",
     "defaultContextGroup": "green",
-    "logLevel": "info"
+    "logLevel": "info",
+    "snap": {
+      "enabled": true,
+      "showDebug": true,
+      "taskbarIconGroup": "rates-etrading"
+    }
   }
 }

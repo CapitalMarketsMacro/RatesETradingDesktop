@@ -12,7 +12,19 @@
     "defaultWindowOptions": {
       "contextMenu": true,
       "backgroundColor": "#0f172a",
-      "frame": true
+      "frame": true,
+      "permissions": {
+        "System": {
+          "launchExternalProcess": true,
+          "downloadAsset": true
+        }
+      }
+    },
+    "permissions": {
+      "System": {
+        "launchExternalProcess": true,
+        "downloadAsset": true
+      }
     }
   },
   "snapshot": {

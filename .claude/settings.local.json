@@ -20,7 +20,13 @@
       "WebFetch(domain:angular.dev)",
       "Bash(git status:*)",
       "Bash(curl:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:cdn.openfin.co)",
+      "Bash(cd:*)"
     ]
   }
 }
