@@ -26,7 +26,7 @@ NX 22.4 monorepo for a **real-time Rates E-Trading desktop application**. Built 
 ```
 RatesETradingDesktop/
 ├── apps/
-│   ├── rates-desktop/                # Main Angular application (:4200)
+│   ├── rates-desktop/                # Main Angular application (:8080)
 │   │   ├── src/app/
 │   │   │   ├── app.ts               # Root component (menubar, layout, OpenFin init)
 │   │   │   ├── app.config.ts        # Providers (PrimeNG, transport, config loader)

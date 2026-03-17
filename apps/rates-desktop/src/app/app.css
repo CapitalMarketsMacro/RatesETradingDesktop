@@ -1,51 +1,96 @@
-.app-menubar {
-  margin-bottom: 0;
+/* Collapsible menubar wrapper */
+.menubar-wrapper {
   flex-shrink: 0;
   position: relative;
   z-index: 1100;
 }
 
+/* Expanded state — show full menubar */
+.menubar-wrapper .menubar-content {
+  display: block;
+}
+
+.menubar-wrapper .menubar-grip {
+  display: none;
+}
+
+/* Collapsed state — show only the grip strip */
+.menubar-wrapper.collapsed .menubar-content {
+  display: none;
+}
+
+.menubar-wrapper.collapsed .menubar-grip {
+  display: flex;
+}
+
+/* Grip strip — thin clickable bar */
+.menubar-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 14px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--p-menubar-background, #1e293b);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.menubar-grip:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.grip-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.grip-dots::before,
+.grip-dots::after {
+  content: '';
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.grip-dots:hover::before,
+.grip-dots:hover::after {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.system-status-dot.mini {
+  width: 5px;
+  height: 5px;
+}
+
+/* Collapse button in expanded menubar */
+.menubar-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #64748b;
+  transition: color 0.1s;
+}
+
+.menubar-collapse-btn:hover {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.app-menubar {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
 .menubar-end {
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-.connection-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.connection-status.status-connected {
-  background-color: rgba(46, 125, 50, 0.1);
-  color: #2e7d32;
-}
-
-.connection-status.status-connecting {
-  background-color: rgba(255, 152, 0, 0.1);
-  color: #f57c00;
-}
-
-.connection-status.status-disconnected {
-  background-color: rgba(211, 47, 47, 0.1);
-  color: #d32f2f;
-}
-
-.app-title {
-  font-weight: 700;
-  font-size: 1rem;
-  color: #1e3a8a;
-  margin-right: 12px;
-  white-space: nowrap;
-}
-
-.theme-toggle {
-  margin-left: auto;
+  gap: 8px;
 }
 
 :host {
@@ -125,10 +170,10 @@ h2 {
 .current-layout-badge {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.8rem;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
   font-weight: 600;
   background-color: rgba(124, 58, 237, 0.12);
   color: #7c3aed;
@@ -157,14 +202,13 @@ h2 {
 .system-status {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.85rem;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.15s;
 }
 
 .system-status:hover {
@@ -172,8 +216,8 @@ h2 {
 }
 
 .system-status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }

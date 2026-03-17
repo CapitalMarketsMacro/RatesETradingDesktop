@@ -1,55 +1,63 @@
-@if (isDefaultRoute) {
-  <p-menubar [model]="menuItems" class="app-menubar"
-    (click)="onMenubarItemClick()"
-    (mouseleave)="onMenubarLeave()">
-    <ng-template pTemplate="start">
-      <span class="app-title">{{ title }}</span>
-    </ng-template>
-    <ng-template pTemplate="end">
-      <div class="menubar-end">
-        @if (currentLayoutName) {
-          <span class="current-layout-badge" title="Active layout">
-            <i class="pi pi-objects-column"></i>
-            {{ currentLayoutName }}
-          </span>
-        } @else {
-          <span class="current-layout-badge default-layout" title="Default layout">
-            <i class="pi pi-objects-column"></i>
-            Default
-          </span>
-        }
-        <span class="system-status" [class]="overallStatusClass"
-              (click)="statusPopover.toggle($event)">
-          <span class="system-status-dot" [class]="overallStatusClass"></span>
-          {{ overallStatusLabel }}
-          <i class="pi pi-chevron-down" style="font-size: 0.65rem"></i>
-        </span>
-        <p-popover #statusPopover styleClass="status-popover">
-          <div class="status-dropdown">
-            <div class="status-dropdown-header">Service Status</div>
-            <div class="status-dropdown-row">
-              <span class="system-status-dot" [class]="connectionStatusClass"></span>
-              <span class="status-dropdown-label">{{ transportType }}</span>
-              <span class="status-dropdown-value" [class]="connectionStatusClass">{{ connectionStatusLabel }}</span>
-            </div>
-            <div class="status-dropdown-row">
-              <span class="system-status-dot" [class]="openfinStatusClass"></span>
-              <span class="status-dropdown-label">OpenFin</span>
-              <span class="status-dropdown-value" [class]="openfinStatusClass">{{ openfinStatusLabel }}</span>
-            </div>
-          </div>
-        </p-popover>
-        <button
-          pButton
-          type="button"
-          (click)="toggleTheme()"
-          class="p-button-text theme-toggle"
-          aria-label="Toggle theme"
-        >{{ themeLabel }}</button>
-      </div>
-    </ng-template>
-  </p-menubar>
+@if (showMenubar) {
+  <div class="menubar-wrapper" [class.collapsed]="menubarCollapsed">
+    <!-- Collapsed: thin grip strip -->
+    <div class="menubar-grip" (click)="menubarCollapsed = !menubarCollapsed"
+         [title]="menubarCollapsed ? 'Show toolbar' : 'Hide toolbar'">
+      <span class="grip-dots"></span>
+      <span class="system-status-dot mini" [class]="overallStatusClass"></span>
+    </div>
 
+    <!-- Expanded: full menubar -->
+    <div class="menubar-content">
+      <p-menubar [model]="menuItems" class="app-menubar compact-menubar"
+        (click)="onMenubarItemClick()"
+        (mouseleave)="onMenubarLeave()">
+        <ng-template pTemplate="end">
+          <div class="menubar-end">
+            @if (!isPlatformView) {
+              @if (currentLayoutName) {
+                <span class="current-layout-badge" [title]="currentLayoutName">
+                  <i class="pi pi-objects-column"></i>
+                  {{ currentLayoutName }}
+                </span>
+              } @else {
+                <span class="current-layout-badge default-layout" title="Default layout">
+                  <i class="pi pi-objects-column"></i>
+                </span>
+              }
+            }
+            <span class="system-status" [class]="overallStatusClass"
+                  [title]="statusTooltipText"
+                  (click)="statusPopover.toggle($event)">
+              <span class="system-status-dot" [class]="overallStatusClass"></span>
+              <i class="pi pi-chevron-down" style="font-size: 0.55rem"></i>
+            </span>
+            <p-popover #statusPopover styleClass="status-popover">
+              <div class="status-dropdown">
+                <div class="status-dropdown-header">Service Status</div>
+                <div class="status-dropdown-row">
+                  <span class="system-status-dot" [class]="connectionStatusClass"></span>
+                  <span class="status-dropdown-label">{{ transportType }}</span>
+                  <span class="status-dropdown-value" [class]="connectionStatusClass">{{ connectionStatusLabel }}</span>
+                </div>
+                <div class="status-dropdown-row">
+                  <span class="system-status-dot" [class]="openfinStatusClass"></span>
+                  <span class="status-dropdown-label">OpenFin</span>
+                  <span class="status-dropdown-value" [class]="openfinStatusClass">{{ openfinStatusLabel }}</span>
+                </div>
+              </div>
+            </p-popover>
+            <span class="menubar-collapse-btn" (click)="menubarCollapsed = true" title="Hide toolbar">
+              <i class="pi pi-chevron-up" style="font-size: 0.6rem"></i>
+            </span>
+          </div>
+        </ng-template>
+      </p-menubar>
+    </div>
+  </div>
+}
+
+@if (isDefaultRoute && !isPlatformView) {
   <main #layoutContainer id="layout-container" class="openfin-layout-container"></main>
 
   <!-- Save Layout dialog -->

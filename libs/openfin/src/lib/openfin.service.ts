@@ -679,6 +679,40 @@ export class OpenFinService {
   }
 
   /**
+   * Create a view using `platform.createView()` — works from any context
+   * (window or view). Used when running inside another platform (e.g. Workspace)
+   * where `Layout.getCurrentSync()` is not available from a view context.
+   *
+   * The view will be added to the caller's parent window.
+   */
+  async createPlatformView(name: string, url: string): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const globalFin = (window as any).fin;
+    if (!globalFin?.Platform) {
+      this.logger.error('Cannot create platform view: not running in OpenFin Platform');
+      return;
+    }
+
+    const resolvedUrl = this.resolveUrl(url);
+
+    try {
+      const platform = globalFin.Platform.getCurrentSync();
+      // Get the parent window identity so the view is added to the same window
+      let windowIdentity: { uuid: string; name: string } | undefined;
+      if (globalFin.me.isView) {
+        const parentWin = await globalFin.me.getCurrentWindow();
+        windowIdentity = parentWin.identity;
+      } else if (globalFin.me.isWindow) {
+        windowIdentity = globalFin.me.identity;
+      }
+      await platform.createView({ name, url: resolvedUrl }, windowIdentity);
+      this.logger.info({ name, url }, 'Platform view created via platform.createView');
+    } catch (error) {
+      this.logger.error(error as Error, 'Failed to create platform view');
+    }
+  }
+
+  /**
    * Recursively search the layout tree for a non-status-bar TabStack.
    * Returns the first TabStack that does NOT contain the status-bar view.
    */

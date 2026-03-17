@@ -7,8 +7,8 @@
   "platform": {
     "uuid": "rates-etrading-platform",
     "autoShow": false,
-    "icon": "http://localhost:4200/favicon.ico",
-    "providerUrl": "http://localhost:4200/assets/openfin/provider.html",
+    "icon": "http://localhost:8080/favicon.ico",
+    "providerUrl": "http://localhost:8080/assets/openfin/provider.html",
     "defaultWindowOptions": {
       "contextMenu": true,
       "backgroundColor": "#0f172a",
@@ -35,7 +35,7 @@
         "defaultCentered": true,
         "autoShow": true,
         "frame": true,
-        "url": "http://localhost:4200?mode=platform",
+        "url": "http://localhost:8080?mode=platform",
         "layout": {
           "settings": {
             "hasHeaders": true,
@@ -47,23 +47,6 @@
             {
               "type": "column",
               "content": [
-                {
-                  "type": "stack",
-                  "height": 5,
-                  "content": [
-                    {
-                      "type": "component",
-                      "componentName": "view",
-                      "title": "Status",
-                      "isClosable": false,
-                      "reorderEnabled": false,
-                      "componentState": {
-                        "name": "status-bar",
-                        "url": "http://localhost:4200/status-bar"
-                      }
-                    }
-                  ]
-                },
                 {
                   "type": "row",
                   "height": 95,
@@ -81,7 +64,7 @@
                               "componentName": "view",
                               "componentState": {
                                 "name": "top-of-book-default",
-                                "url": "http://localhost:4200/market-data/top-of-book"
+                                "url": "http://localhost:8080/market-data/top-of-book"
                               }
                             }
                           ]
@@ -101,7 +84,7 @@
                               "componentName": "view",
                               "componentState": {
                                 "name": "executions-blotter-default",
-                                "url": "http://localhost:4200/executions"
+                                "url": "http://localhost:8080/executions"
                               }
                             }
                           ]
@@ -115,7 +98,7 @@
                               "componentName": "view",
                               "componentState": {
                                 "name": "market-data-blotter-default",
-                                "url": "http://localhost:4200/market-data/blotter"
+                                "url": "http://localhost:8080/market-data/blotter"
                               }
                             }
                           ]
@@ -134,7 +117,7 @@
   "shortcut": {
     "company": "Rates E-Trading",
     "description": "Rates E-Trading Desktop (Platform)",
-    "icon": "http://localhost:4200/favicon.ico",
+    "icon": "http://localhost:8080/favicon.ico",
     "name": "Rates E-Trading Desktop (Platform)"
   }
 }

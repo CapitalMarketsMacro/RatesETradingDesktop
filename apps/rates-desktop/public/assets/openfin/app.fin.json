@@ -27,7 +27,7 @@
   "shortcut": {
     "company": "Rates E-Trading",
     "description": "Rates E-Trading Desktop Application",
-    "icon": "http://localhost:4200/favicon.ico",
+    "icon": "http://localhost:8080/favicon.ico",
     "name": "Rates E-Trading Desktop"
   }
 }

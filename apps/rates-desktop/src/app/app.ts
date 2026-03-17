@@ -53,7 +53,7 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
   protected rates: { symbol: string; rate: number; change: number }[] = [];
 
   menuItems: MenuItem[] = [];
-  isDarkTheme = false;
+  menubarCollapsed = false;
 
   // AMPS connection state
   connectionStatus: ConnectionStatus = ConnectionStatus.Disconnected;
@@ -78,6 +78,31 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
    * unlike router events which may fire after lifecycle hooks.
    */
   isDefaultRoute = window.location.pathname === '/' || window.location.pathname === '';
+
+  /**
+   * True when running as a platform view (e.g. launched from Workspace storefront).
+   * In this case, the main window URL never loads — only view URLs load.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  isPlatformView = !!(window as any).fin?.me?.isView;
+
+  /**
+   * True only for the ONE platform view that "owns" the menubar.
+   * Uses a sessionStorage flag so only the first view to load claims it.
+   * This prevents the menubar from duplicating across every view.
+   */
+  isPrimaryPlatformView = (() => {
+    if (!this.isPlatformView) return false;
+    const key = 'rates-platform-menubar-owner';
+    if (sessionStorage.getItem(key)) return false;
+    sessionStorage.setItem(key, window.location.pathname);
+    return true;
+  })();
+
+  /** Whether to show the menubar — on default route OR on the primary platform view */
+  get showMenubar(): boolean {
+    return this.isDefaultRoute || this.isPrimaryPlatformView;
+  }
 
   private router = inject(Router);
 
@@ -189,12 +214,8 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
       });
     });
 
-    // Check for saved theme preference
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      this.isDarkTheme = true;
-      document.documentElement.classList.add('app-dark');
-    }
+    // Always use dark mode
+    document.documentElement.classList.add('app-dark');
   }
 
   ngAfterViewInit() {
@@ -333,8 +354,13 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
     const separator = url.includes('?') ? '&' : '?';
     const urlWithViewId = `${url}${separator}viewId=${encodeURIComponent(viewName)}`;
 
-    if (env === 'platform') {
-      // OpenFin Platform — add view as a tab in the platform window's layout
+    if (env === 'platform' && this.isPlatformView) {
+      // Running as a view inside Workspace — use platform.createView()
+      // (views don't have their own Layout, only windows do)
+      this.logger.info({ viewName, url: urlWithViewId, env }, 'Creating view via platform (Workspace mode)');
+      await this.openfinService.createPlatformView(viewName, urlWithViewId);
+    } else if (env === 'platform') {
+      // OpenFin Platform (standalone) — add view as a tab in the platform window's layout
       this.logger.info({ viewName, url: urlWithViewId, env }, 'Adding view to platform layout');
       await this.openfinService.addPlatformView(viewName, urlWithViewId);
     } else if (env === 'container') {
@@ -702,26 +728,6 @@ export class App implements OnInit, AfterViewInit, OnDestroy {
 
   get statusTooltipText(): string {
     return `${this.transportType}: ${this.connectionStatusLabel}\nOpenFin: ${this.openfinStatusLabel}`;
-  }
-
-  toggleTheme(): void {
-    this.isDarkTheme = !this.isDarkTheme;
-    const html = document.documentElement;
-    if (this.isDarkTheme) {
-      html.classList.add('app-dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      html.classList.remove('app-dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }
-
-  get themeLabel(): string {
-    return this.isDarkTheme ? 'Light Mode' : 'Dark Mode';
-  }
-
-  get themeIcon(): string {
-    return this.isDarkTheme ? 'pi pi-sun' : 'pi pi-moon';
   }
 
   // ────────────────────────────────────────────────────────
