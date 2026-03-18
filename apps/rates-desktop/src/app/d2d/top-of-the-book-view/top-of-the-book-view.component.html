@@ -46,14 +46,15 @@
   </div>
 </div>
 
-<!-- Trading Popover - Real-time updates -->
-<p-popover #tradingPopover [dismissable]="true">
+<!-- Trading Popover - Real-time updates, draggable -->
+<p-popover #tradingPopover [dismissable]="true" (onShow)="onPopoverShow()">
   <div class="trading-popover" *ngIf="tradingData && liveRow">
-    <div class="trading-popover-header">
+    <div class="trading-popover-header drag-handle" (mousedown)="onDragStart($event)">
       <span class="trading-side" [class.sell]="tradingData.side === 'sell'" [class.buy]="tradingData.side === 'buy'">
         {{ tradingData.side === 'buy' ? 'BUY' : 'SELL' }}
       </span>
       <span class="trading-instrument">{{ liveRow.Desc }}</span>
+      <i class="pi pi-arrows-alt drag-icon"></i>
     </div>
     
     <div class="trading-popover-details">

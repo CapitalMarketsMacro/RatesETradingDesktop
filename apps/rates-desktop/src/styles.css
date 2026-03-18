@@ -60,6 +60,28 @@ body {
   font-family: 'IBM Plex Mono', monospace;
 }
 
+/* Draggable popover */
+.drag-handle {
+  cursor: move;
+  user-select: none;
+}
+
+.drag-icon {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: #64748b;
+  opacity: 0.5;
+}
+
+.drag-handle:hover .drag-icon {
+  opacity: 1;
+}
+
+.popover-dragging {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  transition: none !important;
+}
+
 /* Trading Popover Global Styles */
 .p-popover {
   font-family: 'Noto Sans', sans-serif;

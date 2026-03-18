@@ -266,6 +266,55 @@ export class TopOfTheBookViewComponent extends WorkspaceComponent implements OnI
     this.tradingData = null;
   }
 
+  // ── Draggable popover ──
+  private dragOverlay: HTMLElement | null = null;
+  private dragOffsetX = 0;
+  private dragOffsetY = 0;
+  private boundDragMove = this.onDragMove.bind(this);
+  private boundDragEnd = this.onDragEnd.bind(this);
+
+  onPopoverShow(): void {
+    setTimeout(() => {
+      const overlays = document.querySelectorAll('.p-popover');
+      this.dragOverlay = overlays[overlays.length - 1] as HTMLElement ?? null;
+    }, 50);
+  }
+
+  onDragStart(event: MouseEvent): void {
+    if (!this.dragOverlay) return;
+    event.preventDefault();
+
+    const rect = this.dragOverlay.getBoundingClientRect();
+    this.dragOffsetX = event.clientX - rect.left;
+    this.dragOffsetY = event.clientY - rect.top;
+
+    // Switch from PrimeNG transform positioning to fixed left/top
+    this.dragOverlay.style.left = `${rect.left}px`;
+    this.dragOverlay.style.top = `${rect.top}px`;
+    this.dragOverlay.style.transform = 'none';
+    this.dragOverlay.style.position = 'fixed';
+    this.dragOverlay.classList.add('popover-dragging');
+
+    document.addEventListener('mousemove', this.boundDragMove);
+    document.addEventListener('mouseup', this.boundDragEnd);
+  }
+
+  private onDragMove(event: MouseEvent): void {
+    if (!this.dragOverlay) return;
+    const x = event.clientX - this.dragOffsetX;
+    const y = event.clientY - this.dragOffsetY;
+    this.dragOverlay.style.left = `${x}px`;
+    this.dragOverlay.style.top = `${y}px`;
+  }
+
+  private onDragEnd(): void {
+    if (this.dragOverlay) {
+      this.dragOverlay.classList.remove('popover-dragging');
+    }
+    document.removeEventListener('mousemove', this.boundDragMove);
+    document.removeEventListener('mouseup', this.boundDragEnd);
+  }
+
   /**
    * Execute trade (buy or sell)
    */
