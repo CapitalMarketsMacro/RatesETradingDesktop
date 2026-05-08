@@ -26,7 +26,11 @@
       "WebFetch(domain:www.npmjs.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:cdn.openfin.co)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(mkdir -p /tmp/design-extracted)",
+      "Bash(tar -xzf /tmp/design2 -C /tmp/design-extracted)",
+      "Bash(xargs grep *)"
     ]
   }
 }

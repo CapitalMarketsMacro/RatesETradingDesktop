@@ -1,6 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
 /* PrimeIcons is included via project.json styles array */
 
+/* Macro Design System — tokens, fonts, base styles */
+@import './assets/macro-tokens.css';
+
 /* Full viewport layout — matches OpenFin example pattern */
 html, body {
   margin: 0;
@@ -38,26 +41,72 @@ body {
 }
 
 
-/* IBM Plex Mono for ag-Grid data cells */
-.ag-theme-quartz,
-.ag-theme-quartz-dark {
-  --ag-font-family: 'IBM Plex Mono', monospace;
+/* AG Grid — Macro Design System global rules
+   The Macro theme (via themeQuartz.withParams in ui-components) sets Roboto
+   as the default grid font. Numeric cells get IBM Plex Mono with tabular nums
+   via the `.num` class on cells or `.ag-cell-num` col class. */
+
+.ag-cell.num,
+.ag-cell-num,
+.ag-cell[class*="num-"] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Ensure all grid cells use IBM Plex Mono */
-.ag-cell {
-  font-family: 'IBM Plex Mono', monospace;
-}
-
-/* Header cells can use a different weight */
+/* Uppercase header labels — Macro density */
 .ag-header-cell-text {
-  font-family: 'IBM Plex Mono', monospace;
-  font-weight: 600;
+  font-family: var(--font-sans);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-allcaps);
+  font-size: var(--fs-10);
 }
 
-/* Status bar also uses the mono font */
+/* Status bar — mono */
 .ag-status-bar {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+}
+
+/* Selected row left-edge brand accent — Macro signature */
+.ag-row-selected {
+  box-shadow: inset 2px 0 0 var(--brand) !important;
+}
+
+/* ----------------------------------------------------------------
+   Alignment defaults:
+   - Text columns: left-aligned cell + left-aligned header (AG default)
+   - Number columns: centered cell + centered header
+   AG Grid's built-in `numericColumn` type applies `.ag-right-aligned-cell`
+   and `.ag-right-aligned-header` — we re-purpose those to center.
+   ---------------------------------------------------------------- */
+
+/* Numeric cells — centered */
+.ag-right-aligned-cell,
+.ag-cell.num,
+.ag-cell-num,
+.ag-cell[class*="num-"] {
+  text-align: center !important;
+  justify-content: center !important;
+}
+
+/* Numeric header — centered label */
+.ag-right-aligned-header .ag-header-cell-label,
+.ag-header-cell.num .ag-header-cell-label,
+.ag-header-cell[class*="num-"] .ag-header-cell-label {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* Text cells/headers — explicitly left-aligned (defensive) */
+.ag-cell:not(.ag-right-aligned-cell):not(.num):not(.ag-cell-num):not([class*="num-"]) {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.ag-header-cell:not(.ag-right-aligned-header):not(.num):not([class*="num-"]) .ag-header-cell-label {
+  justify-content: flex-start;
+  text-align: left;
 }
 
 /* Draggable popover */
@@ -68,8 +117,8 @@ body {
 
 .drag-icon {
   margin-left: auto;
-  font-size: 0.7rem;
-  color: #64748b;
+  font-size: var(--fs-11);
+  color: var(--fg-3);
   opacity: 0.5;
 }
 
@@ -78,70 +127,80 @@ body {
 }
 
 .popover-dragging {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--shadow-3) !important;
   transition: none !important;
 }
 
-/* Trading Popover Global Styles */
+/* Trading Popover (Order Ticket) — Macro design */
 .p-popover {
-  font-family: 'Noto Sans', sans-serif;
-  background-color: #333333 !important;
+  font-family: var(--font-sans);
+  background-color: var(--bg-raised) !important;
+  border: 1px solid var(--border-2) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-3) !important;
 }
 
 .p-popover .p-popover-content {
-  font-family: 'Noto Sans', sans-serif;
-  background-color: #333333 !important;
-  color: #ffffff;
+  font-family: var(--font-sans);
+  background-color: var(--bg-raised) !important;
+  color: var(--fg-1);
+  padding: 0 !important;
 }
 
 .trading-popover {
-  min-width: 280px;
-  padding: 0.5rem;
-  font-family: 'Noto Sans', sans-serif;
+  min-width: 320px;
+  font-family: var(--font-sans);
+  color: var(--fg-1);
 }
 
 .trading-popover * {
-  font-family: 'Noto Sans', sans-serif;
+  font-family: var(--font-sans);
 }
 
 .trading-popover-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #4b5563;
-  margin-bottom: 0.75rem;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-1);
+  background: var(--bg-panel);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .trading-side {
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 4px 12px;
-  border-radius: 4px;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-10);
+  padding: 2px var(--space-4);
+  border-radius: var(--radius-sm);
   text-transform: uppercase;
+  letter-spacing: var(--ls-allcaps);
+  font-family: var(--font-mono);
 }
 
 .trading-side.sell {
-  background-color: #ffebee;
-  color: #d32f2f;
+  background-color: var(--red-900);
+  color: var(--red-300);
+  border: 1px solid var(--red-700);
 }
 
 .trading-side.buy {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: var(--green-900);
+  color: var(--green-300);
+  border: 1px solid var(--green-700);
 }
 
 .trading-instrument {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #ffffff;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-13);
+  color: var(--fg-1);
+  letter-spacing: var(--ls-tight);
 }
 
 .trading-popover-details {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: var(--space-5);
+  padding: var(--space-6);
 }
 
 .trading-row {
@@ -151,70 +210,79 @@ body {
 }
 
 .trading-label {
-  color: #ffffff;
-  font-size: 0.85rem;
+  color: var(--fg-3);
+  font-size: var(--fs-11);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--ls-allcaps);
+  text-transform: uppercase;
 }
 
 .trading-value {
-  font-weight: 600;
-  color: #ffffff;
+  font-weight: var(--fw-medium);
+  color: var(--fg-1);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-12);
 }
 
 .trading-price {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: var(--fs-20);
+  font-weight: var(--fw-medium);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--ls-tight);
 }
 
-.trading-price.bid-price {
-  color: #2e7d32;
-}
+.trading-price.bid-price { color: var(--bid); }
+.trading-price.ask-price { color: var(--ask); }
 
-.trading-price.ask-price {
-  color: #d32f2f;
-}
-
-/* Price group with size */
 .trading-price-group {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: var(--space-3);
 }
 
 .trading-size {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748b;
+  font-size: var(--fs-11);
+  font-weight: var(--fw-regular);
+  color: var(--fg-3);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .trading-row-book {
-  margin-top: 0.5rem;
+  padding: var(--space-5) var(--space-6);
+  border-top: 1px solid var(--border-1);
+  background: var(--bg-panel);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 .trading-book-action-group {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-3);
 }
 
 /* Compact book dropdown */
 .trading-book-dropdown {
-  font-size: 0.8rem !important;
+  font-size: var(--fs-12) !important;
 }
 
 .trading-book-dropdown .p-select-label {
-  padding: 0.4rem 0.5rem !important;
-  font-size: 0.8rem !important;
+  padding: var(--space-2) var(--space-3) !important;
+  font-size: var(--fs-12) !important;
+  font-family: var(--font-mono);
 }
 
 .trading-book-dropdown .p-select-dropdown {
-  width: 1.5rem !important;
+  width: 1.25rem !important;
 }
 
 .trading-popover-actions .p-button {
   min-width: 70px;
 }
 
-/* Custom Quantity Spinner */
+/* Custom Quantity Spinner — Macro density */
 .qty-spinner {
   display: flex;
   align-items: center;
@@ -222,160 +290,71 @@ body {
 }
 
 .qty-btn {
-  width: 36px;
-  height: 36px;
-  border: 1px solid #cbd5e1;
-  background-color: #f1f5f9;
+  width: var(--h-control-md);
+  height: var(--h-control-md);
+  border: 1px solid var(--border-2);
+  background-color: var(--bg-raised);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
+  transition: background-color var(--dur-fast) var(--ease-out);
+  color: var(--fg-2);
 }
 
 .qty-btn:hover {
-  background-color: #e2e8f0;
+  background-color: var(--bg-panel);
+  color: var(--fg-1);
 }
 
 .qty-btn:active {
-  background-color: #cbd5e1;
+  background-color: var(--bg-app);
+  transform: translateY(1px);
 }
 
 .qty-decrement {
-  border-radius: 4px 0 0 4px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
   border-right: none;
 }
 
 .qty-increment {
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   border-left: none;
 }
 
 .qty-btn svg {
-  color: #334155;
-  stroke: #334155;
+  color: currentColor;
+  stroke: currentColor;
+  width: 12px;
+  height: 12px;
 }
 
 .qty-input {
-  width: 60px;
-  height: 36px;
-  border: 1px solid #cbd5e1;
+  width: 72px;
+  height: var(--h-control-md);
+  border: 1px solid var(--border-2);
+  border-left: none;
+  border-right: none;
+  background-color: var(--bg-app);
+  color: var(--fg-1);
   text-align: center;
-  font-size: 1rem;
-  font-weight: 600;
-  font-family: 'Noto Sans', sans-serif;
+  font-size: var(--fs-12);
+  font-weight: var(--fw-medium);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   -moz-appearance: textfield;
+}
+
+.qty-input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-soft);
 }
 
 .qty-input::-webkit-outer-spin-button,
 .qty-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
-}
-
-/* Dark mode quantity spinner */
-html.app-dark .qty-btn,
-.app-dark .qty-btn {
-  background-color: #334155;
-  border-color: #475569;
-}
-
-html.app-dark .qty-btn:hover,
-.app-dark .qty-btn:hover {
-  background-color: #475569;
-}
-
-html.app-dark .qty-btn:active,
-.app-dark .qty-btn:active {
-  background-color: #64748b;
-}
-
-html.app-dark .qty-btn svg,
-.app-dark .qty-btn svg {
-  color: #f1f5f9;
-  stroke: #f1f5f9;
-}
-
-html.app-dark .qty-input,
-.app-dark .qty-input {
-  background-color: #1e293b;
-  border-color: #475569;
-  color: #f1f5f9;
-}
-
-/* Dark mode styles for Trading Popover */
-/* app-dark class is on html element */
-html.app-dark .p-popover,
-.app-dark .p-popover {
-  background-color: #333333 !important;
-  border-color: #4b5563 !important;
-}
-
-html.app-dark .p-popover .p-popover-content,
-.app-dark .p-popover .p-popover-content {
-  background-color: #333333 !important;
-  color: #ffffff !important;
-}
-
-html.app-dark .trading-popover,
-.app-dark .trading-popover {
-  color: #f1f5f9;
-}
-
-html.app-dark .trading-popover-header,
-.app-dark .trading-popover-header {
-  border-bottom-color: #475569;
-}
-
-html.app-dark .trading-instrument,
-.app-dark .trading-instrument {
-  color: #f1f5f9 !important;
-}
-
-html.app-dark .trading-side.sell,
-.app-dark .trading-side.sell {
-  background-color: rgba(239, 83, 80, 0.2);
-  color: #ef5350;
-}
-
-html.app-dark .trading-side.buy,
-.app-dark .trading-side.buy {
-  background-color: rgba(129, 199, 132, 0.2);
-  color: #81c784;
-}
-
-html.app-dark .trading-label,
-.app-dark .trading-label {
-  color: #ffffff !important;
-}
-
-html.app-dark .trading-value,
-.app-dark .trading-value {
-  color: #f1f5f9 !important;
-}
-
-/* Ensure all text in popover is visible in dark mode */
-html.app-dark .p-popover .trading-popover,
-html.app-dark .p-popover .trading-popover span,
-html.app-dark .p-popover .trading-popover div,
-html.app-dark .trading-popover span,
-html.app-dark .trading-popover div {
-  color: #f1f5f9;
-}
-
-html.app-dark .trading-price.bid-price,
-.app-dark .trading-price.bid-price {
-  color: #81c784 !important;
-}
-
-html.app-dark .trading-price.ask-price,
-.app-dark .trading-price.ask-price {
-  color: #ef5350 !important;
-}
-
-html.app-dark .trading-size,
-.app-dark .trading-size {
-  color: #94a3b8 !important;
 }
 
 /* Top of the Book Toast - positioned relative to component */
@@ -390,7 +369,7 @@ html.app-dark .trading-size,
   margin-bottom: 0.5rem;
 }
 
-/* Status dropdown popover */
+/* Status dropdown popover — Macro design */
 .status-popover {
   min-width: 220px;
 }
@@ -399,52 +378,40 @@ html.app-dark .trading-size,
   display: flex;
   flex-direction: column;
   gap: 0;
+  font-family: var(--font-sans);
 }
 
 .status-dropdown-header {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: var(--fs-10);
+  font-weight: var(--fw-medium);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #64748b;
-  padding: 0 0 8px;
-  border-bottom: 1px solid #e2e8f0;
-  margin-bottom: 8px;
+  letter-spacing: var(--ls-allcaps);
+  color: var(--fg-3);
+  padding: 0 0 var(--space-4);
+  border-bottom: 1px solid var(--border-1);
+  margin-bottom: var(--space-4);
 }
 
 .status-dropdown-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
 }
 
 .status-dropdown-label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #334155;
+  font-size: var(--fs-12);
+  font-weight: var(--fw-medium);
+  color: var(--fg-2);
   flex: 1;
 }
 
 .status-dropdown-value {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: var(--fs-11);
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-mono);
 }
 
-.status-dropdown-value.status-connected { color: #2e7d32; }
-.status-dropdown-value.status-connecting { color: #f57c00; }
-.status-dropdown-value.status-disconnected { color: #d32f2f; }
-
-/* Dark mode */
-html.app-dark .status-dropdown-header {
-  color: #94a3b8;
-  border-bottom-color: #475569;
-}
-
-html.app-dark .status-dropdown-label {
-  color: #e2e8f0;
-}
-
-html.app-dark .status-dropdown-value.status-connected { color: #4ade80; }
-html.app-dark .status-dropdown-value.status-connecting { color: #fbbf24; }
-html.app-dark .status-dropdown-value.status-disconnected { color: #f87171; }
+.status-dropdown-value.status-connected    { color: var(--status-ok); }
+.status-dropdown-value.status-connecting   { color: var(--status-warn); }
+.status-dropdown-value.status-disconnected { color: var(--status-error); }

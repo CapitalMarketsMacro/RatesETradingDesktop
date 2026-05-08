@@ -1,4 +1,5 @@
-/* Host fills the entire iframe/panel */
+/* Executions Blotter — Macro Design System */
+
 :host {
   display: flex;
   flex-direction: column;
@@ -10,83 +11,66 @@
 .executions-blotter-container {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
-  background-color: #333333;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  padding: var(--space-5);
+  background-color: var(--bg-canvas);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-1);
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  font-family: var(--font-sans);
 }
 
 .blotter-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-4);
   flex-shrink: 0;
+  padding: 0 var(--space-2);
 }
 
 .blotter-header h3 {
   margin: 0;
-  color: #ffffff;
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: var(--fg-1);
+  font-size: var(--fs-13);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
 }
 
-/* ag-Grid Background */
-::ng-deep .ag-root-wrapper,
-::ng-deep .ag-body-viewport,
-::ng-deep .ag-center-cols-viewport {
-  background-color: #333333 !important;
-}
-
-/* ag-Grid Row Styling - Odd/Even coloring */
-::ng-deep .ag-row-odd {
-  background-color: #333333 !important;
-}
-
-::ng-deep .ag-row-even {
-  background-color: #474747 !important;
-}
-
-::ng-deep .ag-row-odd:hover,
-::ng-deep .ag-row-even:hover {
-  background-color: #444444 !important;
-}
-
-/* ag-Grid Header Styling */
-::ng-deep .ag-header {
-  background-color: #333333 !important;
-}
-
-::ng-deep .ag-header-cell {
-  color: #ffffff !important;
-}
-
-/* ag-Grid Cell Text */
-::ng-deep .ag-cell {
-  color: #ffffff !important;
-  font-size: 12px !important;
-}
-
-/* Side column styling */
+/* Side column — Buy/Sell directional pills */
 ::ng-deep .side-buy {
-  color: #4ead74 !important;
-  font-weight: bold;
+  color: var(--bid);
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-mono);
+  letter-spacing: var(--ls-wide);
 }
 
 ::ng-deep .side-sell {
-  color: #ef5350 !important;
-  font-weight: bold;
+  color: var(--ask);
+  font-weight: var(--fw-semibold);
+  font-family: var(--font-mono);
+  letter-spacing: var(--ls-wide);
 }
 
-/* Dark Mode Support */
-:host-context(.app-dark) .executions-blotter-container {
-  background-color: #333333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+/* Mono numeric cells */
+::ng-deep .ag-cell[col-id="price"],
+::ng-deep .ag-cell[col-id="quantity"],
+::ng-deep .ag-cell[col-id="size"],
+::ng-deep .ag-cell[col-id="notional"],
+::ng-deep .ag-cell[col-id="pnl"],
+::ng-deep .ag-cell[col-id="filled"],
+::ng-deep .ag-cell[col-id="orderId"],
+::ng-deep .ag-cell[col-id="executionId"],
+::ng-deep .ag-cell[col-id="time"],
+::ng-deep .ag-cell[col-id="timestamp"] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-:host-context(.app-dark) .blotter-header h3 {
-  color: #ffffff;
-}
+/* Status cell pills */
+::ng-deep .status-filled { color: var(--mkt-up); }
+::ng-deep .status-working { color: var(--mkt-up); }
+::ng-deep .status-rejected { color: var(--status-error); }
+::ng-deep .status-cancelled { color: var(--fg-3); }
+::ng-deep .status-pending { color: var(--status-warn); }

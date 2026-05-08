@@ -24,12 +24,11 @@ import {
   GridReadyEvent,
   ModuleRegistry,
   AllCommunityModule,
-  themeQuartz,
-  colorSchemeDarkBlue,
   GetRowIdParams,
   RowDataTransaction,
   StatusPanelDef,
 } from 'ag-grid-community';
+import { macroGridTheme } from './macro-grid-theme';
 import { AllEnterpriseModule } from 'ag-grid-enterprise';
 import { Subject, Subscription, debounceTime } from 'rxjs';
 import { AccordionModule } from 'primeng/accordion';
@@ -143,8 +142,8 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
   // Merged grid options exposed for template binding
   mergedGridOptions: GridOptions & { suppressPaginationPanel?: boolean } = {};
 
-  // Dynamic theme for AG Grid - switches between light and dark
-  gridTheme = themeQuartz;
+  // Macro-themed AG Grid — dark, dense, Cerulean-accented
+  gridTheme = macroGridTheme;
 
   // Signal for theme detection
   private themeSignal = signal<'light' | 'dark'>('light');
@@ -304,7 +303,7 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
 
   private computeMergedGridOptions(): GridOptions & { suppressPaginationPanel?: boolean } {
     const defaultOptions: GridOptions = {
-      theme: themeQuartz,
+      theme: macroGridTheme,
       pagination: true,
       paginationPageSize: 20,
       paginationPageSizeSelector: [10, 20, 50, 100],
@@ -314,6 +313,14 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
         resizable: true,
         flex: 1,
         minWidth: 100,
+      },
+      // Column types: `type: 'numericColumn'` → centered cell + centered
+      // header (Macro); default text columns are left-aligned.
+      columnTypes: {
+        numericColumn: {
+          cellClass: 'ag-right-aligned-cell num',
+          headerClass: 'ag-right-aligned-header',
+        },
       },
       cellSelection: true,
       rowSelection: {
@@ -416,14 +423,8 @@ export class DataGrid<T = any> implements OnInit, AfterViewInit, OnDestroy, OnCh
 
   private updateGridTheme(theme: 'light' | 'dark'): void {
     this.theme = theme;
-    // Apply AG Grid theme with appropriate color scheme
-    // Using themeQuartz with colorSchemeDarkBlue for dark mode
-    // See: https://www.ag-grid.com/angular-data-grid/theming-colors/
-    if (theme === 'dark') {
-      this.gridTheme = themeQuartz.withPart(colorSchemeDarkBlue);
-    } else {
-      this.gridTheme = themeQuartz;
-    }
+    // Macro is dark-default; always use the Macro-themed grid.
+    this.gridTheme = macroGridTheme;
   }
 
   @ViewChild('quickFilterInput') private quickFilterInputRef?: ElementRef<HTMLInputElement>;

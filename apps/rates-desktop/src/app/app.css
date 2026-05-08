@@ -32,12 +32,12 @@
   height: 14px;
   cursor: pointer;
   user-select: none;
-  background: var(--p-menubar-background, #1e293b);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--border-1);
 }
 
 .menubar-grip:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-panel);
 }
 
 .grip-dots {
@@ -51,12 +51,12 @@
   width: 12px;
   height: 2px;
   border-radius: 1px;
-  background: rgba(148, 163, 184, 0.3);
+  background: var(--fg-4);
 }
 
 .grip-dots:hover::before,
 .grip-dots:hover::after {
-  background: rgba(148, 163, 184, 0.5);
+  background: var(--fg-3);
 }
 
 .system-status-dot.mini {
@@ -71,15 +71,15 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  color: #64748b;
-  transition: color 0.1s;
+  color: var(--fg-3);
+  transition: color var(--dur-fast) var(--ease-out);
 }
 
 .menubar-collapse-btn:hover {
-  color: #94a3b8;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg-2);
+  background: var(--bg-panel);
 }
 
 .app-menubar {
@@ -172,30 +172,19 @@ h2 {
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  background-color: rgba(124, 58, 237, 0.12);
-  color: #7c3aed;
+  border-radius: var(--radius-round);
+  font-size: var(--fs-10);
+  font-weight: var(--fw-medium);
+  background-color: var(--brand-soft);
+  color: var(--brand);
   white-space: nowrap;
-  letter-spacing: 0.01em;
+  letter-spacing: var(--ls-wide);
 }
 
 .current-layout-badge.default-layout {
-  background-color: rgba(100, 116, 139, 0.1);
-  color: #64748b;
-  font-weight: 500;
-}
-
-/* Dark theme overrides */
-:host-context(html.app-dark) .current-layout-badge {
-  background-color: rgba(167, 139, 250, 0.15);
-  color: #a78bfa;
-}
-
-:host-context(html.app-dark) .current-layout-badge.default-layout {
-  background-color: rgba(148, 163, 184, 0.12);
-  color: #94a3b8;
+  background-color: var(--bg-raised);
+  color: var(--fg-3);
+  border: 1px solid var(--border-1);
 }
 
 /* Combined system status badge in menubar */
@@ -223,40 +212,24 @@ h2 {
 }
 
 .system-status-dot.status-connected {
-  background-color: #2e7d32;
-  box-shadow: 0 0 4px rgba(46, 125, 50, 0.5);
+  background-color: var(--status-ok);
+  box-shadow: 0 0 4px var(--mkt-up-bg-flash);
 }
 
 .system-status-dot.status-connecting {
-  background-color: #f57c00;
-  box-shadow: 0 0 4px rgba(245, 124, 0, 0.5);
-  animation: status-pulse 1.5s ease-in-out infinite;
+  background-color: var(--status-warn);
+  box-shadow: 0 0 4px var(--status-warn-bg);
+  animation: status-pulse 1.5s var(--ease-in-out) infinite;
 }
 
 .system-status-dot.status-disconnected {
-  background-color: #d32f2f;
-  box-shadow: 0 0 4px rgba(211, 47, 47, 0.5);
+  background-color: var(--status-error);
+  box-shadow: 0 0 4px var(--mkt-down-bg-flash);
 }
 
 @keyframes status-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
-}
-
-/* Dark mode dots */
-:host-context(html.app-dark) .system-status-dot.status-connected {
-  background-color: #4ade80;
-  box-shadow: 0 0 4px rgba(74, 222, 128, 0.5);
-}
-
-:host-context(html.app-dark) .system-status-dot.status-connecting {
-  background-color: #fbbf24;
-  box-shadow: 0 0 4px rgba(251, 191, 36, 0.5);
-}
-
-:host-context(html.app-dark) .system-status-dot.status-disconnected {
-  background-color: #f87171;
-  box-shadow: 0 0 4px rgba(248, 113, 113, 0.5);
 }
 
 

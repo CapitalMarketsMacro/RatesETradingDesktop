@@ -1,4 +1,5 @@
-/* Host fills the entire iframe/panel */
+/* Market Data Blotter — Macro Design System */
+
 :host {
   display: flex;
   flex-direction: column;
@@ -10,72 +11,65 @@
 .market-data-blotter-container {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
-  background-color: var(--surface-card, #ffffff);
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: var(--space-5);
+  background-color: var(--bg-canvas);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-1);
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  font-family: var(--font-sans);
 }
 
 .blotter-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--space-4);
   flex-shrink: 0;
+  padding: 0 var(--space-2);
 }
 
 .blotter-header h3 {
   margin: 0;
-  color: var(--primary-color, #3b82f6);
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: var(--fg-1);
+  font-size: var(--fs-13);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
 }
 
-/* ag-Grid Background */
-::ng-deep .ag-root-wrapper,
-::ng-deep .ag-body-viewport,
-::ng-deep .ag-center-cols-viewport {
-  background-color: #333333 !important;
+/* Mono numeric cells — for bid/ask/price columns */
+::ng-deep .ag-cell-num,
+::ng-deep .ag-cell.num,
+::ng-deep .ag-cell[col-id="bid"],
+::ng-deep .ag-cell[col-id="ask"],
+::ng-deep .ag-cell[col-id="price"],
+::ng-deep .ag-cell[col-id="last"],
+::ng-deep .ag-cell[col-id="change"],
+::ng-deep .ag-cell[col-id="spread"],
+::ng-deep .ag-cell[col-id="yield"],
+::ng-deep .ag-cell[col-id="coupon"],
+::ng-deep .ag-cell[col-id="volume"] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-/* ag-Grid Row Styling - Odd/Even coloring */
-::ng-deep .ag-row-odd {
-  background-color: #333333 !important;
+/* Directional colors */
+::ng-deep .ag-cell[col-id="bid"],
+::ng-deep .cell-bid {
+  color: var(--bid);
 }
 
-::ng-deep .ag-row-even {
-  background-color: #474747 !important;
+::ng-deep .ag-cell[col-id="ask"],
+::ng-deep .cell-ask {
+  color: var(--ask);
 }
 
-::ng-deep .ag-row-odd:hover,
-::ng-deep .ag-row-even:hover {
-  background-color: #444444 !important;
+/* Tick flash — for ticking price cells */
+::ng-deep .ag-cell.flash-up {
+  animation: macro-flash-up var(--dur-flash) linear;
 }
 
-/* ag-Grid Header Styling */
-::ng-deep .ag-header {
-  background-color: #333333 !important;
-}
-
-::ng-deep .ag-header-cell {
-  color: #ffffff !important;
-}
-
-/* ag-Grid Cell Text */
-::ng-deep .ag-cell {
-  color: #ffffff !important;
-  font-size: 12px !important;
-}
-
-/* Dark Mode Support */
-:host-context(.app-dark) .market-data-blotter-container {
-  background-color: #333333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-:host-context(.app-dark) .blotter-header h3 {
-  color: var(--primary-color, #60a5fa);
+::ng-deep .ag-cell.flash-down {
+  animation: macro-flash-down var(--dur-flash) linear;
 }

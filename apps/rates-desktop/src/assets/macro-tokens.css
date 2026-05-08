@@ -1,0 +1,248 @@
+/* ==========================================================================
+   Macro Design System — Colors & Type tokens
+   Dark-default trading UI.
+   ========================================================================== */
+
+@import url('./macro-fonts.css');
+
+:root {
+  /* Core neutrals — cool blue-tinted slate */
+  --slate-50:  #f6f7f9;
+  --slate-100: #eceef2;
+  --slate-200: #d6dae2;
+  --slate-300: #aeb4c1;
+  --slate-400: #7b8392;
+  --slate-500: #565d6b;
+  --slate-600: #3b414c;
+  --slate-700: #2a2f39;
+  --slate-800: #1e222a;
+  --slate-850: #181b22;
+  --slate-900: #12141a;
+  --slate-950: #0b0d12;
+
+  /* Brand — Macro Cerulean */
+  --cerulean-50:  #e7f4fd;
+  --cerulean-100: #c2e4fb;
+  --cerulean-200: #8ecdf6;
+  --cerulean-300: #55b2ee;
+  --cerulean-400: #2aa6e6;
+  --cerulean-500: #1685c2;
+  --cerulean-600: #0f6497;
+  --cerulean-700: #0a476c;
+
+  /* Directional */
+  --green-300: #6ee7a8;
+  --green-400: #34d97a;
+  --green-500: #16a85c;
+  --green-600: #0f7f45;
+  --green-700: #0a5c32;
+  --green-900: #08281a;
+
+  --red-300:   #ff9a95;
+  --red-400:   #ff6b64;
+  --red-500:   #e84038;
+  --red-600:   #b82c25;
+  --red-700:   #861e19;
+  --red-900:   #3a0f0c;
+
+  --yellow-300: #ffd96a;
+  --yellow-400: #f5c13a;
+  --yellow-500: #c79306;
+
+  --blue-300: #8fb5ff;
+  --blue-400: #5b8def;
+  --blue-500: #3566d9;
+  --blue-600: #234aa6;
+  --blue-900: #0f1d3f;
+
+  --purple-400: #a88cf2;
+  --purple-500: #7a5cd9;
+
+  /* Semantic — dark default */
+  --bg-app:        var(--slate-950);
+  --bg-canvas:     var(--slate-900);
+  --bg-panel:      var(--slate-850);
+  --bg-raised:     var(--slate-800);
+  --bg-overlay:    rgba(6, 8, 12, 0.72);
+  --bg-grid-row:   var(--slate-900);
+  --bg-grid-alt:   var(--slate-850);
+  --bg-grid-hover: #22262f;
+  --bg-grid-selected: #1a2a3f;
+
+  --fg-1: #e6e8ec;
+  --fg-2: #a8afbd;
+  --fg-3: #6f7687;
+  --fg-4: #4a5060;
+  --fg-inverse: #0b0d12;
+
+  --border-1: #2a2f39;
+  --border-2: #363c48;
+  --border-3: #4a5060;
+  --border-grid: #1c2029;
+
+  --brand:         var(--cerulean-400);
+  --brand-hover:   var(--cerulean-300);
+  --brand-press:   var(--cerulean-500);
+  --brand-soft:    rgba(42, 166, 230, 0.14);
+  --on-brand:      #041a26;
+
+  /* Market directional — the most important tokens */
+  --mkt-up:        var(--green-400);
+  --mkt-up-bg:     rgba(52, 217, 122, 0.14);
+  --mkt-up-bg-flash: rgba(52, 217, 122, 0.42);
+  --mkt-down:      var(--red-400);
+  --mkt-down-bg:   rgba(255, 107, 100, 0.14);
+  --mkt-down-bg-flash: rgba(255, 107, 100, 0.42);
+  --mkt-neutral:   var(--fg-2);
+
+  --bid:           var(--green-400);
+  --bid-bg:        rgba(52, 217, 122, 0.10);
+  --ask:           var(--red-400);
+  --ask-bg:        rgba(255, 107, 100, 0.10);
+
+  /* Status */
+  --status-info:    var(--blue-400);
+  --status-info-bg: rgba(91, 141, 239, 0.14);
+  --status-warn:    var(--yellow-400);
+  --status-warn-bg: rgba(245, 193, 58, 0.14);
+  --status-error:   var(--red-400);
+  --status-error-bg:rgba(255, 107, 100, 0.14);
+  --status-ok:      var(--green-400);
+  --status-ok-bg:   rgba(52, 217, 122, 0.14);
+  --status-live:    var(--green-400);
+  --status-stale:   var(--yellow-400);
+  --status-halted:  var(--red-400);
+
+  --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--cerulean-400);
+
+  /* Type */
+  --font-sans: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  --numeric-feature: "tnum" 1, "lnum" 1, "zero" 1;
+
+  --fs-10: 10px;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-20: 20px;
+  --fs-24: 24px;
+  --fs-32: 32px;
+  --fs-48: 48px;
+
+  --lh-tight:  1.15;
+  --lh-snug:   1.3;
+  --lh-normal: 1.5;
+
+  --fw-regular: 400;
+  --fw-medium:  500;
+  --fw-semibold:600;
+  --fw-bold:    700;
+
+  --ls-tight:   -0.01em;
+  --ls-normal:   0;
+  --ls-wide:    0.02em;
+  --ls-allcaps: 0.06em;
+
+  /* Spacing */
+  --space-0: 0;
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 20px;
+  --space-8: 24px;
+  --space-9: 32px;
+  --space-10: 48px;
+  --space-11: 64px;
+
+  /* Radii */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-round: 999px;
+
+  /* Elevation */
+  --shadow-0: none;
+  --shadow-1: 0 1px 0 rgba(0,0,0,0.35), 0 0 0 1px var(--border-1);
+  --shadow-2: 0 4px 12px rgba(0,0,0,0.45), 0 0 0 1px var(--border-1);
+  --shadow-3: 0 12px 32px rgba(0,0,0,0.55), 0 0 0 1px var(--border-2);
+  --shadow-flash-up:   inset 0 0 0 1px var(--green-400);
+  --shadow-flash-down: inset 0 0 0 1px var(--red-400);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-instant: 80ms;
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+  --dur-flash: 600ms;
+
+  /* Density anchors */
+  --h-grid-row: 22px;
+  --h-grid-header: 26px;
+  --h-control-xs: 20px;
+  --h-control-sm: 24px;
+  --h-control-md: 28px;
+  --h-control-lg: 32px;
+}
+
+/* Base element styles */
+html, body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-13);
+  line-height: var(--lh-normal);
+  background: var(--bg-app);
+  color: var(--fg-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.mono, code, kbd, .num {
+  font-family: var(--font-mono);
+  font-feature-settings: var(--numeric-feature);
+}
+.num { font-variant-numeric: tabular-nums; }
+
+.label {
+  font-size: var(--fs-10);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-allcaps);
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.up    { color: var(--mkt-up); }
+.down  { color: var(--mkt-down); }
+.bid   { color: var(--bid); }
+.ask   { color: var(--ask); }
+.muted { color: var(--fg-3); }
+
+/* Scrollbars — thin, dark */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--slate-700);
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--slate-600);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::selection { background: var(--brand-soft); color: var(--fg-1); }
+
+/* Tick flash — the signature motion */
+@keyframes macro-flash-up   { 0% { background: var(--mkt-up-bg-flash); }   100% { background: transparent; } }
+@keyframes macro-flash-down { 0% { background: var(--mkt-down-bg-flash); } 100% { background: transparent; } }
+.flash-up   { animation: macro-flash-up   var(--dur-flash) linear; }
+.flash-down { animation: macro-flash-down var(--dur-flash) linear; }

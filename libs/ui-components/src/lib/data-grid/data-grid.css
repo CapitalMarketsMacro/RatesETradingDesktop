@@ -1,3 +1,5 @@
+/* DataGrid — Macro Design System */
+
 :host {
   display: flex;
   flex: 1;
@@ -17,101 +19,94 @@
   width: 100%;
 }
 
-/* --------------------------------------------------------
-   PrimeNG Accordion — compact grid toolbar
-   Collapsed: just a slim header bar. Expanded: tools panel.
-   -------------------------------------------------------- */
+/* PrimeNG Accordion — compact grid toolbar (collapsed/expanded) */
 ::ng-deep .grid-accordion {
   flex-shrink: 0;
 }
 
-/* Root accordion — remove default spacing */
 ::ng-deep .grid-accordion .p-accordion {
   display: flex;
   flex-direction: column;
 }
 
-/* Panel wrapper */
 ::ng-deep .grid-accordion .p-accordionpanel {
   border: none !important;
 }
 
-/* ── Header — slim, compact bar ── */
+/* Header — slim, compact bar */
 ::ng-deep .grid-accordion .p-accordionheader {
-  padding: 4px 10px !important;
-  background-color: #2a2a2a !important;
+  padding: var(--space-2) var(--space-5) !important;
+  background-color: var(--bg-panel) !important;
   border: none !important;
-  border-bottom: 1px solid #3a3a3a !important;
+  border-bottom: 1px solid var(--border-1) !important;
   border-radius: 0 !important;
   min-height: unset !important;
-  gap: 6px;
+  gap: var(--space-3);
 }
 
 ::ng-deep .grid-accordion .p-accordionheader:hover {
-  background-color: #333333 !important;
+  background-color: var(--bg-raised) !important;
 }
 
-/* Active/open state */
 ::ng-deep .grid-accordion .p-accordionpanel-active .p-accordionheader {
-  background-color: #2e2e2e !important;
-  border-bottom-color: #4b5563 !important;
+  background-color: var(--bg-raised) !important;
+  border-bottom-color: var(--border-2) !important;
 }
 
-/* Header label — small text with icon */
 .grid-accordion-label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: #94a3b8;
+  gap: var(--space-3);
+  font-size: var(--fs-10);
+  font-weight: var(--fw-medium);
+  color: var(--fg-3);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: var(--ls-allcaps);
 }
 
 .grid-accordion-label .pi {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
 }
 
-/* Toggle icon (chevron) — smaller */
+/* Toggle chevron */
 ::ng-deep .grid-accordion .p-accordionheader-toggle-icon {
-  font-size: 0.7rem !important;
-  color: #6b7280 !important;
+  font-size: var(--fs-11) !important;
+  color: var(--fg-4) !important;
 }
 
 ::ng-deep .grid-accordion .p-accordionheader:hover .p-accordionheader-toggle-icon {
-  color: #e2e8f0 !important;
+  color: var(--fg-1) !important;
 }
 
-/* ── Content panel ── */
+/* Content panel */
 ::ng-deep .grid-accordion .p-accordioncontent-content {
-  padding: 6px 10px !important;
-  background-color: #2e2e2e !important;
+  padding: var(--space-3) var(--space-5) !important;
+  background-color: var(--bg-raised) !important;
   border: none !important;
-  border-bottom: 1px solid #3a3a3a !important;
+  border-bottom: 1px solid var(--border-1) !important;
 }
 
-/* ── Tools row — horizontal layout for filter + future tools ── */
+/* Tools row */
 .grid-tools-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-5);
   flex-wrap: wrap;
 }
 
-/* Quick filter group — icon + input + clear */
+/* Quick filter group */
 .grid-quick-filter-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-3);
   flex: 1;
   min-width: 180px;
   max-width: 360px;
 }
 
 .grid-quick-filter-group .filter-icon {
-  font-size: 0.78rem;
-  color: #6b7280;
+  font-size: var(--fs-12);
+  color: var(--fg-4);
   flex-shrink: 0;
 }
 
@@ -119,25 +114,26 @@
 .grid-quick-filter {
   flex: 1;
   min-width: 0;
-  height: 26px;
-  padding: 0 8px;
-  border: 1px solid #4b5563;
-  border-radius: 4px;
-  background-color: #333333;
-  color: #e2e8f0;
-  font-size: 0.8rem;
-  font-family: 'Noto Sans', sans-serif;
+  height: var(--h-control-sm);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-app);
+  color: var(--fg-1);
+  font-size: var(--fs-12);
+  font-family: var(--font-sans);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .grid-quick-filter::placeholder {
-  color: #6b7280;
+  color: var(--fg-4);
 }
 
 .grid-quick-filter:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-soft);
 }
 
 /* Clear button */
@@ -149,71 +145,20 @@
   height: 22px;
   padding: 0;
   border: none;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: #6b7280;
+  color: var(--fg-4);
   cursor: pointer;
   flex-shrink: 0;
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition: color var(--dur-fast) var(--ease-out),
+              background-color var(--dur-fast) var(--ease-out);
 }
 
 .grid-filter-clear .pi {
-  font-size: 0.7rem;
+  font-size: var(--fs-11);
 }
 
 .grid-filter-clear:hover {
-  color: #ef4444;
-  background-color: rgba(239, 68, 68, 0.15);
-}
-
-/* ============================================================
-   Light theme overrides
-   ============================================================ */
-:host-context(html:not(.app-dark)) ::ng-deep .grid-accordion .p-accordionheader {
-  background-color: #f8f9fa !important;
-  border-bottom-color: #e2e8f0 !important;
-}
-
-:host-context(html:not(.app-dark)) ::ng-deep .grid-accordion .p-accordionheader:hover {
-  background-color: #f1f5f9 !important;
-}
-
-:host-context(html:not(.app-dark)) ::ng-deep .grid-accordion .p-accordionpanel-active .p-accordionheader {
-  background-color: #eef2f7 !important;
-  border-bottom-color: #d1d5db !important;
-}
-
-:host-context(html:not(.app-dark)) .grid-accordion-label {
-  color: #64748b;
-}
-
-:host-context(html:not(.app-dark)) ::ng-deep .grid-accordion .p-accordionheader-toggle-icon {
-  color: #9ca3af !important;
-}
-
-:host-context(html:not(.app-dark)) ::ng-deep .grid-accordion .p-accordionheader:hover .p-accordionheader-toggle-icon {
-  color: #1e293b !important;
-}
-
-:host-context(html:not(.app-dark)) ::ng-deep .grid-accordion .p-accordioncontent-content {
-  background-color: #eef2f7 !important;
-  border-bottom-color: #e2e8f0 !important;
-}
-
-:host-context(html:not(.app-dark)) .grid-quick-filter-group .filter-icon {
-  color: #9ca3af;
-}
-
-:host-context(html:not(.app-dark)) .grid-quick-filter {
-  border-color: #d1d5db;
-  background-color: #ffffff;
-  color: #1e293b;
-}
-
-:host-context(html:not(.app-dark)) .grid-quick-filter::placeholder {
-  color: #9ca3af;
-}
-
-:host-context(html:not(.app-dark)) .grid-filter-clear {
-  color: #9ca3af;
+  color: var(--status-error);
+  background-color: var(--status-error-bg);
 }

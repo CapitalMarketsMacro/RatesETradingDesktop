@@ -1,7 +1,5 @@
-/* --------------------------------------------------------
-   Host: fills the OpenFin iframe/panel and acts as a
-   CSS container so children can use cqw / cqh units.
-   -------------------------------------------------------- */
+/* Top of the Book — Macro Design System */
+
 :host {
   display: flex;
   flex-direction: column;
@@ -12,97 +10,94 @@
   container-name: tob;
 }
 
-/* --------------------------------------------------------
-   Main wrapper — flex column that stretches to fill host.
-   Padding scales with container width.
-   -------------------------------------------------------- */
 .top-of-the-book-container {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: clamp(4px, 1.5cqw, 1rem);
-  background-color: #333333;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  font-family: 'Noto Sans', sans-serif;
+  padding: clamp(4px, 1.5cqw, var(--space-5));
+  background-color: var(--bg-canvas);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-1);
+  font-family: var(--font-sans);
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-/* --------------------------------------------------------
-   Header — title + controls; scales font with container
-   -------------------------------------------------------- */
+/* Header */
 .tob-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: clamp(2px, 0.6cqh, 0.5rem);
+  margin-bottom: clamp(2px, 0.6cqh, var(--space-4));
   flex-shrink: 0;
+  padding: 0 var(--space-2);
 }
 
 .tob-header-controls {
   display: flex;
   align-items: center;
-  gap: clamp(4px, 1cqw, 1rem);
+  gap: clamp(4px, 1cqw, var(--space-5));
 }
 
-.tob-header h3 {
-  margin: 0;
-  color: #ffffff;
-  font-size: clamp(0.7rem, 2.5cqw, 1.25rem);
-  font-weight: 600;
+.tob-header > span {
+  color: var(--fg-1);
+  font-size: clamp(0.65rem, 2cqw, var(--fs-13));
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
   white-space: nowrap;
 }
 
 .row-count {
-  color: #9ca3af;
-  font-size: clamp(0.6rem, 1.8cqw, 0.85rem);
-  background-color: rgba(156, 163, 175, 0.15);
-  padding: clamp(2px, 0.4cqh, 4px) clamp(4px, 1cqw, 12px);
-  border-radius: 12px;
+  color: var(--fg-3);
+  font-size: clamp(0.55rem, 1.5cqw, var(--fs-11));
+  background-color: var(--bg-raised);
+  border: 1px solid var(--border-1);
+  padding: 2px var(--space-4);
+  border-radius: var(--radius-round);
   white-space: nowrap;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-/* --------------------------------------------------------
-   Grid — fills remaining space and scrolls vertically
-   -------------------------------------------------------- */
+/* Grid */
 .tob-grid {
   display: flex;
   flex-direction: column;
-  border: 1px solid #374151;
-  border-radius: 6px;
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-sm);
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
   min-height: 0;
+  background: var(--bg-grid-row);
 }
 
-/* --------------------------------------------------------
-   Rows — grid columns scale; row height adapts to panel
-   -------------------------------------------------------- */
 .tob-row {
   display: grid;
-  /* Default columns — overridden by [style.grid-template-columns] binding */
   grid-template-columns: 0.5fr 1fr 1fr 1fr 1fr;
-  min-height: clamp(20px, 4.5cqh, 44px);
+  min-height: clamp(20px, 4cqh, 36px);
 }
 
 .tob-header-row {
-  background-color: #333333;
-  border-bottom: 2px solid #4b5563;
-  font-weight: 600;
-  color: #ffffff;
+  background-color: var(--bg-panel);
+  border-bottom: 1px solid var(--border-1);
+  font-weight: var(--fw-medium);
+  color: var(--fg-3);
   position: sticky;
   top: 0;
   z-index: 1;
+  font-size: var(--fs-10);
+  letter-spacing: var(--ls-allcaps);
+  text-transform: uppercase;
+  min-height: var(--h-grid-header);
 }
 
 .tob-header-row .tob-cell {
   position: relative;
 }
 
-/* ── Column resize handle ── */
+/* Column resize handle */
 .col-resize-handle {
   position: absolute;
   top: 0;
@@ -112,60 +107,48 @@
   cursor: col-resize;
   z-index: 2;
   background: transparent;
-  transition: background-color 0.15s ease;
+  transition: background-color var(--dur-fast) var(--ease-out);
 }
 
 .col-resize-handle:hover,
 .col-resize-handle:active {
-  background-color: rgba(59, 130, 246, 0.6);
+  background-color: var(--brand);
 }
 
-/* Handle on the left edge (used for the last column) */
 .col-resize-handle-left {
   right: auto;
   left: -3px;
 }
 
+/* Data rows */
 .tob-data-row {
-  border-bottom: 1px solid #374151;
-  transition: background-color 0.15s ease;
+  border-bottom: 1px solid var(--border-grid);
+  transition: background-color var(--dur-fast) var(--ease-out);
 }
 
-/* Alternate row coloring */
-.tob-data-row:nth-child(odd) {
-  background-color: #333333;
-}
+.tob-data-row:nth-child(odd)  { background-color: var(--bg-grid-row); }
+.tob-data-row:nth-child(even) { background-color: var(--bg-grid-alt); }
+.tob-data-row:last-child      { border-bottom: none; }
+.tob-data-row:hover           { background-color: var(--bg-grid-hover); }
 
-.tob-data-row:nth-child(even) {
-  background-color: #474747;
-}
-
-.tob-data-row:last-child {
-  border-bottom: none;
-}
-
-.tob-data-row:hover {
-  background-color: #444444;
-}
-
-/* --------------------------------------------------------
-   Cells — padding and font scale with container size
-   -------------------------------------------------------- */
+/* Cells */
 .tob-cell {
   display: flex;
   align-items: center;
-  padding: clamp(2px, 0.5cqh, 0.5rem) clamp(4px, 1cqw, 1rem);
-  font-size: clamp(0.65rem, 2.2cqw, 1.5rem);
-  font-family: 'Noto Sans', sans-serif;
+  padding: clamp(2px, 0.5cqh, var(--space-3)) clamp(4px, 1cqw, var(--space-5));
+  font-size: clamp(0.65rem, 2cqw, var(--fs-12));
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--fg-1);
 }
 
-/* Description Column */
 .tob-cell-desc {
-  font-weight: 600;
-  color: #ffffff;
+  font-family: var(--font-sans);
+  font-weight: var(--fw-medium);
+  color: var(--fg-1);
 }
 
 .tob-cell-selectable {
@@ -173,163 +156,73 @@
 }
 
 .tob-cell-selectable:hover {
-  text-decoration: underline;
+  color: var(--brand);
 }
 
-/* Selected row highlight */
+/* Selected row — Macro uses 2px left brand border inside the row */
 .tob-row-selected {
-  outline: 1px solid rgba(96, 165, 250, 0.5);
-  outline-offset: -1px;
+  background-color: var(--bg-grid-selected) !important;
+}
+
+.tob-row-selected .tob-cell:first-child {
+  box-shadow: inset 2px 0 0 var(--brand);
 }
 
 .tob-row-selected .tob-cell-desc {
-  color: #60a5fa;
+  color: var(--brand);
 }
 
-:host-context(.app-dark) .tob-row-selected {
-  outline-color: rgba(96, 165, 250, 0.6);
-}
-
-:host-context(.app-dark) .tob-row-selected .tob-cell-desc {
-  color: #93bbfc;
-}
-
-/* Bid Size Column - Bright Green */
+/* Bid Size — green directional */
 .tob-cell-bid-size {
   justify-content: flex-end;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semibold);
+  color: var(--bid);
+  background-color: var(--bid-bg);
 }
 
-.tob-data-row .tob-cell-bid-size {
-  background-color: #4ead74;
-  color: #ffffff;
-}
-
-.tob-data-row:nth-child(even) .tob-cell-bid-size {
-  background-color: #56b57c;
-}
-
-/* Best Bid Column */
+/* Best Bid */
 .tob-cell-bid {
   justify-content: flex-end;
-  font-weight: 700;
-  color: #ffffff;
-  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semibold);
+  color: var(--fg-1);
 }
 
-/* Best Ask Column */
+/* Best Ask */
 .tob-cell-ask {
   justify-content: flex-end;
-  font-weight: 700;
-  color: #ffffff;
-  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semibold);
+  color: var(--fg-1);
 }
 
-/* Ask Size Column - Coral/Pink */
+/* Ask Size — red directional */
 .tob-cell-ask-size {
   justify-content: flex-end;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  font-weight: var(--fw-semibold);
+  color: var(--ask);
+  background-color: var(--ask-bg);
 }
 
-.tob-data-row .tob-cell-ask-size {
-  background-color: #a65c5c;
-  color: #ffffff;
+/* Header cells — different alignment for header row */
+.tob-header-row .tob-cell-bid-size,
+.tob-header-row .tob-cell-ask-size,
+.tob-header-row .tob-cell-bid,
+.tob-header-row .tob-cell-ask {
+  color: var(--fg-3);
+  background-color: transparent;
 }
 
-.tob-data-row:nth-child(even) .tob-cell-ask-size {
-  background-color: #ae6464;
-}
-
-/* Empty State */
+/* Empty state */
 .tob-empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(0.5rem, 2cqh, 2rem);
-  color: #94a3b8;
-  font-style: italic;
-  font-size: clamp(0.7rem, 2cqw, 1rem);
+  padding: clamp(var(--space-4), 2cqh, var(--space-9));
+  color: var(--fg-3);
+  font-family: var(--font-sans);
+  font-size: clamp(var(--fs-11), 2cqw, var(--fs-13));
 }
 
-/* Dark Mode Support - use same colors as light mode */
-:host-context(.app-dark) .top-of-the-book-container {
-  background-color: #333333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-:host-context(.app-dark) .tob-header h3 {
-  color: #ffffff;
-}
-
-:host-context(.app-dark) .row-count {
-  color: #9ca3af;
-  background-color: rgba(156, 163, 175, 0.15);
-}
-
-:host-context(.app-dark) .tob-grid {
-  border-color: #374151;
-}
-
-:host-context(.app-dark) .tob-header-row {
-  background-color: #333333;
-  border-bottom-color: #4b5563;
-  color: #ffffff;
-}
-
-:host-context(.app-dark) .tob-data-row {
-  border-bottom-color: #374151;
-}
-
-/* Dark mode alternate row coloring */
-:host-context(.app-dark) .tob-data-row:nth-child(odd) {
-  background-color: #333333;
-}
-
-:host-context(.app-dark) .tob-data-row:nth-child(even) {
-  background-color: #474747;
-}
-
-:host-context(.app-dark) .tob-data-row:hover {
-  background-color: gray;
-}
-
-:host-context(.app-dark) .tob-cell-desc {
-  color: #ffffff;
-}
-
-:host-context(.app-dark) .tob-data-row .tob-cell-bid-size {
-  background-color: #4ead74;
-  color: #ffffff;
-}
-
-:host-context(.app-dark) .tob-data-row:nth-child(even) .tob-cell-bid-size {
-  background-color: #56b57c;
-}
-
-:host-context(.app-dark) .tob-cell-bid {
-  color: #ffffff;
-}
-
-:host-context(.app-dark) .tob-cell-ask {
-  color: #ffffff;
-}
-
-:host-context(.app-dark) .tob-data-row .tob-cell-ask-size {
-  background-color: #a65c5c;
-  color: #ffffff;
-}
-
-:host-context(.app-dark) .tob-data-row:nth-child(even) .tob-cell-ask-size {
-  background-color: #ae6464;
-}
-
-:host-context(.app-dark) .tob-empty {
-  color: #94a3b8;
-}
-
-/* Interactive cells - cursor and hover effect */
+/* Interactive (click-to-trade) cells */
 .tob-cell-interactive {
   cursor: pointer;
   position: relative;
@@ -339,261 +232,105 @@
   content: '';
   position: absolute;
   inset: 0;
-  border: 2px solid transparent;
-  transition: border-color 0.15s ease;
+  border: 1px solid transparent;
+  transition: border-color var(--dur-fast) var(--ease-out);
   pointer-events: none;
 }
 
 .tob-data-row .tob-cell-bid-size.tob-cell-interactive:hover::after {
-  border-color: #2e7d32;
+  border-color: var(--mkt-up);
 }
 
 .tob-data-row .tob-cell-ask-size.tob-cell-interactive:hover::after {
-  border-color: #d32f2f;
+  border-color: var(--mkt-down);
 }
 
-/* --------------------------------------------------------
-   Toast — always dark, matches the TOB container
-   -------------------------------------------------------- */
+/* Toast — Macro-styled */
 ::ng-deep .tob-toast .p-toast-message {
-  background-color: #474747 !important;
-  border: 1px solid #4b5563 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-  color: #e2e8f0 !important;
+  background-color: var(--bg-raised) !important;
+  border: 1px solid var(--border-2) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-2) !important;
+  color: var(--fg-1) !important;
+  font-family: var(--font-sans) !important;
 }
 
 ::ng-deep .tob-toast .p-toast-message-content {
-  color: #e2e8f0 !important;
+  color: var(--fg-1) !important;
 }
 
 ::ng-deep .tob-toast .p-toast-message .p-toast-summary {
-  color: #ffffff !important;
+  color: var(--fg-1) !important;
+  font-weight: var(--fw-semibold) !important;
 }
 
 ::ng-deep .tob-toast .p-toast-message .p-toast-detail {
-  color: #cbd5e1 !important;
+  color: var(--fg-2) !important;
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 ::ng-deep .tob-toast .p-toast-message .p-toast-icon-close {
-  color: #94a3b8 !important;
+  color: var(--fg-3) !important;
 }
 
 ::ng-deep .tob-toast .p-toast-message .p-toast-icon-close:hover {
-  color: #ffffff !important;
+  color: var(--fg-1) !important;
 }
 
 ::ng-deep .tob-toast .p-toast-message .p-toast-message-icon {
-  color: #94a3b8 !important;
+  color: var(--fg-3) !important;
 }
 
-/* Success toast (Buy) — subtle green left accent */
+/* Success toast (Buy) */
 ::ng-deep .tob-toast .p-toast-message-success {
-  border-left: 4px solid #81c784 !important;
+  border-left: 2px solid var(--mkt-up) !important;
 }
-
 ::ng-deep .tob-toast .p-toast-message-success .p-toast-message-icon {
-  color: #81c784 !important;
+  color: var(--mkt-up) !important;
 }
 
-/* Info toast (Sell) — subtle red left accent */
+/* Info toast (Sell) */
 ::ng-deep .tob-toast .p-toast-message-info {
-  border-left: 4px solid #ef5350 !important;
+  border-left: 2px solid var(--mkt-down) !important;
 }
-
 ::ng-deep .tob-toast .p-toast-message-info .p-toast-message-icon {
-  color: #ef5350 !important;
-}
-
-/* --------------------------------------------------------
-   Trading Popover — always dark, matches the TOB container
-   ::ng-deep is required because the popover renders in the
-   overlay container outside this component's view encapsulation.
-   -------------------------------------------------------- */
-::ng-deep .p-popover {
-  background-color: #333333 !important;
-  border: 1px solid #4b5563 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
-  color: #e2e8f0 !important;
-}
-
-::ng-deep .p-popover .p-popover-content {
-  background-color: #333333 !important;
-  color: #e2e8f0 !important;
-  padding: 0 !important;
-}
-
-::ng-deep .p-popover::before {
-  border-bottom-color: #4b5563 !important;
-}
-
-::ng-deep .p-popover::after {
-  border-bottom-color: #333333 !important;
-}
-
-/* Trading Popover Styles */
-.trading-popover {
-  min-width: 280px;
-  padding: 0.5rem;
-  font-family: 'Noto Sans', sans-serif;
-  color: #e2e8f0;
-}
-
-.trading-popover-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #4b5563;
-  margin-bottom: 0.75rem;
-}
-
-.trading-side {
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 4px 12px;
-  border-radius: 4px;
-  text-transform: uppercase;
-}
-
-.trading-side.sell {
-  background-color: rgba(211, 47, 47, 0.2);
-  color: #ef5350;
-}
-
-.trading-side.buy {
-  background-color: rgba(46, 125, 50, 0.2);
-  color: #81c784;
-}
-
-.trading-instrument {
-  font-weight: 600;
-  font-size: 1rem;
-  color: #e2e8f0;
-}
-
-.trading-popover-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.trading-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.trading-label {
-  color: #94a3b8;
-  font-size: 0.85rem;
-}
-
-.trading-value {
-  font-weight: 600;
-  color: #e2e8f0;
-}
-
-.trading-price {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.trading-price.bid-price {
-  color: #81c784;
-}
-
-.trading-price.ask-price {
-  color: #ef5350;
-}
-
-.trading-price-group {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-
-.trading-size {
-  color: #94a3b8;
-  font-size: 0.85rem;
-  font-weight: 400;
-}
-
-.trading-popover-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 0.5rem;
-}
-
-.trading-action-btn {
-  width: 100%;
-}
-
-/* Quantity spinner */
-.qty-spinner {
-  display: flex;
-  align-items: center;
-}
-
-.qty-input {
-  background-color: #474747;
-  border: 1px solid #4b5563;
-  color: #e2e8f0;
-  border-radius: 4px;
-}
-
-.qty-btn {
-  background-color: #474747;
-  border: 1px solid #4b5563;
-  color: #e2e8f0;
-}
-
-.qty-btn:hover {
-  background-color: #555555;
+  color: var(--mkt-down) !important;
 }
 
 /* Book dropdown inside popover */
 ::ng-deep .trading-book-dropdown .p-select {
-  background-color: #474747 !important;
-  border-color: #4b5563 !important;
-  color: #e2e8f0 !important;
+  background-color: var(--bg-app) !important;
+  border: 1px solid var(--border-2) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--fg-1) !important;
+  font-family: var(--font-sans) !important;
 }
 
 ::ng-deep .trading-book-dropdown .p-select-label {
-  color: #e2e8f0 !important;
+  color: var(--fg-1) !important;
+  font-size: var(--fs-12) !important;
 }
 
-/* Book dropdown overlay panel */
 ::ng-deep .p-select-overlay {
-  background-color: #333333 !important;
-  border: 1px solid #4b5563 !important;
+  background-color: var(--bg-raised) !important;
+  border: 1px solid var(--border-2) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-2) !important;
 }
 
 ::ng-deep .p-select-overlay .p-select-option {
-  color: #e2e8f0 !important;
+  color: var(--fg-1) !important;
+  font-size: var(--fs-12) !important;
+  padding: var(--space-3) var(--space-4) !important;
 }
 
 ::ng-deep .p-select-overlay .p-select-option:hover,
 ::ng-deep .p-select-overlay .p-select-option.p-highlight {
-  background-color: #474747 !important;
+  background-color: var(--bg-grid-hover) !important;
 }
 
-/* Interactive cell hover borders */
-:host-context(.app-dark) .tob-data-row .tob-cell-bid-size.tob-cell-interactive:hover::after {
-  border-color: #81c784;
-}
-
-:host-context(.app-dark) .tob-data-row .tob-cell-ask-size.tob-cell-interactive:hover::after {
-  border-color: #ef5350;
-}
-
-/* --------------------------------------------------------
-   Container-query breakpoints for very small panels
-   -------------------------------------------------------- */
-
-/* When panel width is below 300px — hide transport dropdown, compact header */
+/* Container-query breakpoints */
 @container tob (max-width: 300px) {
   .tob-header {
     flex-wrap: wrap;
@@ -604,13 +341,9 @@
   }
 }
 
-/* When panel height is below 200px — minimize header, tighter rows */
 @container tob (max-height: 200px) {
   .tob-header {
     margin-bottom: 2px;
-  }
-  .tob-header h3 {
-    font-size: 0.7rem;
   }
   .row-count {
     display: none;
